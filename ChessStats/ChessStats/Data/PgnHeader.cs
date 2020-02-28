@@ -34,6 +34,7 @@ namespace ChessStats.Data
             Link,
             EventDate,
             EventTime,
+            Rules
         }
 
         public string GetAttributeAsNullOrString(SupportedAttribute attributeName)
