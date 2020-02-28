@@ -78,7 +78,27 @@ namespace ChessStats
                 var endDateParsed = DateTime.TryParseExact($"{gameEndDate} {gameEndTime}", "yyyy.MM.dd HH:mm:ss", null, DateTimeStyles.AssumeUniversal, out parsedEndDate);
                 var seconds = System.Math.Abs((parsedEndDate - parsedStartDate).TotalSeconds);
 
-                string key = $"{parsedStartDate.Year}-{((parsedStartDate.Month < 10) ? "0" : "")}{parsedStartDate.Month} {game.GameAttributes.Attributes["TimeControl"]}";
+                // see: https://support.chess.com/article/330-why-are-there-different-ratings-in-live-chess
+                var timeControlSplit = game.GameAttributes.Attributes["TimeControl"].Split('+');
+                var gameTimeEst = (int.Parse(timeControlSplit[0])) + 
+                                  ((timeControlSplit.Length == 1) ? 0: (int.Parse(timeControlSplit[1]) * 40));
+
+                var gameTime = "";
+
+                if (gameTimeEst < (60*3) )
+                {
+                    gameTime = "Bullet";
+                }
+                else if (gameTimeEst < (60*10) )
+                {
+                    gameTime = "Blitz";
+                }
+                else
+                {
+                    gameTime = "Rapid";
+                }
+
+            string key = $"{parsedStartDate.Year}-{((parsedStartDate.Month < 10) ? "0" : "")}{parsedStartDate.Month} {gameTime}";
                 
                 totalSecondsPlayed += seconds;
 
