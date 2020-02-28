@@ -14,6 +14,7 @@ namespace ChessStats.Data
             Console.WriteLine($">>>Starting ChessDotCom Fetch {username}");
 
             var PgnList = new List<PgnText>();
+            int gameCount = 0;
 
             var t = GetPlayerMonthlyArchive(username);
             t.Wait();
@@ -28,16 +29,20 @@ namespace ChessStats.Data
                 {
                     try
                     {
-                        Console.WriteLine($"Found {game.White.Username} vs {game.Black.Username}");
+                        Console.Write(".");
+                        if (++gameCount > 80) { System.Console.WriteLine(); gameCount = 0; }
+
+                        //Console.WriteLine($"Found {game.White.Username} vs {game.Black.Username}");
                         PgnList.Add(new PgnText() { Source = "ChessDotCom", Text = game.Pgn, TextGameOnly = "", TextHeaderOnly = "" });
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine(ex.Message);
+                        Console.Write(ex.Message);
                     }
                 }
             }
 
+            Console.WriteLine("");
             Console.WriteLine($">>>Finished ChessDotCom Fetch {username}");
 
             return PgnList;

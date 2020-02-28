@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "ChessStats": {
+      "commandName": "Project",
+      "commandLineArgs": "hyper-dragon"
+    }
+  }
+}
