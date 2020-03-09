@@ -3,6 +3,8 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace ChessStats
@@ -14,22 +16,19 @@ namespace ChessStats
             string chessdotcomUsername = args[0];
 
             Helpers.DisplayLogo();
-            Helpers.displaySection("Fetching PGN's", true);
+            Helpers.displaySection($"Fetching Games for {chessdotcomUsername}", true);
 
-            Helpers.displaySection($"Starting ChessDotCom Fetch for {chessdotcomUsername}",false);
+            System.Console.WriteLine($">>Starting ChessDotCom Fetch");
             
             var gameList = PgnFromChessDotCom.FetchGameRecordsForUser(chessdotcomUsername);
             
             System.Console.WriteLine();
-            Helpers.displaySection($"Finished ChessDotCom Fetch for {chessdotcomUsername}",false);
-
-            Helpers.displaySection("Processing PGN's", true);
-            Helpers.displaySection("Calculating Totals", false);
-
-
+            System.Console.WriteLine($">>Finished ChessDotCom Fetch");
+            System.Console.WriteLine($">>Processing Games");
 
             SortedList<string, int> secondsPlayedRollup = new SortedList<string, int>();
-            SortedList<string, int> ecoPlayedRollup = new SortedList<string, int>();
+            SortedList<string, int> ecoPlayedRollupWhite = new SortedList<string, int>();
+            SortedList<string, int> ecoPlayedRollupBlack = new SortedList<string, int>();
             double totalSecondsPlayed = 0;
 
             foreach (var game in gameList)
@@ -42,7 +41,9 @@ namespace ChessStats
                 try
                 {
                     var ecoName = game.GameAttributes.Attributes["ECOUrl"].Replace(@"https://www.chess.com/openings/", "").Replace("-", " ");
-                    var ecoKey = $"{side}-{game.GameAttributes.Attributes["ECO"]}-{ecoName}";
+                    var ecoShortened = new Regex(@"^.*?(?=[0-9])").Match(ecoName).Value.Trim();
+                    var ecoKey = $"{game.GameAttributes.Attributes["ECO"]}-{((string.IsNullOrEmpty(ecoShortened))?ecoName:ecoShortened)}";
+                    var ecoPlayedRollup = (side == "White") ? ecoPlayedRollupWhite : ecoPlayedRollupBlack;
 
                     if (ecoPlayedRollup.ContainsKey(ecoKey))
                     {
@@ -79,15 +80,15 @@ namespace ChessStats
 
                 if (gameTimeEst < (60*3) )
                 {
-                    gameTime = "Bullet";
+                    gameTime = $"Bullet{((game.IsRatedGame)?"":" Unrated")}";
                 }
                 else if (gameTimeEst < (60*10) )
                 {
-                    gameTime = "Blitz";
+                    gameTime = $"Blitz{((game.IsRatedGame)?"":" Unrated")}";
                 }
                 else
                 {
-                    gameTime = "Rapid";
+                    gameTime = $"Rapid{((game.IsRatedGame)?"":" Unrated")}";
                 }
 
             string key = $"{parsedStartDate.Year}-{((parsedStartDate.Month < 10) ? "0" : "")}{parsedStartDate.Month} {gameTime}";
@@ -104,25 +105,39 @@ namespace ChessStats
                 }
             }
 
-            Helpers.displaySection("Report", true);
-
+            System.Console.WriteLine($">>Finished Processing Games");
             System.Console.WriteLine("");
-            foreach (var rolledUp in secondsPlayedRollup)
+            Helpers.displaySection($"Live Chess Report for {chessdotcomUsername} - {DateTime.Now.ToShortDateString()}", true);
+            Console.WriteLine("");
+            Helpers.displaySection("Openings Playing As White >1", false);
+            foreach (var ecoCount in ecoPlayedRollupWhite.OrderByDescending(uses => uses.Value))
             {
-                TimeSpan timeMonth = TimeSpan.FromSeconds(rolledUp.Value);
-                System.Console.WriteLine($"{rolledUp.Key.PadRight(20,' ')} :: {((int)timeMonth.TotalHours).ToString().PadLeft(3, ' ')}:{ timeMonth.Minutes.ToString().PadLeft(2, '0')}:{ timeMonth.Seconds.ToString().PadLeft(2, '0')} :: {rolledUp.Value} seconds");
-            }
-            System.Console.WriteLine("");
-
-            TimeSpan time = TimeSpan.FromSeconds(totalSecondsPlayed);
-            Console.WriteLine($"Time Played: {((int)time.TotalHours).ToString().PadLeft(3, ' ')}:{ time.Minutes.ToString().PadLeft(2, '0')}:{ time.Seconds.ToString().PadLeft(2, '0')} :: {totalSecondsPlayed} seconds");
-
-
-            foreach(var ecoCount in ecoPlayedRollup)
-            {
+                if(ecoCount.Value < 2) { break; }
                 Console.WriteLine($"{ecoCount.Key.PadRight(75,' ')} :: {ecoCount.Value}");
             }
 
+            Console.WriteLine("");
+            Helpers.displaySection("Openings Playing As Black >1", false);
+            foreach (var ecoCount in ecoPlayedRollupBlack.OrderByDescending(uses => uses.Value))
+            {
+                if (ecoCount.Value < 2) { break; }
+                Console.WriteLine($"{ecoCount.Key.PadRight(75, ' ')} :: {ecoCount.Value}");
+            }
+
+            Console.WriteLine("");
+            Helpers.displaySection("Time Played by Month/Time Control", false);
+            
+            foreach (var rolledUp in secondsPlayedRollup)
+            {
+                TimeSpan timeMonth = TimeSpan.FromSeconds(rolledUp.Value);
+                System.Console.WriteLine($"{rolledUp.Key.PadRight(22, ' ')} :: {((int)timeMonth.TotalHours).ToString().PadLeft(3, ' ')}:{ timeMonth.Minutes.ToString().PadLeft(2, '0')}:{ timeMonth.Seconds.ToString().PadLeft(2, '0')} :: {rolledUp.Value} seconds");
+            }
+            
+            Console.WriteLine("");
+            Helpers.displaySection("Total Play Time (Live Chess)", false);
+            TimeSpan time = TimeSpan.FromSeconds(totalSecondsPlayed);
+            Console.WriteLine($"Time Played (hh:mm:ss): {((int)time.TotalHours).ToString().PadLeft(3, ' ')}:{ time.Minutes.ToString().PadLeft(2, '0')}:{ time.Seconds.ToString().PadLeft(2, '0')}");
+            Console.WriteLine("");
             Helpers.PressToContinue();
         }
     }
