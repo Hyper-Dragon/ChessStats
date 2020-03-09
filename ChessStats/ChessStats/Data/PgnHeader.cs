@@ -21,11 +21,11 @@ namespace ChessStats.Data
             Result,
             ECO,
             ECOUrl,
-            CurrentPosition,
-            Timezone,
+            //CurrentPosition,
+            //Timezone,
             UTCTime,
-            WhiteElo,
-            BlackElo,
+            //WhiteElo,
+            //BlackElo,
             TimeControl,
             Termination,
             StartTime,
@@ -34,7 +34,7 @@ namespace ChessStats.Data
             Link,
             EventDate,
             EventTime,
-            Rules
+            //Rules
         }
 
         public string GetAttributeAsNullOrString(SupportedAttribute attributeName)
@@ -78,7 +78,7 @@ namespace ChessStats.Data
             }
         }
 
-        public static PgnHeader GetHeaderFromText(string gameText)
+        public static PgnHeader GetHeaderAttributesFromPgn(string gameText)
         {
             var pgnHeader = new PgnHeader();
 
@@ -88,21 +88,12 @@ namespace ChessStats.Data
 
                 if (nameVal.Length == 2)
                 {
-                    try
+                    SupportedAttribute attrib;
+                    if (Enum.TryParse<SupportedAttribute>(nameVal[0], out attrib))
                     {
-                        var attrib = ((PgnHeader.SupportedAttribute)Enum.Parse(typeof(PgnHeader.SupportedAttribute), nameVal[0], true)).ToString();
-                        var attribValue = nameVal[1].TrimStart('\"').TrimEnd('\"');
-
-                        //HACK: Fix for KingBase Dates (some missing days/month)
-                        if (attrib.ToLower().Contains("date")) attribValue = attribValue.Replace("??", "01").Replace("?", "01");
-
                         pgnHeader.Attributes.Add(
-                            ((PgnHeader.SupportedAttribute)Enum.Parse(typeof(PgnHeader.SupportedAttribute), nameVal[0], true)).ToString(),
+                            attrib.ToString(),
                             nameVal[1].TrimStart('\"').TrimEnd('\"'));
-                    }
-                    catch
-                    {
-                        //Not Supported So Skip
                     }
                 }
             }

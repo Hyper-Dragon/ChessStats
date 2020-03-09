@@ -22,20 +22,21 @@ namespace ChessStats.Data
         public static List<ChessGame> FetchGameRecordsForUser(string username)
         {
             var PgnList = new List<ChessGame>();
-            
+
             var t = GetPlayerMonthlyArchive(username);
             t.Wait();
 
-            Parallel.ForEach(t.Result.Archives, (dataForMonth) =>
+            Parallel.ForEach(t.Result.Archives, new ParallelOptions { MaxDegreeOfParallelism = 4 }, (dataForMonth) =>
             {
                 var urlSplit = dataForMonth.Split('/');
                 var t2 = GetAllPlayerMonthlyGames(username, Int32.Parse(urlSplit[7]), Int32.Parse(urlSplit[8]));
                 t2.Wait();
 
-                foreach (var game in t2.Result.Games)
+                try
                 {
-                    try
+                    foreach (var game in t2.Result.Games)
                     {
+
                         if (game.Rules == GameVariant.Chess)
                         {
                             ProcessedDisplay(".");
@@ -49,7 +50,8 @@ namespace ChessStats.Data
                                 TimeControl = game.TimeControl,
                                 TimeClass = game.TimeClass.ToString(),
                                 WhiteRating = game.IsRated ? game.White.Rating : 0,
-                                BlackRating = game.IsRated ? game.Black.Rating : 0
+                                BlackRating = game.IsRated ? game.Black.Rating : 0,
+                                GameAttributes = PgnHeader.GetHeaderAttributesFromPgn(game.Pgn)
                             });
                         }
                         else
@@ -57,10 +59,12 @@ namespace ChessStats.Data
                             ProcessedDisplay("X");
                         }
                     }
-                    catch (Exception ex)
-                    {
-                        Console.Write(ex.Message);
-                    }
+
+                }
+                catch (Exception ex)
+                {
+                    ProcessedDisplay("E");
+                    //Console.Write(ex.Message);
                 }
             });
 

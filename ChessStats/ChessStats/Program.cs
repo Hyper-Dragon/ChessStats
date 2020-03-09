@@ -24,42 +24,39 @@ namespace ChessStats
             Helpers.displaySection($"Finished ChessDotCom Fetch for {chessdotcomUsername}",false);
 
             Helpers.displaySection("Processing PGN's", true);
-            Helpers.displaySection("Extracting Headers", false);
-
-            ConcurrentBag<PgnGame> processedGameList = new ConcurrentBag<PgnGame>();
-
-            Parallel.ForEach(gameList, (game) =>
-            {
-                processedGameList.Add(PgnProcessor.GetGameFromPgn("ChessDotCom", game.Text));
-            });
-
             Helpers.displaySection("Calculating Totals", false);
+
+
 
             SortedList<string, int> secondsPlayedRollup = new SortedList<string, int>();
             SortedList<string, int> ecoPlayedRollup = new SortedList<string, int>();
             double totalSecondsPlayed = 0;
 
-            foreach (var game in processedGameList)
+            foreach (var game in gameList)
             {
                 // Don't include daily games
                 if (game.GameAttributes.Attributes["Event"] != "Live Chess") continue;
 
                 var side = game.GameAttributes.Attributes["White"].ToUpperInvariant() == chessdotcomUsername.ToUpperInvariant() ? "White" : "Black";
 
-                //var ecoName = new Regex(@"^.*?(?=[0-9])").Match(game.GameAttributes.Attributes["ECOUrl"].Replace(@"https://www.chess.com/openings/", "").Replace("-", " ")).Value;
-                var ecoName = game.GameAttributes.Attributes["ECOUrl"].Replace(@"https://www.chess.com/openings/", "").Replace("-", " ");
-
-                var ecoKey = $"{side}-{game.GameAttributes.Attributes["ECO"]}-{ecoName}";
-
-                if (ecoPlayedRollup.ContainsKey(ecoKey))
+                try
                 {
-                    ecoPlayedRollup[ecoKey]++;
-                }
-                else
-                {
-                    ecoPlayedRollup.Add(ecoKey, 1);
-                }
+                    var ecoName = game.GameAttributes.Attributes["ECOUrl"].Replace(@"https://www.chess.com/openings/", "").Replace("-", " ");
+                    var ecoKey = $"{side}-{game.GameAttributes.Attributes["ECO"]}-{ecoName}";
 
+                    if (ecoPlayedRollup.ContainsKey(ecoKey))
+                    {
+                        ecoPlayedRollup[ecoKey]++;
+                    }
+                    else
+                    {
+                        ecoPlayedRollup.Add(ecoKey, 1);
+                    }
+                }
+                catch
+                {
+                    //ECO missing from Pgn
+                }
                 
                 var gameStartDate = game.GameAttributes.Attributes["Date"];
                 var gameStartTime = game.GameAttributes.Attributes["StartTime"];
