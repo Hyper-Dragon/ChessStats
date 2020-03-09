@@ -26,7 +26,7 @@ namespace ChessStats.Data
             var t = GetPlayerMonthlyArchive(username);
             t.Wait();
 
-            Parallel.ForEach(t.Result.Archives, new ParallelOptions { MaxDegreeOfParallelism = 4 }, (dataForMonth) =>
+            Parallel.ForEach(t.Result.Archives, new ParallelOptions { MaxDegreeOfParallelism = 3 }, (dataForMonth) =>
             {
                 var urlSplit = dataForMonth.Split('/');
                 var t2 = GetAllPlayerMonthlyGames(username, Int32.Parse(urlSplit[7]), Int32.Parse(urlSplit[8]));

@@ -109,16 +109,16 @@ namespace ChessStats
             System.Console.WriteLine("");
             Helpers.displaySection($"Live Chess Report for {chessdotcomUsername} - {DateTime.Now.ToShortDateString()}", true);
             Console.WriteLine("");
-            Helpers.displaySection("Openings Playing As White >1", false);
-            foreach (var ecoCount in ecoPlayedRollupWhite.OrderByDescending(uses => uses.Value))
+            Helpers.displaySection("Openings Playing As White >1 (Max 15)", false);
+            foreach (var ecoCount in ecoPlayedRollupWhite.OrderByDescending(uses => uses.Value).Take(15))
             {
                 if(ecoCount.Value < 2) { break; }
                 Console.WriteLine($"{ecoCount.Key.PadRight(75,' ')} :: {ecoCount.Value}");
             }
 
             Console.WriteLine("");
-            Helpers.displaySection("Openings Playing As Black >1", false);
-            foreach (var ecoCount in ecoPlayedRollupBlack.OrderByDescending(uses => uses.Value))
+            Helpers.displaySection("Openings Playing As Black >1 (Max 15)", false);
+            foreach (var ecoCount in ecoPlayedRollupBlack.OrderByDescending(uses => uses.Value).Take(15))
             {
                 if (ecoCount.Value < 2) { break; }
                 Console.WriteLine($"{ecoCount.Key.PadRight(75, ' ')} :: {ecoCount.Value}");
