@@ -1,25 +1,32 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using ChessDotComSharp.Models;
-
 
 namespace ChessStats.Data
 {
-    public class PgnFromChessDotCom
+    public static class PgnFromChessDotCom
     {
-        public PgnFromChessDotCom() { }
+        static int gameCount = 0;
+        static object displayLock = new object();
 
-        public List<PgnText> FetchGameRecordsForUser(string username)
+        static void ProcessedDisplay(string outChar)
         {
-            Console.WriteLine($">>>Starting ChessDotCom Fetch {username}");
+            lock (displayLock)
+            {
+                if (gameCount++ > 80) { System.Console.WriteLine(); gameCount = 1; }
+                System.Console.Write(outChar);
+            }
+        }
 
-            var PgnList = new List<PgnText>();
-            int gameCount = 0;
-
+        public static List<ChessGame> FetchGameRecordsForUser(string username)
+        {
+            var PgnList = new List<ChessGame>();
+            
             var t = GetPlayerMonthlyArchive(username);
             t.Wait();
 
-            foreach (var dataForMonth in t.Result.Archives)
+            Parallel.ForEach(t.Result.Archives, (dataForMonth) =>
             {
                 var urlSplit = dataForMonth.Split('/');
                 var t2 = GetAllPlayerMonthlyGames(username, Int32.Parse(urlSplit[7]), Int32.Parse(urlSplit[8]));
@@ -29,21 +36,33 @@ namespace ChessStats.Data
                 {
                     try
                     {
-                        Console.Write(".");
-                        if (++gameCount > 80) { System.Console.WriteLine(); gameCount = 0; }
+                        if (game.Rules == GameVariant.Chess)
+                        {
+                            ProcessedDisplay(".");
 
-                        //Console.WriteLine($"Found {game.White.Username} vs {game.Black.Username}");
-                        PgnList.Add(new PgnText() { Source = "ChessDotCom", Text = game.Pgn, TextGameOnly = "", TextHeaderOnly = "" });
+                            PgnList.Add(new ChessGame()
+                            {
+                                Source = "ChessDotCom",
+                                Text = game.Pgn,
+                                IsRatedGame = game.IsRated,
+                                Rules = GameVariant.Chess.ToString(),
+                                TimeControl = game.TimeControl,
+                                TimeClass = game.TimeClass.ToString(),
+                                WhiteRating = game.IsRated ? game.White.Rating : 0,
+                                BlackRating = game.IsRated ? game.Black.Rating : 0
+                            });
+                        }
+                        else
+                        {
+                            ProcessedDisplay("X");
+                        }
                     }
                     catch (Exception ex)
                     {
                         Console.Write(ex.Message);
                     }
                 }
-            }
-
-            Console.WriteLine("");
-            Console.WriteLine($">>>Finished ChessDotCom Fetch {username}");
+            });
 
             return PgnList;
         }
@@ -61,10 +80,18 @@ namespace ChessStats.Data
         static async System.Threading.Tasks.Task<PlayerArchivedGames> GetAllPlayerMonthlyGames(string username, int year, int month)
         {
             ChessDotComSharp.ChessDotComClient client = new ChessDotComSharp.ChessDotComClient();
-            var myGames = await client.GetPlayerGameMonthlyArchiveAsync(username, year, month);
+            PlayerArchivedGames myGames = new PlayerArchivedGames();
+
+            try
+            {
+                myGames = await client.GetPlayerGameMonthlyArchiveAsync(username, year, month).ConfigureAwait(true);
+            }
+            catch (Exception ex)
+            {
+                System.Console.Write(ex.Message);
+            }
 
             return myGames;
         }
-
     }
 }

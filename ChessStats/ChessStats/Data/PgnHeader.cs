@@ -78,7 +78,6 @@ namespace ChessStats.Data
             }
         }
 
-
         public static PgnHeader GetHeaderFromText(string gameText)
         {
             var pgnHeader = new PgnHeader();
@@ -110,7 +109,6 @@ namespace ChessStats.Data
 
             return pgnHeader;
         }
-
     }
 }
 

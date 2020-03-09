@@ -2,15 +2,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Globalization;
-using System.Net;
-using System.Net.Http;
-using System.Net.Http.Headers;
-using System.Text;
-using System.Text.Json;
-using System.Text.RegularExpressions;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace ChessStats
@@ -24,9 +16,12 @@ namespace ChessStats
             Helpers.DisplayLogo();
             Helpers.displaySection("Fetching PGN's", true);
 
-            var p = new PgnFromChessDotCom();
-
-            var gameList = p.FetchGameRecordsForUser(chessdotcomUsername);
+            Helpers.displaySection($"Starting ChessDotCom Fetch for {chessdotcomUsername}",false);
+            
+            var gameList = PgnFromChessDotCom.FetchGameRecordsForUser(chessdotcomUsername);
+            
+            System.Console.WriteLine();
+            Helpers.displaySection($"Finished ChessDotCom Fetch for {chessdotcomUsername}",false);
 
             Helpers.displaySection("Processing PGN's", true);
             Helpers.displaySection("Extracting Headers", false);

@@ -58,12 +58,3 @@ namespace ChessStats
         }
     }
 }
-
-
-/*         
-
-
-
-
-
-    */
