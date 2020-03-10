@@ -28,7 +28,8 @@ namespace ChessStats
             System.Console.WriteLine($">>Finished ChessDotCom Fetch");
             System.Console.WriteLine($">>Processing Games");
 
-            SortedList<string, int> secondsPlayedRollup = new SortedList<string, int>();
+            SortedList<string, (int SecondsPlayed,int GameCount, int MinRating, int MaxRating, int OpponentMinRating, int OpponentMaxRating)> secondsPlayedRollup = new SortedList<string, (int, int, int, int, int, int)>();
+            SortedList<string, dynamic> secondsPlayedRollupMonthOnly = new SortedList<string, dynamic>();
             SortedList<string, int> ecoPlayedRollupWhite = new SortedList<string, int>();
             SortedList<string, int> ecoPlayedRollupBlack = new SortedList<string, int>();
             double totalSecondsPlayed = 0;
@@ -39,7 +40,9 @@ namespace ChessStats
                 if (game.GameAttributes.Attributes["Event"] != "Live Chess") continue;
 
                 var side = game.GameAttributes.Attributes["White"].ToUpperInvariant() == chessdotcomUsername.ToUpperInvariant() ? "White" : "Black";
-
+                var playerRating = (game.IsRatedGame)?((side == "White") ? game.WhiteRating: game.BlackRating):0;
+                var opponentRating = (game.IsRatedGame)?((side == "White") ?  game.BlackRating : game.WhiteRating):0;
+         
                 try
                 {
                     var ecoName = game.GameAttributes.Attributes["ECOUrl"].Replace(@"https://www.chess.com/openings/", "").Replace("-", " ");
@@ -74,20 +77,38 @@ namespace ChessStats
                 var startDateParsed = DateTime.TryParseExact($"{gameStartDate} {gameStartTime}", "yyyy.MM.dd HH:mm:ss", null, DateTimeStyles.AssumeUniversal, out parsedStartDate);
                 var endDateParsed = DateTime.TryParseExact($"{gameEndDate} {gameEndTime}", "yyyy.MM.dd HH:mm:ss", null, DateTimeStyles.AssumeUniversal, out parsedEndDate);
                 var seconds = System.Math.Abs((parsedEndDate - parsedStartDate).TotalSeconds);
-                var gameTime = $"{game.TimeClass}{((game.IsRatedGame) ? "" : " Unrated")}";
-
-
-                string key = $"{parsedStartDate.Year}-{((parsedStartDate.Month < 10) ? "0" : "")}{parsedStartDate.Month} {gameTime}";
-
+                var gameTime = $"{game.TimeClass}{((game.IsRatedGame) ? "   " : " NR")}";
+             
                 totalSecondsPlayed += seconds;
 
+                string key = $"{gameTime} {parsedStartDate.Year}-{((parsedStartDate.Month < 10) ? "0" : "")}{parsedStartDate.Month}";
                 if (secondsPlayedRollup.ContainsKey(key))
                 {
-                    secondsPlayedRollup[key] += (int)seconds;
+                    secondsPlayedRollup[key] = (SecondsPlayed: secondsPlayedRollup[key].SecondsPlayed + (int)seconds,
+                                                GameCount: secondsPlayedRollup[key].GameCount + 1,
+                                                MinRating: Math.Min(playerRating, secondsPlayedRollup[key].MinRating),
+                                                MaxRating: Math.Max(playerRating, secondsPlayedRollup[key].MinRating),
+                                                OpponentMinRating: Math.Min(opponentRating, secondsPlayedRollup[key].OpponentMinRating),
+                                                OpponentMaxRating: Math.Max(opponentRating, secondsPlayedRollup[key].OpponentMaxRating));
                 }
                 else
                 {
-                    secondsPlayedRollup.Add(key, (int)seconds);
+                    secondsPlayedRollup.Add(key, (SecondsPlayed: (int)seconds,
+                                                  GameCount: 1,
+                                                  MinRating: playerRating,
+                                                  MaxRating: playerRating,
+                                                  OpponentMinRating: opponentRating,
+                                                  OpponentMaxRating: opponentRating));
+                }
+
+                string keyMonthOnly = $"{parsedStartDate.Year}-{((parsedStartDate.Month < 10) ? "0" : "")}{parsedStartDate.Month}";
+                if (secondsPlayedRollupMonthOnly.ContainsKey(keyMonthOnly))
+                {
+                    secondsPlayedRollupMonthOnly[keyMonthOnly] += (int)seconds;
+                }
+                else
+                {
+                    secondsPlayedRollupMonthOnly.Add(keyMonthOnly, (int)seconds);
                 }
             }
 
@@ -111,13 +132,30 @@ namespace ChessStats
             }
 
             Console.WriteLine("");
-            Helpers.displaySection("Time Played by Month/Time Control", false);
-            Console.WriteLine("Month/TimeClass        | Play Time |            ");
-            Console.WriteLine("-----------------------+-----------+------------");
+            Helpers.displaySection("Time Played by Time Class/Month", false);
+            Console.WriteLine("Time Class/Month | Play Time | Rating Min/Max/+-  | Vs Min/Max  |");
+            Console.WriteLine("-----------------+-----------+--------------------|-------------|");
             foreach (var rolledUp in secondsPlayedRollup)
             {
+                TimeSpan timeMonth = TimeSpan.FromSeconds(rolledUp.Value.SecondsPlayed);
+                System.Console.WriteLine($"{rolledUp.Key.PadRight(16, ' ')} | "+
+                                         $"{((int)timeMonth.TotalHours).ToString().PadLeft(3, ' ')}:{ timeMonth.Minutes.ToString().PadLeft(2, '0')}:{ timeMonth.Seconds.ToString().PadLeft(2, '0')} | "+
+                                         $"{rolledUp.Value.MinRating.ToString().PadLeft(4)} | "+
+                                         $"{rolledUp.Value.MaxRating.ToString().PadLeft(4)} | "+
+                                         $"{(rolledUp.Value.MaxRating- rolledUp.Value.MinRating).ToString().PadLeft(4)} | "+
+                                         $"{rolledUp.Value.OpponentMinRating.ToString().PadLeft(4)} | " +
+                                         $"{rolledUp.Value.OpponentMaxRating.ToString().PadLeft(4)}");
+            }
+
+            Console.WriteLine("");
+            Helpers.displaySection("Time Played by Month", false);
+            Console.WriteLine("Month                  | Play Time |");
+            Console.WriteLine("-----------------------+-----------|");
+            foreach (var rolledUp in secondsPlayedRollupMonthOnly)
+            {
                 TimeSpan timeMonth = TimeSpan.FromSeconds(rolledUp.Value);
-                System.Console.WriteLine($"{rolledUp.Key.PadRight(22, ' ')} | {((int)timeMonth.TotalHours).ToString().PadLeft(3, ' ')}:{ timeMonth.Minutes.ToString().PadLeft(2, '0')}:{ timeMonth.Seconds.ToString().PadLeft(2, '0')} | {rolledUp.Value} seconds");
+                System.Console.WriteLine($"{rolledUp.Key.PadRight(22, ' ')} | " +
+                                         $"{((int)timeMonth.TotalHours).ToString().PadLeft(3, ' ')}:{ timeMonth.Minutes.ToString().PadLeft(2, '0')}:{ timeMonth.Seconds.ToString().PadLeft(2, '0')}");
             }
 
             Console.WriteLine("");
