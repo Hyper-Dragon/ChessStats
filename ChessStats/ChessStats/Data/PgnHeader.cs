@@ -88,8 +88,7 @@ namespace ChessStats.Data
 
                 if (nameVal.Length == 2)
                 {
-                    SupportedAttribute attrib;
-                    if (Enum.TryParse<SupportedAttribute>(nameVal[0], out attrib))
+                    if (Enum.TryParse<SupportedAttribute>(nameVal[0], out SupportedAttribute attrib))
                     {
                         pgnHeader.Attributes.Add(
                             attrib.ToString(),

@@ -19,7 +19,7 @@ namespace ChessStats
             string chessdotcomUsername = args[0];
 
             Helpers.DisplayLogo();
-            Helpers.displaySection($"Fetching Games for {chessdotcomUsername}", true);
+            Helpers.DisplaySection($"Fetching Games for {chessdotcomUsername}", true);
 
             System.Console.WriteLine($">>Starting ChessDotCom Fetch");
 
@@ -88,11 +88,8 @@ namespace ChessStats
                 var gameEndDate = game.GameAttributes.Attributes["EndDate"];
                 var gameEndTime = game.GameAttributes.Attributes["EndTime"];
 
-                DateTime parsedStartDate;
-                DateTime parsedEndDate;
-
-                var startDateParsed = DateTime.TryParseExact($"{gameStartDate} {gameStartTime}", "yyyy.MM.dd HH:mm:ss", null, DateTimeStyles.AssumeUniversal, out parsedStartDate);
-                var endDateParsed = DateTime.TryParseExact($"{gameEndDate} {gameEndTime}", "yyyy.MM.dd HH:mm:ss", null, DateTimeStyles.AssumeUniversal, out parsedEndDate);
+                var startDateParsed = DateTime.TryParseExact($"{gameStartDate} {gameStartTime}", "yyyy.MM.dd HH:mm:ss", null, DateTimeStyles.AssumeUniversal, out DateTime parsedStartDate);
+                var endDateParsed = DateTime.TryParseExact($"{gameEndDate} {gameEndTime}", "yyyy.MM.dd HH:mm:ss", null, DateTimeStyles.AssumeUniversal, out DateTime parsedEndDate);
                 var seconds = System.Math.Abs((parsedEndDate - parsedStartDate).TotalSeconds);
                 var gameTime = $"{game.TimeClass.PadRight(6,' ')}{((game.IsRatedGame) ? "   " : " NR")}";
              
@@ -137,9 +134,9 @@ namespace ChessStats
 
             System.Console.WriteLine($">>Finished Processing Games");
             System.Console.WriteLine("");
-            Helpers.displaySection($"Live Chess Report for {chessdotcomUsername} - {DateTime.Now.ToShortDateString()}", true);
+            Helpers.DisplaySection($"Live Chess Report for {chessdotcomUsername} - {DateTime.Now.ToShortDateString()}", true);
             Console.WriteLine("");
-            Helpers.displaySection("Openings Playing As White >1 (Max 15)", false);
+            Helpers.DisplaySection("Openings Playing As White >1 (Max 15)", false);
             foreach (var ecoCount in ecoPlayedRollupWhite.OrderByDescending(uses => uses.Value).Take(15))
             {
                 if (ecoCount.Value < 2) { break; }
@@ -147,7 +144,7 @@ namespace ChessStats
             }
 
             Console.WriteLine("");
-            Helpers.displaySection("Openings Playing As Black >1 (Max 15)", false);
+            Helpers.DisplaySection("Openings Playing As Black >1 (Max 15)", false);
             foreach (var ecoCount in ecoPlayedRollupBlack.OrderByDescending(uses => uses.Value).Take(15))
             {
                 if (ecoCount.Value < 2) { break; }
@@ -155,7 +152,7 @@ namespace ChessStats
             }
 
             Console.WriteLine("");
-            Helpers.displaySection("Time Played by Time Class/Month", false);
+            Helpers.DisplaySection("Time Played by Time Class/Month", false);
             Console.WriteLine("Time Class/Month  | Play Time | Rating Min/Max/+-  | Vs Min/Max  | Win  | Loss | Draw | Tot. ");
             Console.WriteLine("------------------+-----------+--------------------+-------------+------+------+------+------");
             foreach (var rolledUp in secondsPlayedRollup)
@@ -176,7 +173,7 @@ namespace ChessStats
             }
 
             Console.WriteLine("");
-            Helpers.displaySection("Time Played by Month", false);
+            Helpers.DisplaySection("Time Played by Month", false);
             Console.WriteLine("Month                  | Play Time ");
             Console.WriteLine("-----------------------+-----------");
             foreach (var rolledUp in secondsPlayedRollupMonthOnly)
@@ -187,7 +184,7 @@ namespace ChessStats
             }
 
             Console.WriteLine("");
-            Helpers.displaySection("Total Play Time (Live Chess)", false);
+            Helpers.DisplaySection("Total Play Time (Live Chess)", false);
             TimeSpan time = TimeSpan.FromSeconds(totalSecondsPlayed);
             Console.WriteLine($"Time Played (hh:mm:ss): {((int)time.TotalHours).ToString().PadLeft(3, ' ')}:{ time.Minutes.ToString().PadLeft(2, '0')}:{ time.Seconds.ToString().PadLeft(2, '0')}");
             Console.WriteLine("");

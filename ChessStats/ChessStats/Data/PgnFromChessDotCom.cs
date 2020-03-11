@@ -8,7 +8,7 @@ namespace ChessStats.Data
     public static class PgnFromChessDotCom
     {
         static int gameCount = 0;
-        static object displayLock = new object();
+        static readonly object displayLock = new object();
 
         static void ProcessedDisplay(string outChar)
         {

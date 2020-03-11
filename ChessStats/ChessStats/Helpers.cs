@@ -6,7 +6,7 @@ namespace ChessStats
 {
     public static class Helpers
     {
-        public static void displaySection(string title, bool isHeader)
+        public static void DisplaySection(string title, bool isHeader)
         {
             const int HEAD_LEN = 48;
             const int FOOT_LEN = 30;
