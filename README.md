@@ -1,4 +1,4 @@
-# ChessStats
+# ChessStats (for chess.com)
 
 ## Dependencies
 
