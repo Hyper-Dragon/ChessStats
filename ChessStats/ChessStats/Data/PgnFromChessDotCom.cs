@@ -40,7 +40,7 @@ namespace ChessStats.Data
                         if (game.Rules == GameVariant.Chess)
                         {
                             ProcessedDisplay(".");
-
+                            
                             PgnList.Add(new ChessGame()
                             {
                                 Source = "ChessDotCom",

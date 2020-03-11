@@ -6,6 +6,7 @@ using System.Globalization;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using static ChessStats.Data.PgnHeader;
 
 namespace ChessStats
 {
@@ -28,7 +29,7 @@ namespace ChessStats
             System.Console.WriteLine($">>Finished ChessDotCom Fetch");
             System.Console.WriteLine($">>Processing Games");
 
-            SortedList<string, (int SecondsPlayed,int GameCount, int MinRating, int MaxRating, int OpponentMinRating, int OpponentMaxRating)> secondsPlayedRollup = new SortedList<string, (int, int, int, int, int, int)>();
+            SortedList<string, (int SecondsPlayed,int GameCount,int Win, int Loss, int Draw, int MinRating, int MaxRating, int OpponentMinRating, int OpponentMaxRating)> secondsPlayedRollup = new SortedList<string, (int, int, int, int, int, int, int, int, int)>();
             SortedList<string, dynamic> secondsPlayedRollupMonthOnly = new SortedList<string, dynamic>();
             SortedList<string, int> ecoPlayedRollupWhite = new SortedList<string, int>();
             SortedList<string, int> ecoPlayedRollupBlack = new SortedList<string, int>();
@@ -42,7 +43,23 @@ namespace ChessStats
                 var side = game.GameAttributes.Attributes["White"].ToUpperInvariant() == chessdotcomUsername.ToUpperInvariant() ? "White" : "Black";
                 var playerRating = (game.IsRatedGame)?((side == "White") ? game.WhiteRating: game.BlackRating):0;
                 var opponentRating = (game.IsRatedGame)?((side == "White") ?  game.BlackRating : game.WhiteRating):0;
-         
+
+                bool? isWin;
+                switch (game.GameAttributes.Attributes[SupportedAttribute.Result.ToString()])
+                {
+                    case "1/2-1/2":
+                        isWin = null;
+                        break;
+                    case "1-0":
+                        isWin = (side=="White" ? true:false);
+                        break;
+                    case "0-1":
+                        isWin = (side == "White" ? false : true);
+                        break;
+                    default:
+                        throw new Exception($"Unrecorded game result found");
+                }
+
                 try
                 {
                     var ecoName = game.GameAttributes.Attributes["ECOUrl"].Replace(@"https://www.chess.com/openings/", "").Replace("-", " ");
@@ -77,7 +94,7 @@ namespace ChessStats
                 var startDateParsed = DateTime.TryParseExact($"{gameStartDate} {gameStartTime}", "yyyy.MM.dd HH:mm:ss", null, DateTimeStyles.AssumeUniversal, out parsedStartDate);
                 var endDateParsed = DateTime.TryParseExact($"{gameEndDate} {gameEndTime}", "yyyy.MM.dd HH:mm:ss", null, DateTimeStyles.AssumeUniversal, out parsedEndDate);
                 var seconds = System.Math.Abs((parsedEndDate - parsedStartDate).TotalSeconds);
-                var gameTime = $"{game.TimeClass}{((game.IsRatedGame) ? "   " : " NR")}";
+                var gameTime = $"{game.TimeClass.PadRight(6,' ')}{((game.IsRatedGame) ? "   " : " NR")}";
              
                 totalSecondsPlayed += seconds;
 
@@ -86,6 +103,9 @@ namespace ChessStats
                 {
                     secondsPlayedRollup[key] = (SecondsPlayed: secondsPlayedRollup[key].SecondsPlayed + (int)seconds,
                                                 GameCount: secondsPlayedRollup[key].GameCount + 1,
+                                                Win: ((isWin != null && isWin.Value== true)? secondsPlayedRollup[key].Win+1 : secondsPlayedRollup[key].Win),
+                                                Loss: ((isWin != null && isWin.Value == false) ? secondsPlayedRollup[key].Loss + 1 : secondsPlayedRollup[key].Loss),
+                                                Draw: ((isWin == null) ? secondsPlayedRollup[key].Draw + 1 : secondsPlayedRollup[key].Draw),
                                                 MinRating: Math.Min(playerRating, secondsPlayedRollup[key].MinRating),
                                                 MaxRating: Math.Max(playerRating, secondsPlayedRollup[key].MinRating),
                                                 OpponentMinRating: Math.Min(opponentRating, secondsPlayedRollup[key].OpponentMinRating),
@@ -95,6 +115,9 @@ namespace ChessStats
                 {
                     secondsPlayedRollup.Add(key, (SecondsPlayed: (int)seconds,
                                                   GameCount: 1,
+                                                  Win: ((isWin != null && isWin.Value == true) ? 1 : 0),
+                                                  Loss: ((isWin != null && isWin.Value == false) ? 1 : 0),
+                                                  Draw: ((isWin == null) ? 1 : 0),
                                                   MinRating: playerRating,
                                                   MaxRating: playerRating,
                                                   OpponentMinRating: opponentRating,
@@ -133,24 +156,29 @@ namespace ChessStats
 
             Console.WriteLine("");
             Helpers.displaySection("Time Played by Time Class/Month", false);
-            Console.WriteLine("Time Class/Month | Play Time | Rating Min/Max/+-  | Vs Min/Max  |");
-            Console.WriteLine("-----------------+-----------+--------------------|-------------|");
+            Console.WriteLine("Time Class/Month  | Play Time | Rating Min/Max/+-  | Vs Min/Max  | Win  | Loss | Draw | Tot. ");
+            Console.WriteLine("------------------+-----------+--------------------+-------------+------+------+------+------");
             foreach (var rolledUp in secondsPlayedRollup)
             {
                 TimeSpan timeMonth = TimeSpan.FromSeconds(rolledUp.Value.SecondsPlayed);
-                System.Console.WriteLine($"{rolledUp.Key.PadRight(16, ' ')} | "+
+                System.Console.WriteLine($"{rolledUp.Key.PadRight(17, ' ')} | "+
                                          $"{((int)timeMonth.TotalHours).ToString().PadLeft(3, ' ')}:{ timeMonth.Minutes.ToString().PadLeft(2, '0')}:{ timeMonth.Seconds.ToString().PadLeft(2, '0')} | "+
-                                         $"{rolledUp.Value.MinRating.ToString().PadLeft(4)} | "+
-                                         $"{rolledUp.Value.MaxRating.ToString().PadLeft(4)} | "+
+                                         $"{rolledUp.Value.MinRating.ToString().PadLeft(4).Replace("   0", "   -")} | "+
+                                         $"{rolledUp.Value.MaxRating.ToString().PadLeft(4).Replace("   0", "   -")} | "+
                                          $"{(rolledUp.Value.MaxRating- rolledUp.Value.MinRating).ToString().PadLeft(4)} | "+
-                                         $"{rolledUp.Value.OpponentMinRating.ToString().PadLeft(4)} | " +
-                                         $"{rolledUp.Value.OpponentMaxRating.ToString().PadLeft(4)}");
+                                         $"{rolledUp.Value.OpponentMinRating.ToString().PadLeft(4).Replace("   0", "   -")} | " +
+                                         $"{rolledUp.Value.OpponentMaxRating.ToString().PadLeft(4).Replace("   0", "   -")} | "+
+                                         $"{rolledUp.Value.Win.ToString().PadLeft(4).Replace("   0", "   -")} | " +
+                                         $"{rolledUp.Value.Loss.ToString().PadLeft(4).Replace("   0", "   -")} | " +
+                                         $"{rolledUp.Value.Draw.ToString().PadLeft(4).Replace("   0", "   -")} | " +
+                                         $"{rolledUp.Value.GameCount.ToString().PadLeft(4).Replace("   0", "   -")}"
+                                         );
             }
 
             Console.WriteLine("");
             Helpers.displaySection("Time Played by Month", false);
-            Console.WriteLine("Month                  | Play Time |");
-            Console.WriteLine("-----------------------+-----------|");
+            Console.WriteLine("Month                  | Play Time ");
+            Console.WriteLine("-----------------------+-----------");
             foreach (var rolledUp in secondsPlayedRollupMonthOnly)
             {
                 TimeSpan timeMonth = TimeSpan.FromSeconds(rolledUp.Value);
