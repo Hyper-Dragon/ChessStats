@@ -8,7 +8,7 @@ namespace ChessStats
     {
         public static void DisplaySection(string title, bool isHeader)
         {
-            const int HEAD_LEN = 48;
+            const int HEAD_LEN = 50;
             const int FOOT_LEN = 30;
 
             int midRowLength = (isHeader) ? HEAD_LEN : FOOT_LEN;
@@ -51,11 +51,10 @@ namespace ChessStats
             Console.WriteLine(@"   (____)  /    \  \/ |  |  \ _/ __ \  /  ___/ /  ___/     \_____  \ \   __\\__  \  \   __\ /  ___/ ");
             Console.WriteLine(@"    |  |   \     \____|   Y  \\  ___/  \___ \  \___ \      /        \ |  |   / __ \_ |  |   \___ \  ");
             Console.WriteLine(@"    |  |    \______  /|___|  / \___  >/____  >/____  >    /_______  / |__|  (____  / |__|  /____  > ");
-            Console.WriteLine(@"    |__|           \/      \/      \/      \/      \/             \/             \/             \/  ");
+            Console.WriteLine(@"    |__|           \/      \/      \/      \/      \/             \/             \/for Chess.com\/  ");
             Console.WriteLine(@"   /____\                                                                                           ");
             Console.WriteLine(@"  (______)                                                                                          ");
-            Console.WriteLine(@" (________)                                                            Version 0.1 Alpha - Feb 2020 ");
-            Console.WriteLine(@"                                                                                                    ");
+            Console.WriteLine(@" (________)   Hyper-Dragon :: Version 0.2 :: 03/2020                                                ");
             Console.WriteLine(@"                                                                                                    ");
         }
     }

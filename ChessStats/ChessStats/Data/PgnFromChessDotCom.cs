@@ -14,11 +14,12 @@ namespace ChessStats.Data
         {
             lock (displayLock)
             {
-                if (gameCount++ > 80) { System.Console.WriteLine(); gameCount = 1; }
+                if (gameCount++ > 99) { System.Console.WriteLine(); gameCount = 1; }
                 System.Console.Write(outChar);
             }
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "<Pending>")]
         public static List<ChessGame> FetchGameRecordsForUser(string username)
         {
             var PgnList = new List<ChessGame>();
@@ -59,12 +60,11 @@ namespace ChessStats.Data
                             ProcessedDisplay("X");
                         }
                     }
-
                 }
                 catch (Exception ex)
                 {
+                    //Ignore individual game errors
                     ProcessedDisplay("E");
-                    //Console.Write(ex.Message);
                 }
             });
 
@@ -90,10 +90,12 @@ namespace ChessStats.Data
             {
                 myGames = await client.GetPlayerGameMonthlyArchiveAsync(username, year, month).ConfigureAwait(true);
             }
+#pragma warning disable CA1031 // Do not catch general exception types
             catch (Exception ex)
             {
                 System.Console.Write(ex.Message);
             }
+#pragma warning restore CA1031 // Do not catch general exception types
 
             return myGames;
         }

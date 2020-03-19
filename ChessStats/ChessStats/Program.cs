@@ -158,19 +158,23 @@ namespace ChessStats
             System.Console.WriteLine("");
             Helpers.DisplaySection($"Live Chess Report for {chessdotcomUsername} - {DateTime.Now.ToShortDateString()}", true);
             Console.WriteLine("");
-            Helpers.DisplaySection("Openings Playing As White >1 (Max 15)", false);
+            Helpers.DisplaySection($"Openings Occuring More Than Once (Max 15)", false);
+            Console.WriteLine("Playing As White                                                        | Tot.");
+            Console.WriteLine("------------------------------------------------------------------------+------");
+
             foreach (var ecoCount in ecoPlayedRollupWhite.OrderByDescending(uses => uses.Value).Take(15))
             {
                 if (ecoCount.Value < 2) { break; }
-                Console.WriteLine($"{ecoCount.Key.PadRight(75, ' ')} | {ecoCount.Value.ToString().PadLeft(4)}");
+                Console.WriteLine($"{ecoCount.Key.PadRight(71, ' ')} | {ecoCount.Value.ToString().PadLeft(4)}");
             }
 
             Console.WriteLine("");
-            Helpers.DisplaySection("Openings Playing As Black >1 (Max 15)", false);
+            Console.WriteLine("Playing As Black                                                        | Tot.");
+            Console.WriteLine("------------------------------------------------------------------------+------");
             foreach (var ecoCount in ecoPlayedRollupBlack.OrderByDescending(uses => uses.Value).Take(15))
             {
                 if (ecoCount.Value < 2) { break; }
-                Console.WriteLine($"{ecoCount.Key.PadRight(75, ' ')} | {ecoCount.Value.ToString().PadLeft(4)}");
+                Console.WriteLine($"{ecoCount.Key.PadRight(71, ' ')} | {ecoCount.Value.ToString().PadLeft(4)}");
             }
 
             Console.WriteLine("");
@@ -197,12 +201,12 @@ namespace ChessStats
 
             Console.WriteLine("");
             Helpers.DisplaySection("Time Played by Month", false);
-            Console.WriteLine("Month                  | Play Time ");
-            Console.WriteLine("-----------------------+-----------");
+            Console.WriteLine("Month             | Play Time ");
+            Console.WriteLine("------------------+-----------");
             foreach (var rolledUp in secondsPlayedRollupMonthOnly)
             {
                 TimeSpan timeMonth = TimeSpan.FromSeconds(rolledUp.Value);
-                System.Console.WriteLine($"{rolledUp.Key.PadRight(22, ' ')} | " +
+                System.Console.WriteLine($"{rolledUp.Key.PadRight(17, ' ')} | " +
                                          $"{((int)timeMonth.TotalHours).ToString().PadLeft(3, ' ')}:{ timeMonth.Minutes.ToString().PadLeft(2, '0')}:{ timeMonth.Seconds.ToString().PadLeft(2, '0')}");
             }
 
@@ -210,6 +214,8 @@ namespace ChessStats
             Helpers.DisplaySection("Total Play Time (Live Chess)", false);
             TimeSpan time = TimeSpan.FromSeconds(totalSecondsPlayed);
             Console.WriteLine($"Time Played (hh:mm:ss): {((int)time.TotalHours).ToString().PadLeft(3, ' ')}:{ time.Minutes.ToString().PadLeft(2, '0')}:{ time.Seconds.ToString().PadLeft(2, '0')}");
+            Console.WriteLine("");
+            Helpers.DisplaySection("End of Report", true);
             Console.WriteLine("");
             Helpers.PressToContinueIfDebug();
             Environment.Exit(0);

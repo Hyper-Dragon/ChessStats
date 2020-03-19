@@ -40,6 +40,7 @@ namespace ChessStats.Data
             return this.Attributes.ContainsKey(attributeName.ToString()) ? this.Attributes[attributeName.ToString()] : null;
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "<Pending>")]
         public Nullable<short> GetAttributeAsNullOrShort(SupportedAttribute attributeName)
         {
             try
@@ -52,6 +53,7 @@ namespace ChessStats.Data
             }
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "<Pending>")]
         public DateTime? GetAttributeAsNullOrDateTime(SupportedAttribute attributeNameDate, SupportedAttribute attributeNameTime)
         {
             try
