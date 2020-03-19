@@ -1,7 +1,7 @@
 # ChessStats for (https://chess.com)
 
 ## Usage
-Retrieve monthly play time,ratings and top openings for any chessdotcom user. 
+Retrieve monthly play time, ratings and top openings for any chessdotcom user. 
 
     ChessStats [chessdotcom username]
 
@@ -60,11 +60,14 @@ Time Played (hh:mm:ss): 149:50:52
 </pre>
 
 ## Known Issues
-- Games of type 'oddschess' generate error message.
--- Raised (https://github.com/nullablebool/ChessDotComSharp/issues/1)
+- Games of type 'oddschess' generate error message [Raised](https://github.com/nullablebool/ChessDotComSharp/issues/1)
 - Only supports standard chess varients
 
 ## Dependencies
 
 - [ChessDotComSharp](https://github.com/nullablebool/ChessDotComSharp) @nullablebool
+
+## Acknowledgements
+
+- [ChessDotCom](https://github.com/ChessCom) @ChessCom
 
