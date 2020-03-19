@@ -1,12 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
-using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 
 namespace ChessStats.Data
 {
-    public class PgnHeader
+    public class GameHeader
     {
         public Dictionary<string, string> Attributes { get; } = new Dictionary<string, string>();
 
@@ -15,7 +13,7 @@ namespace ChessStats.Data
             Event,
             Site,
             Date,
-            Round,
+            //Round,
             White,
             Black,
             Result,
@@ -31,7 +29,7 @@ namespace ChessStats.Data
             StartTime,
             EndDate,
             EndTime,
-            Link,
+            //Link,
             EventDate,
             EventTime,
             //Rules
@@ -78,9 +76,9 @@ namespace ChessStats.Data
             }
         }
 
-        public static PgnHeader GetHeaderAttributesFromPgn(string gameText)
+        public static GameHeader GetHeaderAttributesFromPgn(string gameText)
         {
-            var pgnHeader = new PgnHeader();
+            var pgnHeader = new GameHeader();
 
             foreach (string attribute in Regex.Split(gameText, @"^\[(.*?)\]", RegexOptions.Multiline))
             {

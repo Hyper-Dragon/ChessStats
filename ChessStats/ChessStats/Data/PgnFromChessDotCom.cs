@@ -51,7 +51,7 @@ namespace ChessStats.Data
                                 TimeClass = game.TimeClass.ToString(),
                                 WhiteRating = game.IsRated ? game.White.Rating : 0,
                                 BlackRating = game.IsRated ? game.Black.Rating : 0,
-                                GameAttributes = PgnHeader.GetHeaderAttributesFromPgn(game.Pgn)
+                                GameAttributes = GameHeader.GetHeaderAttributesFromPgn(game.Pgn)
                             });
                         }
                         else

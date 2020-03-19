@@ -6,7 +6,7 @@ using System.Globalization;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using static ChessStats.Data.PgnHeader;
+using static ChessStats.Data.GameHeader;
 
 namespace ChessStats
 {
@@ -16,16 +16,36 @@ namespace ChessStats
         static async Task Main(string[] args)
 #pragma warning restore CS1998 // Async method lacks 'await' operators and will run synchronously
         {
-            string chessdotcomUsername = args[0];
-
             Helpers.DisplayLogo();
-            Helpers.DisplaySection($"Fetching Games for {chessdotcomUsername}", true);
-
-            System.Console.WriteLine($">>Starting ChessDotCom Fetch");
-
-            var gameList = PgnFromChessDotCom.FetchGameRecordsForUser(chessdotcomUsername);
-
             System.Console.WriteLine();
+
+            if (args.Length != 1)
+            {
+                System.Console.WriteLine($">>ChessDotCom Fetch Failed");
+                System.Console.WriteLine($"  You must specify a single valid chess.com username");
+                System.Console.WriteLine();
+                Environment.Exit(-2);
+            }
+
+            string chessdotcomUsername = args[0];
+            List<ChessGame> gameList = new List<ChessGame>();
+            Helpers.DisplaySection($"Fetching Games for {chessdotcomUsername}", true);
+            System.Console.WriteLine($">>Starting ChessDotCom Fetch");
+            
+            try
+            {
+                gameList = PgnFromChessDotCom.FetchGameRecordsForUser(chessdotcomUsername);
+            }
+#pragma warning disable CA1031 // Do not catch general exception types
+            catch (Exception ex)
+            {
+                System.Console.WriteLine($">>ChessDotCom Fetch Failed");
+                System.Console.WriteLine($"  {ex.Message}");
+                System.Console.WriteLine();
+                Environment.Exit(-1);
+            }
+#pragma warning restore CA1031 // Do not catch general exception types
+
             System.Console.WriteLine($">>Finished ChessDotCom Fetch");
             System.Console.WriteLine($">>Processing Games");
 
@@ -191,7 +211,8 @@ namespace ChessStats
             TimeSpan time = TimeSpan.FromSeconds(totalSecondsPlayed);
             Console.WriteLine($"Time Played (hh:mm:ss): {((int)time.TotalHours).ToString().PadLeft(3, ' ')}:{ time.Minutes.ToString().PadLeft(2, '0')}:{ time.Seconds.ToString().PadLeft(2, '0')}");
             Console.WriteLine("");
-            Helpers.PressToContinue();
+            Helpers.PressToContinueIfDebug();
+            Environment.Exit(0);
         }
     }
 }

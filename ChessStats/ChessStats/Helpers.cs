@@ -33,11 +33,13 @@ namespace ChessStats
             return new string(s.Take(width).ToArray()).PadRight(width);
         }
 
-        public static void PressToContinue()
+        public static void PressToContinueIfDebug()
         {
+#if DEBUG
             Console.Beep();
             Console.WriteLine("<Press a Key>");
             Console.ReadKey();
+#endif
         }
 
         public static void DisplayLogo()

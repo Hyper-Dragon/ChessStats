@@ -10,6 +10,6 @@
         public string Rules { get; set; }
         public string TimeClass { get; set; }
         public string TimeControl { get; set; }
-        public PgnHeader GameAttributes { get; set; } = new PgnHeader();
+        public GameHeader GameAttributes { get; set; } = new GameHeader();
     }
 }
