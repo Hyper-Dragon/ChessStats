@@ -29,7 +29,7 @@ namespace ChessStats
             System.Console.WriteLine($">>Finished ChessDotCom Fetch");
             System.Console.WriteLine($">>Processing Games");
 
-            SortedList<string, (int SecondsPlayed,int GameCount,int Win, int Loss, int Draw, int MinRating, int MaxRating, int OpponentMinRating, int OpponentMaxRating)> secondsPlayedRollup = new SortedList<string, (int, int, int, int, int, int, int, int, int)>();
+            SortedList<string, (int SecondsPlayed,int GameCount,int Win, int Loss, int Draw, int MinRating, int MaxRating, int OpponentMinRating, int OpponentMaxRating, int OpponentBestWin)> secondsPlayedRollup = new SortedList<string, (int, int, int, int, int, int, int, int, int, int)>();
             SortedList<string, dynamic> secondsPlayedRollupMonthOnly = new SortedList<string, dynamic>();
             SortedList<string, int> ecoPlayedRollupWhite = new SortedList<string, int>();
             SortedList<string, int> ecoPlayedRollupBlack = new SortedList<string, int>();
@@ -104,9 +104,10 @@ namespace ChessStats
                                                 Loss: ((isWin != null && isWin.Value == false) ? secondsPlayedRollup[key].Loss + 1 : secondsPlayedRollup[key].Loss),
                                                 Draw: ((isWin == null) ? secondsPlayedRollup[key].Draw + 1 : secondsPlayedRollup[key].Draw),
                                                 MinRating: Math.Min(playerRating, secondsPlayedRollup[key].MinRating),
-                                                MaxRating: Math.Max(playerRating, secondsPlayedRollup[key].MinRating),
+                                                MaxRating: Math.Max(playerRating, secondsPlayedRollup[key].MaxRating),
                                                 OpponentMinRating: Math.Min(opponentRating, secondsPlayedRollup[key].OpponentMinRating),
-                                                OpponentMaxRating: Math.Max(opponentRating, secondsPlayedRollup[key].OpponentMaxRating));
+                                                OpponentMaxRating: Math.Max(opponentRating, secondsPlayedRollup[key].OpponentMaxRating),
+                                                OpponentBestWin: ((isWin != null && isWin.Value == true) ? Math.Max(opponentRating,secondsPlayedRollup[key].OpponentBestWin) : secondsPlayedRollup[key].OpponentBestWin));
                 }
                 else
                 {
@@ -118,7 +119,8 @@ namespace ChessStats
                                                   MinRating: playerRating,
                                                   MaxRating: playerRating,
                                                   OpponentMinRating: opponentRating,
-                                                  OpponentMaxRating: opponentRating));
+                                                  OpponentMaxRating: opponentRating,
+                                                  OpponentBestWin: ((isWin != null && isWin.Value == true) ? opponentRating : 0)));
                 }
 
                 string keyMonthOnly = $"{parsedStartDate.Year}-{((parsedStartDate.Month < 10) ? "0" : "")}{parsedStartDate.Month}";
@@ -153,8 +155,8 @@ namespace ChessStats
 
             Console.WriteLine("");
             Helpers.DisplaySection("Time Played by Time Class/Month", false);
-            Console.WriteLine("Time Class/Month  | Play Time | Rating Min/Max/+-  | Vs Min/Max  | Win  | Loss | Draw | Tot. ");
-            Console.WriteLine("------------------+-----------+--------------------+-------------+------+------+------+------");
+            Console.WriteLine("Time Class/Month  | Play Time | Rating Min/Max/+-  | Vs Min/BestWin/Max | Win  | Loss | Draw | Tot. ");
+            Console.WriteLine("------------------+-----------+--------------------+--------------------+------+------+------+------");
             foreach (var rolledUp in secondsPlayedRollup)
             {
                 TimeSpan timeMonth = TimeSpan.FromSeconds(rolledUp.Value.SecondsPlayed);
@@ -162,8 +164,9 @@ namespace ChessStats
                                          $"{((int)timeMonth.TotalHours).ToString().PadLeft(3, ' ')}:{ timeMonth.Minutes.ToString().PadLeft(2, '0')}:{ timeMonth.Seconds.ToString().PadLeft(2, '0')} | "+
                                          $"{rolledUp.Value.MinRating.ToString().PadLeft(4).Replace("   0", "   -")} | "+
                                          $"{rolledUp.Value.MaxRating.ToString().PadLeft(4).Replace("   0", "   -")} | "+
-                                         $"{(rolledUp.Value.MaxRating- rolledUp.Value.MinRating).ToString().PadLeft(4)} | "+
+                                         $"{(rolledUp.Value.MaxRating- rolledUp.Value.MinRating).ToString().PadLeft(4).Replace("   0", "   -")} | "+
                                          $"{rolledUp.Value.OpponentMinRating.ToString().PadLeft(4).Replace("   0", "   -")} | " +
+                                         $"{rolledUp.Value.OpponentBestWin.ToString().PadLeft(4).Replace("   0", "   -")} | " +
                                          $"{rolledUp.Value.OpponentMaxRating.ToString().PadLeft(4).Replace("   0", "   -")} | "+
                                          $"{rolledUp.Value.Win.ToString().PadLeft(4).Replace("   0", "   -")} | " +
                                          $"{rolledUp.Value.Loss.ToString().PadLeft(4).Replace("   0", "   -")} | " +
