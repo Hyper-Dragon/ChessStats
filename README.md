@@ -2,12 +2,14 @@
 
 ## Usage
 Retrieve monthly play time, ratings and top openings for any chessdotcom user. 
-
+```
     ChessStats [chessdotcom username]
-
+```
 ## Example Output Fragments
 
+```
 > ChessStats FabianoCaruana
+```
 
 <pre>
 ====================== Live Chess Report for FabianoCaruana - 19/03/2020 =======================
