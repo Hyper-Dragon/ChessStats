@@ -3,12 +3,12 @@
 ## Usage
 Retrieve monthly play time, ratings and top openings for any chessdotcom user. 
 ```
-    ChessStats [chessdotcom username]
+ChessStats [chessdotcom username]
 ```
 ## Example Output Fragments
 
 ```
-> ChessStats FabianoCaruana
+> chessstats fabianocaruana
 ```
 
 <pre>
