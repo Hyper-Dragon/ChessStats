@@ -16,7 +16,7 @@ namespace ChessStats
             int midRowLength = (isHeader) ? HEAD_LEN : FOOT_LEN;
             double spacerLength = (title.Length + 2d) / 2d;
 
-            var sb = new StringBuilder();
+            StringBuilder sb = new StringBuilder();
 
             sb.Append('=', midRowLength - (int)Math.Ceiling(spacerLength));
             sb.Append($" {title} ");

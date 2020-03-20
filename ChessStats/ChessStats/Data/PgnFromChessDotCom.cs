@@ -7,10 +7,10 @@ namespace ChessStats.Data
 {
     public static class PgnFromChessDotCom
     {
-        static int gameCount = 0;
-        static readonly object displayLock = new object();
+        private static int gameCount = 0;
+        private static readonly object displayLock = new object();
 
-        static void ProcessedDisplay(string outChar)
+        private static void ProcessedDisplay(string outChar)
         {
             lock (displayLock)
             {
@@ -22,26 +22,26 @@ namespace ChessStats.Data
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "<Pending>")]
         public static List<ChessGame> FetchGameRecordsForUser(string username)
         {
-            var PgnList = new List<ChessGame>();
+            List<ChessGame> PgnList = new List<ChessGame>();
 
-            var t = GetPlayerMonthlyArchive(username);
+            Task<ArchivedGamesList> t = GetPlayerMonthlyArchive(username);
             t.Wait();
 
             Parallel.ForEach(t.Result.Archives, new ParallelOptions { MaxDegreeOfParallelism = 3 }, (dataForMonth) =>
             {
-                var urlSplit = dataForMonth.Split('/');
-                var t2 = GetAllPlayerMonthlyGames(username, Int32.Parse(urlSplit[7]), Int32.Parse(urlSplit[8]));
+                string[] urlSplit = dataForMonth.Split('/');
+                Task<PlayerArchivedGames> t2 = GetAllPlayerMonthlyGames(username, int.Parse(urlSplit[7]), int.Parse(urlSplit[8]));
                 t2.Wait();
 
                 try
                 {
-                    foreach (var game in t2.Result.Games)
+                    foreach (ArchiveGame game in t2.Result.Games)
                     {
 
                         if (game.Rules == GameVariant.Chess)
                         {
                             ProcessedDisplay(".");
-                            
+
                             PgnList.Add(new ChessGame()
                             {
                                 Source = "ChessDotCom",
@@ -71,17 +71,15 @@ namespace ChessStats.Data
             return PgnList;
         }
 
-
-        static async System.Threading.Tasks.Task<ArchivedGamesList> GetPlayerMonthlyArchive(string username)
+        private static async System.Threading.Tasks.Task<ArchivedGamesList> GetPlayerMonthlyArchive(string username)
         {
             ChessDotComSharp.ChessDotComClient client = new ChessDotComSharp.ChessDotComClient();
-            var myGames = await client.GetPlayerGameArchivesAsync(username).ConfigureAwait(true);
+            ArchivedGamesList myGames = await client.GetPlayerGameArchivesAsync(username).ConfigureAwait(true);
 
             return myGames;
         }
 
-
-        static async System.Threading.Tasks.Task<PlayerArchivedGames> GetAllPlayerMonthlyGames(string username, int year, int month)
+        private static async System.Threading.Tasks.Task<PlayerArchivedGames> GetAllPlayerMonthlyGames(string username, int year, int month)
         {
             ChessDotComSharp.ChessDotComClient client = new ChessDotComSharp.ChessDotComClient();
             PlayerArchivedGames myGames = new PlayerArchivedGames();

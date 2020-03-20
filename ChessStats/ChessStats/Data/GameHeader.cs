@@ -37,7 +37,7 @@ namespace ChessStats.Data
 
         public string GetAttributeAsNullOrString(SupportedAttribute attributeName)
         {
-            return this.Attributes.ContainsKey(attributeName.ToString()) ? this.Attributes[attributeName.ToString()] : null;
+            return Attributes.ContainsKey(attributeName.ToString()) ? Attributes[attributeName.ToString()] : null;
         }
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "<Pending>")]
@@ -45,7 +45,7 @@ namespace ChessStats.Data
         {
             try
             {
-                return this.Attributes.ContainsKey(attributeName.ToString()) ? (short?)short.Parse(this.Attributes[attributeName.ToString()]) : null;
+                return Attributes.ContainsKey(attributeName.ToString()) ? (short?)short.Parse(Attributes[attributeName.ToString()]) : null;
             }
             catch
             {
@@ -59,11 +59,11 @@ namespace ChessStats.Data
             try
             {
                 //if we have a date and time join them/if there is only a date return that/return null if there is only a time
-                if (this.Attributes.ContainsKey(attributeNameDate.ToString()) && this.Attributes.ContainsKey(attributeNameTime.ToString()))
+                if (Attributes.ContainsKey(attributeNameDate.ToString()) && Attributes.ContainsKey(attributeNameTime.ToString()))
                 {
-                    return (DateTime?)DateTime.Parse($"{Attributes[attributeNameDate.ToString()]} {this.Attributes[attributeNameTime.ToString()]}");
+                    return (DateTime?)DateTime.Parse($"{Attributes[attributeNameDate.ToString()]} {Attributes[attributeNameTime.ToString()]}");
                 }
-                else if (this.Attributes.ContainsKey(attributeNameDate.ToString()))
+                else if (Attributes.ContainsKey(attributeNameDate.ToString()))
                 {
                     return DateTime.Parse($"{Attributes[attributeNameDate.ToString()]}");
                 }
@@ -80,7 +80,7 @@ namespace ChessStats.Data
 
         public static GameHeader GetHeaderAttributesFromPgn(string gameText)
         {
-            var pgnHeader = new GameHeader();
+            GameHeader pgnHeader = new GameHeader();
 
             foreach (string attribute in Regex.Split(gameText, @"^\[(.*?)\]", RegexOptions.Multiline))
             {

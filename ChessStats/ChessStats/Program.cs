@@ -10,16 +10,16 @@ using static ChessStats.Data.GameHeader;
 
 namespace ChessStats
 {
-    class Program
+    internal class Program
     {
 #pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously
-        static async Task Main(string[] args)
+        private static async Task Main(string[] args)
 #pragma warning restore CS1998 // Async method lacks 'await' operators and will run synchronously
         {
             Stopwatch stopwatch = new Stopwatch();
 
             Helpers.DisplayLogo();
-            
+
             if (args.Length != 1)
             {
                 System.Console.WriteLine($">>ChessDotCom Fetch Failed");
@@ -63,10 +63,13 @@ namespace ChessStats
             stopwatch.Reset();
             stopwatch.Start();
 
-            foreach (var game in gameList)
+            foreach (ChessGame game in gameList)
             {
                 // Don't include daily games
-                if (game.GameAttributes.Attributes["Event"] != "Live Chess") continue;
+                if (game.GameAttributes.Attributes["Event"] != "Live Chess")
+                {
+                    continue;
+                }
 
                 ExtractRatings(chessdotcomUsername, game, out string side, out int playerRating, out int opponentRating, out bool? isWin);
                 CalculateOpening(ecoPlayedRollupWhite, ecoPlayedRollupBlack, game, side);
@@ -87,7 +90,7 @@ namespace ChessStats
             DisplayTimePlayedByMonth(secondsPlayedRollupMonthOnly);
             DisplayTotalSecondsPlayed(totalSecondsPlayed);
             Helpers.DisplaySection("End of Report", true);
-            
+
             Console.WriteLine("");
             Helpers.PressToContinueIfDebug();
             Environment.Exit(0);
@@ -160,10 +163,10 @@ namespace ChessStats
 
         private static void CalculateGameTime(ChessGame game, out DateTime parsedStartDate, out double seconds, out string gameTime)
         {
-            var gameStartDate = game.GameAttributes.Attributes["Date"];
-            var gameStartTime = game.GameAttributes.Attributes["StartTime"];
-            var gameEndDate = game.GameAttributes.Attributes["EndDate"];
-            var gameEndTime = game.GameAttributes.Attributes["EndTime"];
+            string gameStartDate = game.GameAttributes.Attributes["Date"];
+            string gameStartTime = game.GameAttributes.Attributes["StartTime"];
+            string gameEndDate = game.GameAttributes.Attributes["EndDate"];
+            string gameEndTime = game.GameAttributes.Attributes["EndTime"];
 
             _ = DateTime.TryParseExact($"{gameStartDate} {gameStartTime}", "yyyy.MM.dd HH:mm:ss", null, DateTimeStyles.AssumeUniversal, out parsedStartDate);
             _ = DateTime.TryParseExact($"{gameEndDate} {gameEndTime}", "yyyy.MM.dd HH:mm:ss", null, DateTimeStyles.AssumeUniversal, out DateTime parsedEndDate);
@@ -175,10 +178,10 @@ namespace ChessStats
         {
             try
             {
-                var ecoName = game.GameAttributes.Attributes["ECOUrl"].Replace(@"https://www.chess.com/openings/", "").Replace("-", " ");
-                var ecoShortened = new Regex(@"^.*?(?=[0-9])").Match(ecoName).Value.Trim();
-                var ecoKey = $"{game.GameAttributes.Attributes["ECO"]}-{((string.IsNullOrEmpty(ecoShortened)) ? ecoName : ecoShortened)}";
-                var ecoPlayedRollup = (side == "White") ? ecoPlayedRollupWhite : ecoPlayedRollupBlack;
+                string ecoName = game.GameAttributes.Attributes["ECOUrl"].Replace(@"https://www.chess.com/openings/", "").Replace("-", " ");
+                string ecoShortened = new Regex(@"^.*?(?=[0-9])").Match(ecoName).Value.Trim();
+                string ecoKey = $"{game.GameAttributes.Attributes["ECO"]}-{((string.IsNullOrEmpty(ecoShortened)) ? ecoName : ecoShortened)}";
+                SortedList<string, int> ecoPlayedRollup = (side == "White") ? ecoPlayedRollupWhite : ecoPlayedRollupBlack;
 
                 if (ecoPlayedRollup.ContainsKey(ecoKey))
                 {
@@ -204,7 +207,7 @@ namespace ChessStats
             Console.WriteLine("Playing As White                                                        | Tot.");
             Console.WriteLine("------------------------------------------------------------------------+------");
 
-            foreach (var ecoCount in ecoPlayedRollupWhite.OrderByDescending(uses => uses.Value).Take(15))
+            foreach (KeyValuePair<string, int> ecoCount in ecoPlayedRollupWhite.OrderByDescending(uses => uses.Value).Take(15))
             {
                 if (ecoCount.Value < 2) { break; }
                 Console.WriteLine($"{ecoCount.Key.PadRight(71, ' ')} | {ecoCount.Value.ToString().PadLeft(4)}");
@@ -217,7 +220,7 @@ namespace ChessStats
             Console.WriteLine("Playing As Black                                                        | Tot.");
             Console.WriteLine("------------------------------------------------------------------------+------");
 
-            foreach (var ecoCount in ecoPlayedRollupBlack.OrderByDescending(uses => uses.Value).Take(15))
+            foreach (KeyValuePair<string, int> ecoCount in ecoPlayedRollupBlack.OrderByDescending(uses => uses.Value).Take(15))
             {
                 if (ecoCount.Value < 2) { break; }
                 Console.WriteLine($"{ecoCount.Key.PadRight(71, ' ')} | {ecoCount.Value.ToString().PadLeft(4)}");
@@ -231,7 +234,7 @@ namespace ChessStats
             Console.WriteLine("Time Class/Month  | Play Time | Rating Min/Max/+-  | Vs Min/BestWin/Max | Win  | Loss | Draw | Tot. ");
             string lastLine = "";
 
-            foreach (var rolledUp in secondsPlayedRollup)
+            foreach (KeyValuePair<string, (int SecondsPlayed, int GameCount, int Win, int Loss, int Draw, int MinRating, int MaxRating, int OpponentMinRating, int OpponentMaxRating, int OpponentBestWin)> rolledUp in secondsPlayedRollup)
             {
                 if (lastLine != rolledUp.Key.Substring(0, 10))
                 {
@@ -262,7 +265,7 @@ namespace ChessStats
             Helpers.DisplaySection("Time Played by Month", false);
             Console.WriteLine("Month             | Play Time ");
             Console.WriteLine("------------------+-----------");
-            foreach (var rolledUp in secondsPlayedRollupMonthOnly)
+            foreach (KeyValuePair<string, dynamic> rolledUp in secondsPlayedRollupMonthOnly)
             {
                 TimeSpan timeMonth = TimeSpan.FromSeconds(rolledUp.Value);
                 System.Console.WriteLine($"{rolledUp.Key.PadRight(17, ' ')} | " +
