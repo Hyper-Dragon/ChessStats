@@ -1,9 +1,13 @@
 # ChessStats for (https://chess.com)
 
 ## Usage
-Retrieve monthly play time, ratings and top openings for any chessdotcom user. 
+Retrieve monthly play time, ratings and top openings for any chessdotcom user. Note that variant game types are not included in the stats (displayed as 'X' during game retrieval).
+
+If you find this useful and want to say thanks just send me a fun trophy over on chess.com ;-)
+
+
 ```
-ChessStats [chessdotcom username]
+chessstats [chessdotcom username]
 ```
 ## Example Output Fragments
 
