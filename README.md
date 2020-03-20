@@ -76,4 +76,5 @@ Time Played (hh:mm:ss): 149:50:52
 ## Acknowledgements
 
 - [ChessDotCom](https://github.com/ChessCom) @ChessCom
+- Social Isolation
 
