@@ -1,7 +1,7 @@
 # ChessStats for (https://chess.com)
 
 ## Usage
-ChessStats is a console app to retrieve monthly play time, ratings and top openings for any chessdotcom user. Note that variant game types are not included in the stats (displayed as 'X' during game retrieval) and unrated games ('NR') information is time only. 
+ChessStats is a console app used to retrieve monthly play time, ratings and top openings for any chessdotcom user. Note that variant game types are not included in the stats (displayed as 'X' during game retrieval) and unrated game ('NR') information is time only. 
 
 If you find this useful and want to say thanks just send me a fun trophy over on chess.com ;-)
 
@@ -65,8 +65,7 @@ Time Played (hh:mm:ss): 149:50:52
 </pre>
 
 ## Known Issues
-- Games of type 'oddschess' generate error message [Raised](https://github.com/nullablebool/ChessDotComSharp/issues/1)
-- Only supports standard chess varients
+- Games of type 'oddschess' generate/display error message [Raised](https://github.com/nullablebool/ChessDotComSharp/issues/1)
 
 ## Dependencies
 
