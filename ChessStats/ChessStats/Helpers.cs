@@ -8,6 +8,8 @@ namespace ChessStats
     {
         public static void DisplaySection(string title, bool isHeader)
         {
+            _ = title ?? throw new ArgumentNullException(nameof(title));
+
             const int HEAD_LEN = 50;
             const int FOOT_LEN = 30;
 

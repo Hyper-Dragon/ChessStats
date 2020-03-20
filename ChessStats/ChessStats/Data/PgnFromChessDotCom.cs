@@ -1,7 +1,7 @@
-﻿using System;
+﻿using ChessDotComSharp.Models;
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using ChessDotComSharp.Models;
 
 namespace ChessStats.Data
 {
@@ -61,7 +61,7 @@ namespace ChessStats.Data
                         }
                     }
                 }
-                catch (Exception ex)
+                catch
                 {
                     //Ignore individual game errors
                     ProcessedDisplay("E");
@@ -75,7 +75,7 @@ namespace ChessStats.Data
         static async System.Threading.Tasks.Task<ArchivedGamesList> GetPlayerMonthlyArchive(string username)
         {
             ChessDotComSharp.ChessDotComClient client = new ChessDotComSharp.ChessDotComClient();
-            var myGames = await client.GetPlayerGameArchivesAsync(username);
+            var myGames = await client.GetPlayerGameArchivesAsync(username).ConfigureAwait(true);
 
             return myGames;
         }

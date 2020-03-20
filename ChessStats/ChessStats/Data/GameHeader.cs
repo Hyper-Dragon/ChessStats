@@ -61,11 +61,11 @@ namespace ChessStats.Data
                 //if we have a date and time join them/if there is only a date return that/return null if there is only a time
                 if (this.Attributes.ContainsKey(attributeNameDate.ToString()) && this.Attributes.ContainsKey(attributeNameTime.ToString()))
                 {
-                    return (DateTime?)DateTime.Parse($"{this.Attributes[attributeNameDate.ToString()]} {this.Attributes[attributeNameTime.ToString()]}");
+                    return (DateTime?)DateTime.Parse($"{Attributes[attributeNameDate.ToString()]} {this.Attributes[attributeNameTime.ToString()]}");
                 }
                 else if (this.Attributes.ContainsKey(attributeNameDate.ToString()))
                 {
-                    return DateTime.Parse($"{this.Attributes[attributeNameDate.ToString()]}");
+                    return DateTime.Parse($"{Attributes[attributeNameDate.ToString()]}");
                 }
                 else
                 {
