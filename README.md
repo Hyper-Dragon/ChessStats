@@ -67,7 +67,7 @@ Time Played (hh:mm:ss): 149:50:52
 </pre>
 
 ## Known Issues
-- Games of type 'oddschess' generate/display error message [Raised](https://github.com/nullablebool/ChessDotComSharp/issues/1)
+- Games of type 'oddschess' generate/display error messages.  Fixed in solution and [Raised](https://github.com/nullablebool/ChessDotComSharp/issues/1)
 
 ## Dependencies
 
