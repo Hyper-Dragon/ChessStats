@@ -83,7 +83,7 @@ namespace ChessStats
             System.Console.WriteLine($">>Finished Processing Games ({stopwatch.Elapsed.Hours}:{stopwatch.Elapsed.Minutes}:{stopwatch.Elapsed.Seconds}:{stopwatch.Elapsed.Milliseconds})");
             System.Console.WriteLine("");
 
-            Helpers.DisplaySection($"Live Chess Report for {chessdotcomUsername} - {DateTime.Now.ToShortDateString()}", true);
+            Helpers.DisplaySection($"Live Chess Report for {chessdotcomUsername} : {DateTime.Now.ToLongDateString()}", true);
             DisplayOpeningsAsWhite(ecoPlayedRollupWhite);
             DisplayOpeningsAsBlack(ecoPlayedRollupBlack);
             DisplayPlayingStats(secondsPlayedRollup);
@@ -96,6 +96,7 @@ namespace ChessStats
             Environment.Exit(0);
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Globalization", "CA1303:Do not pass literals as localized parameters", Justification = "<Pending>")]
         private static void ExtractRatings(string chessdotcomUsername, ChessGame game, out string side, out int playerRating, out int opponentRating, out bool? isWin)
         {
             side = game.GameAttributes.Attributes["White"].ToUpperInvariant() == chessdotcomUsername.ToUpperInvariant() ? "White" : "Black";
@@ -178,7 +179,7 @@ namespace ChessStats
         {
             try
             {
-                string ecoName = game.GameAttributes.Attributes["ECOUrl"].Replace(@"https://www.chess.com/openings/", "").Replace("-", " ");
+                string ecoName = game.GameAttributes.Attributes["ECOUrl"].Replace(@"https://www.chess.com/openings/", "", true, CultureInfo.InvariantCulture).Replace("-", " ", true, CultureInfo.InvariantCulture);
                 string ecoShortened = new Regex(@"^.*?(?=[0-9])").Match(ecoName).Value.Trim();
                 string ecoKey = $"{game.GameAttributes.Attributes["ECO"]}-{((string.IsNullOrEmpty(ecoShortened)) ? ecoName : ecoShortened)}";
                 SortedList<string, int> ecoPlayedRollup = (side == "White") ? ecoPlayedRollupWhite : ecoPlayedRollupBlack;
@@ -200,6 +201,7 @@ namespace ChessStats
             }
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Globalization", "CA1303:Do not pass literals as localized parameters", Justification = "<Pending>")]
         private static void DisplayOpeningsAsWhite(SortedList<string, int> ecoPlayedRollupWhite)
         {
             Console.WriteLine("");
@@ -210,10 +212,11 @@ namespace ChessStats
             foreach (KeyValuePair<string, int> ecoCount in ecoPlayedRollupWhite.OrderByDescending(uses => uses.Value).Take(15))
             {
                 if (ecoCount.Value < 2) { break; }
-                Console.WriteLine($"{ecoCount.Key.PadRight(71, ' ')} | {ecoCount.Value.ToString().PadLeft(4)}");
+                Console.WriteLine($"{ecoCount.Key.PadRight(71, ' ')} | {ecoCount.Value.ToString(CultureInfo.CurrentCulture).PadLeft(4)}");
             }
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Globalization", "CA1303:Do not pass literals as localized parameters", Justification = "<Pending>")]
         private static void DisplayOpeningsAsBlack(SortedList<string, int> ecoPlayedRollupBlack)
         {
             Console.WriteLine("");
@@ -223,10 +226,11 @@ namespace ChessStats
             foreach (KeyValuePair<string, int> ecoCount in ecoPlayedRollupBlack.OrderByDescending(uses => uses.Value).Take(15))
             {
                 if (ecoCount.Value < 2) { break; }
-                Console.WriteLine($"{ecoCount.Key.PadRight(71, ' ')} | {ecoCount.Value.ToString().PadLeft(4)}");
+                Console.WriteLine($"{ecoCount.Key.PadRight(71, ' ')} | {ecoCount.Value.ToString(CultureInfo.CurrentCulture).PadLeft(4)}");
             }
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Globalization", "CA1303:Do not pass literals as localized parameters", Justification = "<Pending>")]
         private static void DisplayPlayingStats(SortedList<string, (int SecondsPlayed, int GameCount, int Win, int Loss, int Draw, int MinRating, int MaxRating, int OpponentMinRating, int OpponentMaxRating, int OpponentBestWin)> secondsPlayedRollup)
         {
             Console.WriteLine("");
@@ -244,21 +248,22 @@ namespace ChessStats
                 lastLine = rolledUp.Key.Substring(0, 10);
                 TimeSpan timeMonth = TimeSpan.FromSeconds(rolledUp.Value.SecondsPlayed);
                 System.Console.WriteLine($"{rolledUp.Key.PadRight(17, ' ')} | " +
-                                         $"{((int)timeMonth.TotalHours).ToString().PadLeft(3, ' ')}:{ timeMonth.Minutes.ToString().PadLeft(2, '0')}:{ timeMonth.Seconds.ToString().PadLeft(2, '0')} | " +
-                                         $"{rolledUp.Value.MinRating.ToString().PadLeft(4).Replace("   0", "   -")} | " +
-                                         $"{rolledUp.Value.MaxRating.ToString().PadLeft(4).Replace("   0", "   -")} | " +
-                                         $"{(rolledUp.Value.MaxRating - rolledUp.Value.MinRating).ToString().PadLeft(4).Replace("   0", "   -")} | " +
-                                         $"{rolledUp.Value.OpponentMinRating.ToString().PadLeft(4).Replace("   0", "   -")} | " +
-                                         $"{rolledUp.Value.OpponentBestWin.ToString().PadLeft(4).Replace("   0", "   -")} | " +
-                                         $"{rolledUp.Value.OpponentMaxRating.ToString().PadLeft(4).Replace("   0", "   -")} | " +
-                                         $"{rolledUp.Value.Win.ToString().PadLeft(4).Replace("   0", "   -")} | " +
-                                         $"{rolledUp.Value.Loss.ToString().PadLeft(4).Replace("   0", "   -")} | " +
-                                         $"{rolledUp.Value.Draw.ToString().PadLeft(4).Replace("   0", "   -")} | " +
-                                         $"{rolledUp.Value.GameCount.ToString().PadLeft(4).Replace("   0", "   -")}"
+                                         $"{((int)timeMonth.TotalHours).ToString(CultureInfo.CurrentCulture).PadLeft(3, ' ')}:{ timeMonth.Minutes.ToString(CultureInfo.CurrentCulture).PadLeft(2, '0')}:{ timeMonth.Seconds.ToString(CultureInfo.CurrentCulture).PadLeft(2, '0')} | " +
+                                         $"{rolledUp.Value.MinRating.ToString(CultureInfo.CurrentCulture).PadLeft(4).Replace("   0", "   -", true, CultureInfo.InvariantCulture)} | " +
+                                         $"{rolledUp.Value.MaxRating.ToString(CultureInfo.CurrentCulture).PadLeft(4).Replace("   0", "   -", true, CultureInfo.InvariantCulture)} | " +
+                                         $"{(rolledUp.Value.MaxRating - rolledUp.Value.MinRating).ToString(CultureInfo.CurrentCulture).PadLeft(4).Replace("   0", "   -", true, CultureInfo.InvariantCulture)} | " +
+                                         $"{rolledUp.Value.OpponentMinRating.ToString(CultureInfo.CurrentCulture).PadLeft(4).Replace("   0", "   -", true, CultureInfo.InvariantCulture)} | " +
+                                         $"{rolledUp.Value.OpponentBestWin.ToString(CultureInfo.CurrentCulture).PadLeft(4).Replace("   0", "   -", true, CultureInfo.InvariantCulture)} | " +
+                                         $"{rolledUp.Value.OpponentMaxRating.ToString(CultureInfo.CurrentCulture).PadLeft(4).Replace("   0", "   -", true, CultureInfo.InvariantCulture)} | " +
+                                         $"{rolledUp.Value.Win.ToString(CultureInfo.CurrentCulture).PadLeft(4).Replace("   0", "   -", true, CultureInfo.InvariantCulture)} | " +
+                                         $"{rolledUp.Value.Loss.ToString(CultureInfo.CurrentCulture).PadLeft(4).Replace("   0", "   -", true, CultureInfo.InvariantCulture)} | " +
+                                         $"{rolledUp.Value.Draw.ToString(CultureInfo.CurrentCulture).PadLeft(4).Replace("   0", "   -", true, CultureInfo.InvariantCulture)} | " +
+                                         $"{rolledUp.Value.GameCount.ToString(CultureInfo.CurrentCulture).PadLeft(4).Replace("   0", "   -",true, CultureInfo.InvariantCulture)}"
                                          );
             }
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Globalization", "CA1303:Do not pass literals as localized parameters", Justification = "<Pending>")]
         private static void DisplayTimePlayedByMonth(SortedList<string, dynamic> secondsPlayedRollupMonthOnly)
         {
             Console.WriteLine("");
@@ -269,7 +274,7 @@ namespace ChessStats
             {
                 TimeSpan timeMonth = TimeSpan.FromSeconds(rolledUp.Value);
                 System.Console.WriteLine($"{rolledUp.Key.PadRight(17, ' ')} | " +
-                                         $"{((int)timeMonth.TotalHours).ToString().PadLeft(3, ' ')}:{ timeMonth.Minutes.ToString().PadLeft(2, '0')}:{ timeMonth.Seconds.ToString().PadLeft(2, '0')}");
+                                         $"{((int)timeMonth.TotalHours).ToString(CultureInfo.CurrentCulture).PadLeft(3, ' ')}:{ timeMonth.Minutes.ToString(CultureInfo.CurrentCulture).PadLeft(2, '0')}:{ timeMonth.Seconds.ToString(CultureInfo.CurrentCulture).PadLeft(2, '0')}");
             }
         }
 
@@ -278,7 +283,7 @@ namespace ChessStats
             Console.WriteLine("");
             Helpers.DisplaySection("Total Play Time (Live Chess)", false);
             TimeSpan time = TimeSpan.FromSeconds(totalSecondsPlayed);
-            Console.WriteLine($"Time Played (hh:mm:ss): {((int)time.TotalHours).ToString().PadLeft(3, ' ')}:{ time.Minutes.ToString().PadLeft(2, '0')}:{ time.Seconds.ToString().PadLeft(2, '0')}");
+            Console.WriteLine($"Time Played (hh:mm:ss): {((int)time.TotalHours).ToString(CultureInfo.CurrentCulture).PadLeft(3, ' ')}:{ time.Minutes.ToString(CultureInfo.CurrentCulture).PadLeft(2, '0')}:{ time.Seconds.ToString(CultureInfo.CurrentCulture).PadLeft(2, '0')}");
             Console.WriteLine("");
         }
     }

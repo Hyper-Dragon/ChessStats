@@ -1,6 +1,7 @@
 ﻿using ChessDotComSharp.Models;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Threading.Tasks;
 
 namespace ChessStats.Data
@@ -30,7 +31,7 @@ namespace ChessStats.Data
             Parallel.ForEach(t.Result.Archives, new ParallelOptions { MaxDegreeOfParallelism = 3 }, (dataForMonth) =>
             {
                 string[] urlSplit = dataForMonth.Split('/');
-                Task<PlayerArchivedGames> t2 = GetAllPlayerMonthlyGames(username, int.Parse(urlSplit[7]), int.Parse(urlSplit[8]));
+                Task<PlayerArchivedGames> t2 = GetAllPlayerMonthlyGames(username, int.Parse(urlSplit[7], CultureInfo.InvariantCulture), int.Parse(urlSplit[8], CultureInfo.InvariantCulture));
                 t2.Wait();
 
                 try

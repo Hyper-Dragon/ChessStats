@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Text.RegularExpressions;
 
 namespace ChessStats.Data
@@ -45,7 +46,7 @@ namespace ChessStats.Data
         {
             try
             {
-                return Attributes.ContainsKey(attributeName.ToString()) ? (short?)short.Parse(Attributes[attributeName.ToString()]) : null;
+                return Attributes.ContainsKey(attributeName.ToString()) ? (short?)short.Parse(Attributes[attributeName.ToString()], CultureInfo.InvariantCulture) : null;
             }
             catch
             {
@@ -61,11 +62,11 @@ namespace ChessStats.Data
                 //if we have a date and time join them/if there is only a date return that/return null if there is only a time
                 if (Attributes.ContainsKey(attributeNameDate.ToString()) && Attributes.ContainsKey(attributeNameTime.ToString()))
                 {
-                    return (DateTime?)DateTime.Parse($"{Attributes[attributeNameDate.ToString()]} {Attributes[attributeNameTime.ToString()]}");
+                    return (DateTime?)DateTime.Parse($"{Attributes[attributeNameDate.ToString()]} {Attributes[attributeNameTime.ToString()]}", CultureInfo.InvariantCulture);
                 }
                 else if (Attributes.ContainsKey(attributeNameDate.ToString()))
                 {
-                    return DateTime.Parse($"{Attributes[attributeNameDate.ToString()]}");
+                    return DateTime.Parse($"{Attributes[attributeNameDate.ToString()]}", CultureInfo.InvariantCulture);
                 }
                 else
                 {
