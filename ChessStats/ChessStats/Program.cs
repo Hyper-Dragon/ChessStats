@@ -1,7 +1,7 @@
 ﻿using ChessStats.Data;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -16,6 +16,8 @@ namespace ChessStats
         static async Task Main(string[] args)
 #pragma warning restore CS1998 // Async method lacks 'await' operators and will run synchronously
         {
+            Stopwatch stopwatch = new Stopwatch();
+
             Helpers.DisplayLogo();
             
             if (args.Length != 1)
@@ -33,6 +35,7 @@ namespace ChessStats
 
             try
             {
+                stopwatch.Start();
                 gameList = PgnFromChessDotCom.FetchGameRecordsForUser(chessdotcomUsername);
             }
 #pragma warning disable CA1031 // Do not catch general exception types
@@ -45,7 +48,9 @@ namespace ChessStats
             }
 #pragma warning restore CA1031 // Do not catch general exception types
 
-            System.Console.WriteLine($">>Finished ChessDotCom Fetch");
+            stopwatch.Stop();
+            System.Console.WriteLine($"");
+            System.Console.WriteLine($">>Finished ChessDotCom Fetch ({stopwatch.Elapsed.Hours}:{stopwatch.Elapsed.Minutes}:{stopwatch.Elapsed.Seconds}:{stopwatch.Elapsed.Milliseconds})");
             System.Console.WriteLine($">>Processing Games");
 
             SortedList<string, (int SecondsPlayed, int GameCount, int Win, int Loss, int Draw, int MinRating, int MaxRating, int OpponentMinRating, int OpponentMaxRating, int OpponentBestWin)> secondsPlayedRollup = new SortedList<string, (int, int, int, int, int, int, int, int, int, int)>();
@@ -53,6 +58,9 @@ namespace ChessStats
             SortedList<string, int> ecoPlayedRollupWhite = new SortedList<string, int>();
             SortedList<string, int> ecoPlayedRollupBlack = new SortedList<string, int>();
             double totalSecondsPlayed = 0;
+
+            stopwatch.Reset();
+            stopwatch.Start();
 
             foreach (var game in gameList)
             {
@@ -153,7 +161,8 @@ namespace ChessStats
                 }
             }
 
-            System.Console.WriteLine($">>Finished Processing Games");
+            stopwatch.Stop();
+            System.Console.WriteLine($">>Finished Processing Games ({stopwatch.Elapsed.Hours}:{stopwatch.Elapsed.Minutes}:{stopwatch.Elapsed.Seconds}:{stopwatch.Elapsed.Milliseconds})");
             System.Console.WriteLine("");
 
             Helpers.DisplaySection($"Live Chess Report for {chessdotcomUsername} - {DateTime.Now.ToShortDateString()}", true);
@@ -201,9 +210,16 @@ namespace ChessStats
             Console.WriteLine("");
             Helpers.DisplaySection("Time Played by Time Class/Month", false);
             Console.WriteLine("Time Class/Month  | Play Time | Rating Min/Max/+-  | Vs Min/BestWin/Max | Win  | Loss | Draw | Tot. ");
-            Console.WriteLine("------------------+-----------+--------------------+--------------------+------+------+------+------");
+            string lastLine = "";
+
             foreach (var rolledUp in secondsPlayedRollup)
             {
+                if (lastLine != rolledUp.Key.Substring(0, 10))
+                {
+                    Console.WriteLine("------------------+-----------+--------------------+--------------------+------+------+------+------");
+                }
+
+                lastLine = rolledUp.Key.Substring(0, 10);
                 TimeSpan timeMonth = TimeSpan.FromSeconds(rolledUp.Value.SecondsPlayed);
                 System.Console.WriteLine($"{rolledUp.Key.PadRight(17, ' ')} | " +
                                          $"{((int)timeMonth.TotalHours).ToString().PadLeft(3, ' ')}:{ timeMonth.Minutes.ToString().PadLeft(2, '0')}:{ timeMonth.Seconds.ToString().PadLeft(2, '0')} | " +
