@@ -203,7 +203,7 @@ namespace ChessStats
         private static void DisplayOpeningsAsWhite(SortedList<string, int> ecoPlayedRollupWhite)
         {
             Console.WriteLine("");
-            Helpers.DisplaySection($"Openings Occuring More Than Once (Max 15)", false);
+            Helpers.DisplaySection($"Openings Occurring More Than Once (Max 15)", false);
             Console.WriteLine("Playing As White                                                        | Tot.");
             Console.WriteLine("------------------------------------------------------------------------+------");
 
