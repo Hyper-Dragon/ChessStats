@@ -53,6 +53,7 @@ namespace ChessStats
             System.Console.WriteLine($">>Finished ChessDotCom Fetch ({stopwatch.Elapsed.Hours}:{stopwatch.Elapsed.Minutes}:{stopwatch.Elapsed.Seconds}:{stopwatch.Elapsed.Milliseconds})");
             System.Console.WriteLine($">>Processing Games");
 
+            //Initialise reporting lists
             SortedList<string, (int SecondsPlayed, int GameCount, int Win, int Loss, int Draw, int MinRating, int MaxRating, int OpponentMinRating, int OpponentMaxRating, int OpponentBestWin)> secondsPlayedRollup = new SortedList<string, (int, int, int, int, int, int, int, int, int, int)>();
             SortedList<string, dynamic> secondsPlayedRollupMonthOnly = new SortedList<string, dynamic>();
             SortedList<string, int> ecoPlayedRollupWhite = new SortedList<string, int>();
@@ -67,98 +68,12 @@ namespace ChessStats
                 // Don't include daily games
                 if (game.GameAttributes.Attributes["Event"] != "Live Chess") continue;
 
-                var side = game.GameAttributes.Attributes["White"].ToUpperInvariant() == chessdotcomUsername.ToUpperInvariant() ? "White" : "Black";
-                var playerRating = (game.IsRatedGame) ? ((side == "White") ? game.WhiteRating : game.BlackRating) : 0;
-                var opponentRating = (game.IsRatedGame) ? ((side == "White") ? game.BlackRating : game.WhiteRating) : 0;
-
-                bool? isWin;
-                switch (game.GameAttributes.Attributes[SupportedAttribute.Result.ToString()])
-                {
-                    case "1/2-1/2":
-                        isWin = null;
-                        break;
-                    case "1-0":
-                        isWin = (side == "White" ? true : false);
-                        break;
-                    case "0-1":
-                        isWin = (side == "White" ? false : true);
-                        break;
-                    default:
-                        throw new Exception($"Unrecorded game result found");
-                }
-
-                try
-                {
-                    var ecoName = game.GameAttributes.Attributes["ECOUrl"].Replace(@"https://www.chess.com/openings/", "").Replace("-", " ");
-                    var ecoShortened = new Regex(@"^.*?(?=[0-9])").Match(ecoName).Value.Trim();
-                    var ecoKey = $"{game.GameAttributes.Attributes["ECO"]}-{((string.IsNullOrEmpty(ecoShortened)) ? ecoName : ecoShortened)}";
-                    var ecoPlayedRollup = (side == "White") ? ecoPlayedRollupWhite : ecoPlayedRollupBlack;
-
-                    if (ecoPlayedRollup.ContainsKey(ecoKey))
-                    {
-                        ecoPlayedRollup[ecoKey]++;
-                    }
-                    else
-                    {
-                        ecoPlayedRollup.Add(ecoKey, 1);
-                    }
-                }
-#pragma warning disable CA1031 // Do not catch general exception types
-                catch
-#pragma warning restore CA1031 // Do not catch general exception types
-                {
-                    //ECO missing from Pgn so just ignore
-                }
-
-                var gameStartDate = game.GameAttributes.Attributes["Date"];
-                var gameStartTime = game.GameAttributes.Attributes["StartTime"];
-                var gameEndDate = game.GameAttributes.Attributes["EndDate"];
-                var gameEndTime = game.GameAttributes.Attributes["EndTime"];
-
-                var startDateParsed = DateTime.TryParseExact($"{gameStartDate} {gameStartTime}", "yyyy.MM.dd HH:mm:ss", null, DateTimeStyles.AssumeUniversal, out DateTime parsedStartDate);
-                var endDateParsed = DateTime.TryParseExact($"{gameEndDate} {gameEndTime}", "yyyy.MM.dd HH:mm:ss", null, DateTimeStyles.AssumeUniversal, out DateTime parsedEndDate);
-                var seconds = System.Math.Abs((parsedEndDate - parsedStartDate).TotalSeconds);
-                var gameTime = $"{game.TimeClass.PadRight(6, ' ')}{((game.IsRatedGame) ? "   " : " NR")}";
-
+                ExtractRatings(chessdotcomUsername, game, out string side, out int playerRating, out int opponentRating, out bool? isWin);
+                CalculateOpening(ecoPlayedRollupWhite, ecoPlayedRollupBlack, game, side);
+                CalculateGameTime(game, out DateTime parsedStartDate, out double seconds, out string gameTime);
                 totalSecondsPlayed += seconds;
-
-                string key = $"{gameTime} {parsedStartDate.Year}-{((parsedStartDate.Month < 10) ? "0" : "")}{parsedStartDate.Month}";
-                if (secondsPlayedRollup.ContainsKey(key))
-                {
-                    secondsPlayedRollup[key] = (SecondsPlayed: secondsPlayedRollup[key].SecondsPlayed + (int)seconds,
-                                                GameCount: secondsPlayedRollup[key].GameCount + 1,
-                                                Win: ((isWin != null && isWin.Value == true) ? secondsPlayedRollup[key].Win + 1 : secondsPlayedRollup[key].Win),
-                                                Loss: ((isWin != null && isWin.Value == false) ? secondsPlayedRollup[key].Loss + 1 : secondsPlayedRollup[key].Loss),
-                                                Draw: ((isWin == null) ? secondsPlayedRollup[key].Draw + 1 : secondsPlayedRollup[key].Draw),
-                                                MinRating: Math.Min(playerRating, secondsPlayedRollup[key].MinRating),
-                                                MaxRating: Math.Max(playerRating, secondsPlayedRollup[key].MaxRating),
-                                                OpponentMinRating: Math.Min(opponentRating, secondsPlayedRollup[key].OpponentMinRating),
-                                                OpponentMaxRating: Math.Max(opponentRating, secondsPlayedRollup[key].OpponentMaxRating),
-                                                OpponentBestWin: ((isWin != null && isWin.Value == true) ? Math.Max(opponentRating, secondsPlayedRollup[key].OpponentBestWin) : secondsPlayedRollup[key].OpponentBestWin));
-                }
-                else
-                {
-                    secondsPlayedRollup.Add(key, (SecondsPlayed: (int)seconds,
-                                                  GameCount: 1,
-                                                  Win: ((isWin != null && isWin.Value == true) ? 1 : 0),
-                                                  Loss: ((isWin != null && isWin.Value == false) ? 1 : 0),
-                                                  Draw: ((isWin == null) ? 1 : 0),
-                                                  MinRating: playerRating,
-                                                  MaxRating: playerRating,
-                                                  OpponentMinRating: opponentRating,
-                                                  OpponentMaxRating: opponentRating,
-                                                  OpponentBestWin: ((isWin != null && isWin.Value == true) ? opponentRating : 0)));
-                }
-
-                string keyMonthOnly = $"{parsedStartDate.Year}-{((parsedStartDate.Month < 10) ? "0" : "")}{parsedStartDate.Month}";
-                if (secondsPlayedRollupMonthOnly.ContainsKey(keyMonthOnly))
-                {
-                    secondsPlayedRollupMonthOnly[keyMonthOnly] += (int)seconds;
-                }
-                else
-                {
-                    secondsPlayedRollupMonthOnly.Add(keyMonthOnly, (int)seconds);
-                }
+                UpdateGameTypeTimeTotals(secondsPlayedRollup, playerRating, opponentRating, isWin, parsedStartDate, seconds, gameTime);
+                UpdateGameTimeTotals(secondsPlayedRollupMonthOnly, parsedStartDate, seconds);
             }
 
             stopwatch.Stop();
@@ -176,6 +91,110 @@ namespace ChessStats
             Console.WriteLine("");
             Helpers.PressToContinueIfDebug();
             Environment.Exit(0);
+        }
+
+        private static void ExtractRatings(string chessdotcomUsername, ChessGame game, out string side, out int playerRating, out int opponentRating, out bool? isWin)
+        {
+            side = game.GameAttributes.Attributes["White"].ToUpperInvariant() == chessdotcomUsername.ToUpperInvariant() ? "White" : "Black";
+            playerRating = (game.IsRatedGame) ? ((side == "White") ? game.WhiteRating : game.BlackRating) : 0;
+            opponentRating = (game.IsRatedGame) ? ((side == "White") ? game.BlackRating : game.WhiteRating) : 0;
+            switch (game.GameAttributes.Attributes[SupportedAttribute.Result.ToString()])
+            {
+                case "1/2-1/2":
+                    isWin = null;
+                    break;
+                case "1-0":
+                    isWin = (side == "White" ? true : false);
+                    break;
+                case "0-1":
+                    isWin = (side == "White" ? false : true);
+                    break;
+                default:
+                    throw new Exception($"Unrecorded game result found");
+            }
+        }
+
+        private static void UpdateGameTimeTotals(SortedList<string, dynamic> secondsPlayedRollupMonthOnly, DateTime parsedStartDate, double seconds)
+        {
+            string keyMonthOnly = $"{parsedStartDate.Year}-{((parsedStartDate.Month < 10) ? "0" : "")}{parsedStartDate.Month}";
+            if (secondsPlayedRollupMonthOnly.ContainsKey(keyMonthOnly))
+            {
+                secondsPlayedRollupMonthOnly[keyMonthOnly] += (int)seconds;
+            }
+            else
+            {
+                secondsPlayedRollupMonthOnly.Add(keyMonthOnly, (int)seconds);
+            }
+        }
+
+        private static void UpdateGameTypeTimeTotals(SortedList<string, (int SecondsPlayed, int GameCount, int Win, int Loss, int Draw, int MinRating, int MaxRating, int OpponentMinRating, int OpponentMaxRating, int OpponentBestWin)> secondsPlayedRollup, int playerRating, int opponentRating, bool? isWin, DateTime parsedStartDate, double seconds, string gameTime)
+        {
+            string key = $"{gameTime} {parsedStartDate.Year}-{((parsedStartDate.Month < 10) ? "0" : "")}{parsedStartDate.Month}";
+            if (secondsPlayedRollup.ContainsKey(key))
+            {
+                secondsPlayedRollup[key] = (SecondsPlayed: secondsPlayedRollup[key].SecondsPlayed + (int)seconds,
+                                            GameCount: secondsPlayedRollup[key].GameCount + 1,
+                                            Win: ((isWin != null && isWin.Value == true) ? secondsPlayedRollup[key].Win + 1 : secondsPlayedRollup[key].Win),
+                                            Loss: ((isWin != null && isWin.Value == false) ? secondsPlayedRollup[key].Loss + 1 : secondsPlayedRollup[key].Loss),
+                                            Draw: ((isWin == null) ? secondsPlayedRollup[key].Draw + 1 : secondsPlayedRollup[key].Draw),
+                                            MinRating: Math.Min(playerRating, secondsPlayedRollup[key].MinRating),
+                                            MaxRating: Math.Max(playerRating, secondsPlayedRollup[key].MaxRating),
+                                            OpponentMinRating: Math.Min(opponentRating, secondsPlayedRollup[key].OpponentMinRating),
+                                            OpponentMaxRating: Math.Max(opponentRating, secondsPlayedRollup[key].OpponentMaxRating),
+                                            OpponentBestWin: ((isWin != null && isWin.Value == true) ? Math.Max(opponentRating, secondsPlayedRollup[key].OpponentBestWin) : secondsPlayedRollup[key].OpponentBestWin));
+            }
+            else
+            {
+                secondsPlayedRollup.Add(key, (SecondsPlayed: (int)seconds,
+                                              GameCount: 1,
+                                              Win: ((isWin != null && isWin.Value == true) ? 1 : 0),
+                                              Loss: ((isWin != null && isWin.Value == false) ? 1 : 0),
+                                              Draw: ((isWin == null) ? 1 : 0),
+                                              MinRating: playerRating,
+                                              MaxRating: playerRating,
+                                              OpponentMinRating: opponentRating,
+                                              OpponentMaxRating: opponentRating,
+                                              OpponentBestWin: ((isWin != null && isWin.Value == true) ? opponentRating : 0)));
+            }
+        }
+
+        private static void CalculateGameTime(ChessGame game, out DateTime parsedStartDate, out double seconds, out string gameTime)
+        {
+            var gameStartDate = game.GameAttributes.Attributes["Date"];
+            var gameStartTime = game.GameAttributes.Attributes["StartTime"];
+            var gameEndDate = game.GameAttributes.Attributes["EndDate"];
+            var gameEndTime = game.GameAttributes.Attributes["EndTime"];
+
+            _ = DateTime.TryParseExact($"{gameStartDate} {gameStartTime}", "yyyy.MM.dd HH:mm:ss", null, DateTimeStyles.AssumeUniversal, out parsedStartDate);
+            _ = DateTime.TryParseExact($"{gameEndDate} {gameEndTime}", "yyyy.MM.dd HH:mm:ss", null, DateTimeStyles.AssumeUniversal, out DateTime parsedEndDate);
+            seconds = System.Math.Abs((parsedEndDate - parsedStartDate).TotalSeconds);
+            gameTime = $"{game.TimeClass.PadRight(6, ' ')}{((game.IsRatedGame) ? "   " : " NR")}";
+        }
+
+        private static void CalculateOpening(SortedList<string, int> ecoPlayedRollupWhite, SortedList<string, int> ecoPlayedRollupBlack, ChessGame game, string side)
+        {
+            try
+            {
+                var ecoName = game.GameAttributes.Attributes["ECOUrl"].Replace(@"https://www.chess.com/openings/", "").Replace("-", " ");
+                var ecoShortened = new Regex(@"^.*?(?=[0-9])").Match(ecoName).Value.Trim();
+                var ecoKey = $"{game.GameAttributes.Attributes["ECO"]}-{((string.IsNullOrEmpty(ecoShortened)) ? ecoName : ecoShortened)}";
+                var ecoPlayedRollup = (side == "White") ? ecoPlayedRollupWhite : ecoPlayedRollupBlack;
+
+                if (ecoPlayedRollup.ContainsKey(ecoKey))
+                {
+                    ecoPlayedRollup[ecoKey]++;
+                }
+                else
+                {
+                    ecoPlayedRollup.Add(ecoKey, 1);
+                }
+            }
+#pragma warning disable CA1031 // Do not catch general exception types
+            catch
+#pragma warning restore CA1031 // Do not catch general exception types
+            {
+                //ECO missing from Pgn so just ignore
+            }
         }
 
         private static void DisplayOpeningsAsWhite(SortedList<string, int> ecoPlayedRollupWhite)
