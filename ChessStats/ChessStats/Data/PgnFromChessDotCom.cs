@@ -28,7 +28,7 @@ namespace ChessStats.Data
             Task<ArchivedGamesList> t = GetPlayerMonthlyArchive(username);
             t.Wait();
 
-            Parallel.ForEach(t.Result.Archives, new ParallelOptions { MaxDegreeOfParallelism = 3 }, (dataForMonth) =>
+            Parallel.ForEach(t.Result.Archives, new ParallelOptions { MaxDegreeOfParallelism = 1 }, (dataForMonth) =>
             {
                 string[] urlSplit = dataForMonth.Split('/');
                 Task<PlayerArchivedGames> t2 = GetAllPlayerMonthlyGames(username, int.Parse(urlSplit[7], CultureInfo.InvariantCulture), int.Parse(urlSplit[8], CultureInfo.InvariantCulture));
@@ -64,7 +64,6 @@ namespace ChessStats.Data
                 }
                 catch
                 {
-                    //Ignore individual game errors
                     ProcessedDisplay("E");
                 }
             });
@@ -74,27 +73,15 @@ namespace ChessStats.Data
 
         private static async System.Threading.Tasks.Task<ArchivedGamesList> GetPlayerMonthlyArchive(string username)
         {
-            ChessDotComSharp.ChessDotComClient client = new ChessDotComSharp.ChessDotComClient();
+            using ChessDotComSharp.ChessDotComClient client = new ChessDotComSharp.ChessDotComClient();
             ArchivedGamesList myGames = await client.GetPlayerGameArchivesAsync(username).ConfigureAwait(true);
-
             return myGames;
         }
 
         private static async System.Threading.Tasks.Task<PlayerArchivedGames> GetAllPlayerMonthlyGames(string username, int year, int month)
         {
-            ChessDotComSharp.ChessDotComClient client = new ChessDotComSharp.ChessDotComClient();
-            PlayerArchivedGames myGames = new PlayerArchivedGames();
-
-            try
-            {
-                myGames = await client.GetPlayerGameMonthlyArchiveAsync(username, year, month).ConfigureAwait(true);
-            }
-#pragma warning disable CA1031 // Do not catch general exception types
-            catch (Exception ex)
-            {
-                System.Console.Write(ex.Message);
-            }
-#pragma warning restore CA1031 // Do not catch general exception types
+            using ChessDotComSharp.ChessDotComClient client = new ChessDotComSharp.ChessDotComClient();
+            PlayerArchivedGames myGames = await client.GetPlayerGameMonthlyArchiveAsync(username, year, month).ConfigureAwait(true);
 
             return myGames;
         }

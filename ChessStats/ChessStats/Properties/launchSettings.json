@@ -2,7 +2,7 @@
   "profiles": {
     "ChessStats": {
       "commandName": "Project",
-      "commandLineArgs": "FabianoCaruana"
+      "commandLineArgs": "maxmlynek"
     }
   }
 }
