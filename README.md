@@ -15,23 +15,25 @@ chessstats [chessdotcom username]
 ```
 
 <pre>
-====================== Live Chess Report for FabianoCaruana - 19/03/2020 =======================
+======================== Live Chess Report for FabianoCaruana - 20/03/2020 =========================
 
-========== Openings Playing As White >1 (Max 15) ===========  
-  
->A00-Mieses Opening                                                          |   98
->B23-Sicilian Defense Closed                                                 |   32
->B06-Modern Defense with                                                     |   23
->C00-French Defense Knight Variation Two Knights Variation                   |   21
+======== Openings Occurring More Than Once (Max 15) ========
+
+Playing As White                                                        | Tot.
+------------------------------------------------------------------------+------
+A00-Mieses Opening                                                      |   98
+B23-Sicilian Defense Closed                                             |   32
+B06-Modern Defense with                                                 |   23
+C00-French Defense Knight Variation Two Knights Variation               |   21
 </pre>
 ...
 <pre>
-========== Openings Playing As Black >1 (Max 15) ===========
-
-A40-Queens Pawn Opening Horwitz Defense                                     |   54
-C00-French Defense Normal Variation                                         |   35
-A13-English Opening Agincourt Defense                                       |   26
-E00-Indian Game East Indian Defense                                         |   23
+Playing As Black                                                        | Tot.
+------------------------------------------------------------------------+------
+A40-Queens Pawn Opening Horwitz Defense                                 |   54
+C00-French Defense Normal Variation                                     |   35
+A13-English Opening Agincourt Defense                                   |   26
+E00-Indian Game East Indian Defense                                     |   23
 </pre>
 ...
 <pre>
