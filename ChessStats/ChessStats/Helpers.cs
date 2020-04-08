@@ -6,6 +6,26 @@ namespace ChessStats
 {
     public static class Helpers
     {
+        private static int gameCount = 0;
+        private static readonly object displayLock = new object();
+
+        public static void ProcessedDisplay(string outChar)
+        {
+            lock (displayLock)
+            {
+                if (gameCount++ > 99) { System.Console.WriteLine(); gameCount = 1; }
+                System.Console.Write(outChar);
+            }
+        }
+
+        public static void ResetDisplayCounter()
+        {
+            lock (displayLock)
+            {
+                gameCount = 0;
+            }
+        }
+
         public static void DisplaySection(string title, bool isHeader)
         {
             _ = title ?? throw new ArgumentNullException(nameof(title));
