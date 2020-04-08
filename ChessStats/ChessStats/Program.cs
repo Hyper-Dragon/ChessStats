@@ -32,12 +32,12 @@ namespace ChessStats
             string chessdotcomUsername = args[0];
             List<ChessGame> gameList = new List<ChessGame>();
             Helpers.DisplaySection($"Fetching Games for {chessdotcomUsername}", true);
-            
+
             stopwatch.Reset();
             stopwatch.Start();
 
             System.Console.WriteLine($">>Fetching CAPS Scores");
-            Dictionary<string, List<(double Caps, DateTime GameDate, int GameMonth, int GameYear)>> capsScores = new Dictionary<string, List<(double Caps, DateTime GameDate, int GameMonth, int GameYear)>>();
+            Dictionary<string, List<(double Caps, DateTime GameDate, string GameYearMonth)>> capsScores = new Dictionary<string, List<(double Caps, DateTime GameDate, string GameYearMonth)>>();
             await GetCapsScores(chessdotcomUsername, capsScores).ConfigureAwait(false);
             System.Console.WriteLine($">>Finished Processing CAPS Scores ({stopwatch.Elapsed.Hours}:{stopwatch.Elapsed.Minutes}:{stopwatch.Elapsed.Seconds}:{stopwatch.Elapsed.Milliseconds})");
 
@@ -101,22 +101,93 @@ namespace ChessStats
             DisplayOpeningsAsBlack(ecoPlayedRollupBlack);
             DisplayPlayingStats(secondsPlayedRollup);
             DisplayTimePlayedByMonth(secondsPlayedRollupMonthOnly);
-            
+
+
+
             Console.WriteLine("");
-            Helpers.DisplaySection("CAPS Scoring (Rolling Average)", false);
+            Helpers.DisplaySection("CAPS Scoring (Month Average > 4 games)", false);
+
+
+            SortedList<string, (double, double, double, double, double, double)> capsTable = new SortedList<string, (double, double, double, double, double, double)>();
+
+
+            foreach (var capsScore in capsScores)
+            {
+                var test = capsScore.Value.GroupBy(t => new { Id = t.GameYearMonth })
+                                          .Where( i => i.Count() > 4)
+                                          .Select(g => new
+                                          {
+                                              Average = Math.Round(g.Average(p => p.Caps),2),
+                                              Id = $"{capsScore.Key} {g.Key.Id}"
+                                          })
+                                          .OrderBy(o => o.Id.Split()[1])
+                                          .ThenBy(p => p.Id.Split()[2])
+                                          .ThenBy(q => q.Id.Split()[0]);
+
+               foreach(var t in test)
+                {
+                    Console.WriteLine($"{t.Id} | {t.Average}");
+                }
+
+
+            }
+
+            //List<string> capsScoresByControl = capsScores.SelectMany(i => i.).
+
+            /*
+                capsScores.Select(i => new (i.Key     )
+
+            foreach (var capsScoresByControl in capsScores.Select(i => i.Value).Where(i => i.)
+            {
+                var latestCaps = capsScore.Value.Select(x => x.Caps).ToList<double>();
+
+
+
+                if (capsScore.Value.Count > width)
+                {
+
+
+
+                    var latestCaps = capsScore.Value.Select(x => x.Caps).ToList<double>();
+
+                    List<double> averages = Enumerable.Range(0, latestCaps.Count - width - 1).
+                                      Select(i => Math.Round(latestCaps.Skip(i).Take(width).Average(), 2)).
+                                      ToList();
+
+                    //Console.WriteLine($"{capsScore.Key.PadRight(15)} | {string.Join(" | ", averages.Take(10))}");
+                
+                }
+            }
+            */
+
+
+
 
             int width = 10;
 
-            if (capsScores["rapidwhite"].Count > width)
+            Console.WriteLine("");
+            Helpers.DisplaySection($"CAPS Scoring (Rolling {width} Game Average)", false);
+
+            foreach (var capsScore in capsScores)
             {
-                var capsScoreWhite = capsScores["rapidwhite"].Select(x => x.Caps).ToList<double>();
+                if (capsScore.Value.Count > width)
+                {
+                    var latestCaps = capsScore.Value.Select(x => x.Caps).ToList<double>();
 
-                List<double> averages = Enumerable.Range(0, capsScoreWhite.Count - width - 1).
-                                  Select(i => Math.Round(capsScoreWhite.Skip(i).Take(width).Average(), 2)).
-                                  ToList();
+                    List<double> averages = Enumerable.Range(0, latestCaps.Count - width - 1).
+                                      Select(i => Math.Round(latestCaps.Skip(i).Take(width).Average(), 2)).
+                                      ToList();
 
-                Console.WriteLine($" {$"rapidwhite".PadRight(15)} | {string.Join(" | ", averages.Take(10))}");
+                    Console.WriteLine($"{capsScore.Key.PadRight(15)} | {string.Join(" | ", averages.Take(10))}");
+                }
             }
+
+
+
+
+
+
+
 
 
             DisplayTotalSecondsPlayed(totalSecondsPlayed);
@@ -127,14 +198,14 @@ namespace ChessStats
             Environment.Exit(0);
         }
 
-        private static async Task GetCapsScores(string chessdotcomUsername, Dictionary<string, List<(double Caps, DateTime GameDate, int GameMonth, int GameYear)>> capsScores)
+        private static async Task GetCapsScores(string chessdotcomUsername, Dictionary<string, List<(double Caps, DateTime GameDate, string GameYearMonth)>> capsScores)
         {
             foreach (string control in new string[] { "bullet", "blitz", "rapid" })
             {
                 foreach (string colour in new string[] { "white", "black" })
                 {
-                    string iterationKey = $"{control}{colour}";
-                    capsScores.Add(iterationKey, new List<(double Caps, DateTime GameDate, int GameMonth, int GameYear)>());
+                    string iterationKey = $"{control} {colour}";
+                    capsScores.Add(iterationKey, new List<(double Caps, DateTime GameDate, string GameYearMonth)>());
 
                     for (int page = 1; page <= 10; page++)
                     {
@@ -161,10 +232,10 @@ namespace ChessStats
                                 {
                                     double caps = double.Parse(row.SelectNodes("td[contains(@class,'archive-games-analyze-cell')]/div")[((colour == "white") ? 0 : 1)].InnerText);
                                     DateTime gameDate = DateTime.Parse(row.SelectNodes("td[contains(@class,'archive-games-date-cell')]")[0].InnerText.Trim(new char[] { ' ', '\n', '\r' }).Replace(",", ""));
-                                    int gameMonth = gameDate.Month;
-                                    int gameYear = gameDate.Year;
+                                    string GameYearMonth = $"{gameDate.Year}-{gameDate.Month.ToString().PadLeft(2, '0')}";
 
-                                    capsScores[iterationKey].Add((caps, gameDate, gameMonth, gameYear));
+
+                                    capsScores[iterationKey].Add((caps, gameDate, GameYearMonth));
                                 }
                                 catch (Exception)
                                 {
