@@ -119,7 +119,7 @@ namespace ChessStats
             SortedList<string, (double, double, double, double, double, double)> capsTable = new SortedList<string, (double, double, double, double, double, double)>();
             SortedList<string, string[]> capsTableReformat = new SortedList<string, string[]>();
 
-            foreach (var capsScore in capsScores)
+            foreach (KeyValuePair<string, List<(double Caps, DateTime GameDate, string GameYearMonth)>> capsScore in capsScores)
             {
                 foreach (var extractedScore in capsScore.Value.GroupBy(t => new { Id = t.GameYearMonth })
                                                     .Where(i => i.Count() > 4)
@@ -147,13 +147,13 @@ namespace ChessStats
                 }
             }
 
-            Console.WriteLine("                  |      Bullet     |     Blitz     |     Rapid     ");
-            Console.WriteLine("Month             |   White | Black | White | Black | White | Black ");
-            Console.WriteLine("------------------+---------+-------+-------+-------+-------+-------");
+            Console.WriteLine($"                  |      Bullet     |     Blitz     |     Rapid     ");
+            Console.WriteLine($"Month             |   White | Black | White | Black | White | Black ");
+            Console.WriteLine($"------------------+---------+-------+-------+-------+-------+-------");
 
-            foreach (var line in capsTableReformat)
+            foreach (KeyValuePair<string, string[]> line in capsTableReformat)
             {
-                Console.WriteLine($"{ line.Key.PadRight(17)} |   {string.Join(" | ", line.Value)}");
+                Console.WriteLine($"{ line.Key,-17 } |   {string.Join(" | ", line.Value)}");
             }
         }
 
@@ -166,11 +166,11 @@ namespace ChessStats
             Console.WriteLine("Control/Side      |   <-Newest                                                             Oldest-> ");
             Console.WriteLine("------------------+---------------------------------------------------------------------------------");
 
-            foreach (var capsScore in capsScores)
+            foreach (KeyValuePair<string, List<(double Caps, DateTime GameDate, string GameYearMonth)>> capsScore in capsScores)
             {
                 if (capsScore.Value.Count > width)
                 {
-                    var latestCaps = capsScore.Value.Select(x => x.Caps).ToList<double>();
+                    List<double> latestCaps = capsScore.Value.Select(x => x.Caps).ToList<double>();
 
                     List<string> averages = Enumerable.Range(0, latestCaps.Count - width - 1).
                                       Select(i => (Math.Round(latestCaps.Skip(i).Take(width).Average(), 2)).ToString().PadRight(5)).
@@ -196,25 +196,25 @@ namespace ChessStats
                         List<double> capsScoreWhite = new List<double>();
 
                         using HttpClient client = new HttpClient();
-                        HttpResponseMessage response = await client.GetAsync(new Uri($"https://www.chess.com/games/archive/{chessdotcomUsername}?color={colour}&gameOwner=other_game&gameType=live&gameTypeslive%5B%5D={control}&rated=rated&timeSort=desc&page={page.ToString()}")).ConfigureAwait(false);
+                        HttpResponseMessage response = await client.GetAsync(new Uri($"https://www.chess.com/games/archive/{chessdotcomUsername}?color={colour}&gameOwner=other_game&gameType=live&gameTypeslive%5B%5D={control}&rated=rated&timeSort=desc&page={page}")).ConfigureAwait(false);
                         string pageContents = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
 
                         HtmlDocument pageDocument = new HtmlDocument();
                         pageDocument.LoadHtml(pageContents);
 
-                        HtmlNodeCollection xxx = pageDocument.DocumentNode.SelectNodes("//*[contains(@class,'archive-games-table')]");
+                        HtmlNodeCollection nodeCollection = pageDocument.DocumentNode.SelectNodes("//*[contains(@class,'archive-games-table')]");
 
-                        if (xxx == null || xxx[0].InnerText.Contains("No results found."))
+                        if (nodeCollection == null || nodeCollection[0].InnerText.Contains("No results found."))
                         {
                             break;
                         }
                         else
                         {
-                            foreach (HtmlNode row in xxx[0].SelectNodes("//tr[contains(@class,'v-board-popover')]").Cast<HtmlNode>())
+                            foreach (HtmlNode row in nodeCollection[0].SelectNodes("//tr[contains(@class,'v-board-popover')]").Cast<HtmlNode>())
                             {
                                 try
                                 {
-                                    double caps = double.Parse(row.SelectNodes("td[contains(@class,'archive-games-analyze-cell')]/div")[((colour == "white") ? 0 : 1)].InnerText);
+                                    double caps = double.Parse(row.SelectNodes("td[contains(@class,'archive-games-analyze-cell')]/div")[(colour == "white") ? 0 : 1].InnerText);
                                     DateTime gameDate = DateTime.Parse(row.SelectNodes("td[contains(@class,'archive-games-date-cell')]")[0].InnerText.Trim(new char[] { ' ', '\n', '\r' }).Replace(",", ""));
                                     string GameYearMonth = $"{gameDate.Year}-{gameDate.Month.ToString().PadLeft(2, '0')}";
 
@@ -245,10 +245,10 @@ namespace ChessStats
                     isWin = null;
                     break;
                 case "1-0":
-                    isWin = (side == "White" ? true : false);
+                    isWin = side == "White";
                     break;
                 case "0-1":
-                    isWin = (side == "White" ? false : true);
+                    isWin = side != "White";
                     break;
                 default:
                     throw new Exception($"Unrecorded game result found");
@@ -309,7 +309,7 @@ namespace ChessStats
             _ = DateTime.TryParseExact($"{gameStartDate} {gameStartTime}", "yyyy.MM.dd HH:mm:ss", null, DateTimeStyles.AssumeUniversal, out parsedStartDate);
             _ = DateTime.TryParseExact($"{gameEndDate} {gameEndTime}", "yyyy.MM.dd HH:mm:ss", null, DateTimeStyles.AssumeUniversal, out DateTime parsedEndDate);
             seconds = System.Math.Abs((parsedEndDate - parsedStartDate).TotalSeconds);
-            gameTime = $"{game.TimeClass.PadRight(6, ' ')}{((game.IsRatedGame) ? "   " : " NR")}";
+            gameTime = $"{game.TimeClass,-6}{((game.IsRatedGame) ? "   " : " NR")}";
         }
 
         private static void CalculateOpening(SortedList<string, int> ecoPlayedRollupWhite, SortedList<string, int> ecoPlayedRollupBlack, ChessGame game, string side)
@@ -349,7 +349,7 @@ namespace ChessStats
             foreach (KeyValuePair<string, int> ecoCount in ecoPlayedRollupWhite.OrderByDescending(uses => uses.Value).Take(15))
             {
                 if (ecoCount.Value < 2) { break; }
-                Console.WriteLine($"{ecoCount.Key.PadRight(71, ' ')} | {ecoCount.Value.ToString(CultureInfo.CurrentCulture).PadLeft(4)}");
+                Console.WriteLine($"{ecoCount.Key,-71} | {ecoCount.Value.ToString(CultureInfo.CurrentCulture),4}");
             }
         }
 
@@ -363,7 +363,7 @@ namespace ChessStats
             foreach (KeyValuePair<string, int> ecoCount in ecoPlayedRollupBlack.OrderByDescending(uses => uses.Value).Take(15))
             {
                 if (ecoCount.Value < 2) { break; }
-                Console.WriteLine($"{ecoCount.Key.PadRight(71, ' ')} | {ecoCount.Value.ToString(CultureInfo.CurrentCulture).PadLeft(4)}");
+                Console.WriteLine($"{ecoCount.Key,-71} | {ecoCount.Value.ToString(CultureInfo.CurrentCulture),4}");
             }
         }
 
@@ -384,8 +384,8 @@ namespace ChessStats
 
                 lastLine = rolledUp.Key.Substring(0, 10);
                 TimeSpan timeMonth = TimeSpan.FromSeconds(rolledUp.Value.SecondsPlayed);
-                System.Console.WriteLine($"{rolledUp.Key.PadRight(17, ' ')} | " +
-                                         $"{((int)timeMonth.TotalHours).ToString(CultureInfo.CurrentCulture).PadLeft(3, ' ')}:{ timeMonth.Minutes.ToString(CultureInfo.CurrentCulture).PadLeft(2, '0')}:{ timeMonth.Seconds.ToString(CultureInfo.CurrentCulture).PadLeft(2, '0')} | " +
+                System.Console.WriteLine($"{rolledUp.Key,-17} | " +
+                                         $"{((int)timeMonth.TotalHours).ToString(CultureInfo.CurrentCulture),3}:{ timeMonth.Minutes.ToString(CultureInfo.CurrentCulture).PadLeft(2, '0')}:{ timeMonth.Seconds.ToString(CultureInfo.CurrentCulture).PadLeft(2, '0')} | " +
                                          $"{rolledUp.Value.MinRating.ToString(CultureInfo.CurrentCulture).PadLeft(4).Replace("   0", "   -", true, CultureInfo.InvariantCulture)} | " +
                                          $"{rolledUp.Value.MaxRating.ToString(CultureInfo.CurrentCulture).PadLeft(4).Replace("   0", "   -", true, CultureInfo.InvariantCulture)} | " +
                                          $"{(rolledUp.Value.MaxRating - rolledUp.Value.MinRating).ToString(CultureInfo.CurrentCulture).PadLeft(4).Replace("   0", "   -", true, CultureInfo.InvariantCulture)} | " +
@@ -410,8 +410,8 @@ namespace ChessStats
             foreach (KeyValuePair<string, dynamic> rolledUp in secondsPlayedRollupMonthOnly)
             {
                 TimeSpan timeMonth = TimeSpan.FromSeconds(rolledUp.Value);
-                System.Console.WriteLine($"{rolledUp.Key.PadRight(17, ' ')} | " +
-                                         $"{((int)timeMonth.TotalHours).ToString(CultureInfo.CurrentCulture).PadLeft(3, ' ')}:{ timeMonth.Minutes.ToString(CultureInfo.CurrentCulture).PadLeft(2, '0')}:{ timeMonth.Seconds.ToString(CultureInfo.CurrentCulture).PadLeft(2, '0')}");
+                System.Console.WriteLine($"{rolledUp.Key,-17} | " +
+                                         $"{((int)timeMonth.TotalHours).ToString(CultureInfo.CurrentCulture),3}:{ timeMonth.Minutes.ToString(CultureInfo.CurrentCulture).PadLeft(2, '0')}:{ timeMonth.Seconds.ToString(CultureInfo.CurrentCulture).PadLeft(2, '0')}");
             }
         }
 
@@ -420,7 +420,7 @@ namespace ChessStats
             Console.WriteLine("");
             Helpers.DisplaySection("Total Play Time (Live Chess)", false);
             TimeSpan time = TimeSpan.FromSeconds(totalSecondsPlayed);
-            Console.WriteLine($"Time Played (hh:mm:ss): {((int)time.TotalHours).ToString(CultureInfo.CurrentCulture).PadLeft(3, ' ')}:{ time.Minutes.ToString(CultureInfo.CurrentCulture).PadLeft(2, '0')}:{ time.Seconds.ToString(CultureInfo.CurrentCulture).PadLeft(2, '0')}");
+            Console.WriteLine($"Time Played (hh:mm:ss): {((int)time.TotalHours).ToString(CultureInfo.CurrentCulture),3}:{ time.Minutes.ToString(CultureInfo.CurrentCulture).PadLeft(2, '0')}:{ time.Seconds.ToString(CultureInfo.CurrentCulture).PadLeft(2, '0')}");
             Console.WriteLine("");
         }
     }
