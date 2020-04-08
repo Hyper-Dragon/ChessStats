@@ -1,9 +1,11 @@
 ﻿using ChessStats.Data;
+using HtmlAgilityPack;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
+using System.Net.Http;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using static ChessStats.Data.GameHeader;
@@ -17,7 +19,6 @@ namespace ChessStats
 #pragma warning restore CS1998 // Async method lacks 'await' operators and will run synchronously
         {
             Stopwatch stopwatch = new Stopwatch();
-
             Helpers.DisplayLogo();
 
             if (args.Length != 1)
@@ -31,6 +32,18 @@ namespace ChessStats
             string chessdotcomUsername = args[0];
             List<ChessGame> gameList = new List<ChessGame>();
             Helpers.DisplaySection($"Fetching Games for {chessdotcomUsername}", true);
+            
+            stopwatch.Reset();
+            stopwatch.Start();
+
+            System.Console.WriteLine($">>Fetching CAPS Scores");
+            Dictionary<string, List<(double Caps, DateTime GameDate, int GameMonth, int GameYear)>> capsScores = new Dictionary<string, List<(double Caps, DateTime GameDate, int GameMonth, int GameYear)>>();
+            await GetCapsScores(chessdotcomUsername, capsScores).ConfigureAwait(false);
+            System.Console.WriteLine($">>Finished Processing CAPS Scores ({stopwatch.Elapsed.Hours}:{stopwatch.Elapsed.Minutes}:{stopwatch.Elapsed.Seconds}:{stopwatch.Elapsed.Milliseconds})");
+
+            stopwatch.Reset();
+            stopwatch.Start();
+
             System.Console.WriteLine($">>Starting ChessDotCom Fetch");
 
             try
@@ -88,12 +101,80 @@ namespace ChessStats
             DisplayOpeningsAsBlack(ecoPlayedRollupBlack);
             DisplayPlayingStats(secondsPlayedRollup);
             DisplayTimePlayedByMonth(secondsPlayedRollupMonthOnly);
+            
+            Console.WriteLine("");
+            Helpers.DisplaySection("CAPS Scoring (Rolling Average)", false);
+
+            int width = 10;
+
+            if (capsScores["rapidwhite"].Count > width)
+            {
+                var capsScoreWhite = capsScores["rapidwhite"].Select(x => x.Caps).ToList<double>();
+
+                List<double> averages = Enumerable.Range(0, capsScoreWhite.Count - width - 1).
+                                  Select(i => Math.Round(capsScoreWhite.Skip(i).Take(width).Average(), 2)).
+                                  ToList();
+
+                Console.WriteLine($" {$"rapidwhite".PadRight(15)} | {string.Join(" | ", averages.Take(10))}");
+            }
+
+
             DisplayTotalSecondsPlayed(totalSecondsPlayed);
             Helpers.DisplaySection("End of Report", true);
 
             Console.WriteLine("");
             Helpers.PressToContinueIfDebug();
             Environment.Exit(0);
+        }
+
+        private static async Task GetCapsScores(string chessdotcomUsername, Dictionary<string, List<(double Caps, DateTime GameDate, int GameMonth, int GameYear)>> capsScores)
+        {
+            foreach (string control in new string[] { "bullet", "blitz", "rapid" })
+            {
+                foreach (string colour in new string[] { "white", "black" })
+                {
+                    string iterationKey = $"{control}{colour}";
+                    capsScores.Add(iterationKey, new List<(double Caps, DateTime GameDate, int GameMonth, int GameYear)>());
+
+                    for (int page = 1; page <= 10; page++)
+                    {
+                        List<double> capsScoreWhite = new List<double>();
+
+                        using HttpClient client = new HttpClient();
+                        HttpResponseMessage response = await client.GetAsync(new Uri($"https://www.chess.com/games/archive/{chessdotcomUsername}?color={colour}&gameOwner=other_game&gameType=live&gameTypeslive%5B%5D={control}&rated=rated&timeSort=desc&page={page.ToString()}")).ConfigureAwait(false);
+                        string pageContents = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+
+                        HtmlDocument pageDocument = new HtmlDocument();
+                        pageDocument.LoadHtml(pageContents);
+
+                        HtmlNodeCollection xxx = pageDocument.DocumentNode.SelectNodes("//*[contains(@class,'archive-games-table')]");
+
+                        if (xxx == null || xxx[0].InnerText.Contains("No results found."))
+                        {
+                            break;
+                        }
+                        else
+                        {
+                            foreach (HtmlNode row in xxx[0].SelectNodes("//tr[contains(@class,'v-board-popover')]").Cast<HtmlNode>())
+                            {
+                                try
+                                {
+                                    double caps = double.Parse(row.SelectNodes("td[contains(@class,'archive-games-analyze-cell')]/div")[((colour == "white") ? 0 : 1)].InnerText);
+                                    DateTime gameDate = DateTime.Parse(row.SelectNodes("td[contains(@class,'archive-games-date-cell')]")[0].InnerText.Trim(new char[] { ' ', '\n', '\r' }).Replace(",", ""));
+                                    int gameMonth = gameDate.Month;
+                                    int gameYear = gameDate.Year;
+
+                                    capsScores[iterationKey].Add((caps, gameDate, gameMonth, gameYear));
+                                }
+                                catch (Exception)
+                                {
+                                    //Console.WriteLine(ex.ToString()); 
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Globalization", "CA1303:Do not pass literals as localized parameters", Justification = "<Pending>")]
