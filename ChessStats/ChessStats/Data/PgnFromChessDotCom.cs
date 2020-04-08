@@ -7,21 +7,10 @@ namespace ChessStats.Data
 {
     public static class PgnFromChessDotCom
     {
-        private static int gameCount = 0;
-        private static readonly object displayLock = new object();
-
-        private static void ProcessedDisplay(string outChar)
-        {
-            lock (displayLock)
-            {
-                if (gameCount++ > 99) { System.Console.WriteLine(); gameCount = 1; }
-                System.Console.Write(outChar);
-            }
-        }
-
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "<Pending>")]
         public static List<ChessGame> FetchGameRecordsForUser(string username)
         {
+            Helpers.ResetDisplayCounter();
             List<ChessGame> PgnList = new List<ChessGame>();
 
             Task<ArchivedGamesList> t = GetPlayerMonthlyArchive(username);
@@ -40,7 +29,7 @@ namespace ChessStats.Data
 
                         if (game.Rules == GameVariant.Chess)
                         {
-                            ProcessedDisplay(".");
+                            Helpers.ProcessedDisplay(".");
 
                             PgnList.Add(new ChessGame()
                             {
@@ -57,13 +46,13 @@ namespace ChessStats.Data
                         }
                         else
                         {
-                            ProcessedDisplay("X");
+                            Helpers.ProcessedDisplay("X");
                         }
                     }
                 }
                 catch
                 {
-                    ProcessedDisplay("E");
+                    Helpers.ProcessedDisplay("E");
                 }
             });
 
