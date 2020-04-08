@@ -101,32 +101,7 @@ namespace ChessStats
             DisplayOpeningsAsBlack(ecoPlayedRollupBlack);
             DisplayPlayingStats(secondsPlayedRollup);
             DisplayTimePlayedByMonth(secondsPlayedRollupMonthOnly);
-
-
-
-            Console.WriteLine("");
-            Helpers.DisplaySection("CAPS Scoring (Month Average > 4 games)", false);
-
-            SortedList<string, (double, double, double, double, double, double)> capsTable = new SortedList<string, (double, double, double, double, double, double)>();
-            foreach (var capsScore in capsScores)
-            {
-                var test = capsScore.Value.GroupBy(t => new { Id = t.GameYearMonth })
-                                          .Where(i => i.Count() > 4)
-                                          .Select(g => new
-                                          {
-                                              Average = Math.Round(g.Average(p => p.Caps), 2),
-                                              Id = $"{capsScore.Key} {g.Key.Id}"
-                                          })
-                                          .OrderBy(o => o.Id.Split()[1])
-                                          .ThenBy(p => p.Id.Split()[2])
-                                          .ThenBy(q => q.Id.Split()[0]);
-
-                foreach (var t in test)
-                {
-                    Console.WriteLine($"{t.Id} | {t.Average}");
-                }
-            }
-
+            DisplayCapsTable(capsScores);
             DisplayCapsRollingAverage(capsScores);
             DisplayTotalSecondsPlayed(totalSecondsPlayed);
             Helpers.DisplaySection("End of Report", true);
@@ -134,6 +109,52 @@ namespace ChessStats
             Console.WriteLine("");
             Helpers.PressToContinueIfDebug();
             Environment.Exit(0);
+        }
+
+        private static void DisplayCapsTable(Dictionary<string, List<(double Caps, DateTime GameDate, string GameYearMonth)>> capsScores)
+        {
+            Console.WriteLine("");
+            Helpers.DisplaySection("CAPS Scoring (Month Average > 4 games)", false);
+
+            SortedList<string, (double, double, double, double, double, double)> capsTable = new SortedList<string, (double, double, double, double, double, double)>();
+            SortedList<string, string[]> capsTableReformat = new SortedList<string, string[]>();
+
+            foreach (var capsScore in capsScores)
+            {
+                foreach (var extractedScore in capsScore.Value.GroupBy(t => new { Id = t.GameYearMonth })
+                                                    .Where(i => i.Count() > 4)
+                                                    .Select(g => new
+                                                    {
+                                                        Average = (Math.Round(g.Average(p => p.Caps), 2)).ToString().PadRight(5, ' '),
+                                                        Month = g.Key.Id,
+                                                        Control = capsScore.Key.Split()[0],
+                                                        Side = capsScore.Key.Split()[1],
+                                                        Id = $"{capsScore.Key} {g.Key.Id}"
+                                                    }))
+                {
+
+                    if (!capsTableReformat.ContainsKey(extractedScore.Month))
+                    {
+                        capsTableReformat.Add(extractedScore.Month, new string[] { "  -  ", "  -  ", "  -  ", "  -  ", "  -  ", "  -  " });
+                    }
+
+                    capsTableReformat[extractedScore.Month][extractedScore.Control switch
+                    {
+                        "bullet" => extractedScore.Side == "white" ? 0 : 1,
+                        "blitz" => extractedScore.Side == "white" ? 2 : 3,
+                        _ => extractedScore.Side == "white" ? 4 : 5,
+                    }] = extractedScore.Average;
+                }
+            }
+
+            Console.WriteLine("                  |      Bullet     |     Blitz     |     Rapid     ");
+            Console.WriteLine("Month             |   White | Black | White | Black | White | Black ");
+            Console.WriteLine("------------------+---------+-------+-------+-------+-------+-------");
+
+            foreach (var line in capsTableReformat)
+            {
+                Console.WriteLine($"{ line.Key.PadRight(17)} |   {string.Join(" | ", line.Value)}");
+            }
         }
 
         private static void DisplayCapsRollingAverage(Dictionary<string, List<(double Caps, DateTime GameDate, string GameYearMonth)>> capsScores)
