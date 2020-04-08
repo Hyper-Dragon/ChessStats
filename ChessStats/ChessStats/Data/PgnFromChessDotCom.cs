@@ -1,5 +1,4 @@
 ﻿using ChessDotComSharp.Models;
-using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Threading.Tasks;
@@ -73,16 +72,15 @@ namespace ChessStats.Data
 
         private static async System.Threading.Tasks.Task<ArchivedGamesList> GetPlayerMonthlyArchive(string username)
         {
-            ChessDotComSharp.ChessDotComClient client = new ChessDotComSharp.ChessDotComClient();
+            using ChessDotComSharp.ChessDotComClient client = new ChessDotComSharp.ChessDotComClient();
             ArchivedGamesList myGames = await client.GetPlayerGameArchivesAsync(username).ConfigureAwait(true);
             return myGames;
         }
 
         private static async System.Threading.Tasks.Task<PlayerArchivedGames> GetAllPlayerMonthlyGames(string username, int year, int month)
         {
-            ChessDotComSharp.ChessDotComClient client = new ChessDotComSharp.ChessDotComClient();
+            using ChessDotComSharp.ChessDotComClient client = new ChessDotComSharp.ChessDotComClient();
             PlayerArchivedGames myGames = await client.GetPlayerGameMonthlyArchiveAsync(username, year, month).ConfigureAwait(true);
-
             return myGames;
         }
     }
