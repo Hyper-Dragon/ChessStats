@@ -107,66 +107,43 @@ namespace ChessStats
             Console.WriteLine("");
             Helpers.DisplaySection("CAPS Scoring (Month Average > 4 games)", false);
 
-
             SortedList<string, (double, double, double, double, double, double)> capsTable = new SortedList<string, (double, double, double, double, double, double)>();
-
-
             foreach (var capsScore in capsScores)
             {
                 var test = capsScore.Value.GroupBy(t => new { Id = t.GameYearMonth })
-                                          .Where( i => i.Count() > 4)
+                                          .Where(i => i.Count() > 4)
                                           .Select(g => new
                                           {
-                                              Average = Math.Round(g.Average(p => p.Caps),2),
+                                              Average = Math.Round(g.Average(p => p.Caps), 2),
                                               Id = $"{capsScore.Key} {g.Key.Id}"
                                           })
                                           .OrderBy(o => o.Id.Split()[1])
                                           .ThenBy(p => p.Id.Split()[2])
                                           .ThenBy(q => q.Id.Split()[0]);
 
-               foreach(var t in test)
+                foreach (var t in test)
                 {
                     Console.WriteLine($"{t.Id} | {t.Average}");
                 }
-
-
             }
 
-            //List<string> capsScoresByControl = capsScores.SelectMany(i => i.).
-
-            /*
-                capsScores.Select(i => new (i.Key     )
-
-            foreach (var capsScoresByControl in capsScores.Select(i => i.Value).Where(i => i.)
-            {
-                var latestCaps = capsScore.Value.Select(x => x.Caps).ToList<double>();
-
-
-
-                if (capsScore.Value.Count > width)
-                {
-
-
-
-                    var latestCaps = capsScore.Value.Select(x => x.Caps).ToList<double>();
-
-                    List<double> averages = Enumerable.Range(0, latestCaps.Count - width - 1).
-                                      Select(i => Math.Round(latestCaps.Skip(i).Take(width).Average(), 2)).
-                                      ToList();
-
-                    //Console.WriteLine($"{capsScore.Key.PadRight(15)} | {string.Join(" | ", averages.Take(10))}");
-                
-                }
-            }
-            */
-
-
-
-
-            int width = 10;
+            DisplayCapsRollingAverage(capsScores);
+            DisplayTotalSecondsPlayed(totalSecondsPlayed);
+            Helpers.DisplaySection("End of Report", true);
 
             Console.WriteLine("");
+            Helpers.PressToContinueIfDebug();
+            Environment.Exit(0);
+        }
+
+        private static void DisplayCapsRollingAverage(Dictionary<string, List<(double Caps, DateTime GameDate, string GameYearMonth)>> capsScores)
+        {
+            int width = 10;
+            Console.WriteLine("");
             Helpers.DisplaySection($"CAPS Scoring (Rolling {width} Game Average)", false);
+
+            Console.WriteLine("Control/Side      |   <-Newest                                                             Oldest-> ");
+            Console.WriteLine("------------------+---------------------------------------------------------------------------------");
 
             foreach (var capsScore in capsScores)
             {
@@ -174,28 +151,14 @@ namespace ChessStats
                 {
                     var latestCaps = capsScore.Value.Select(x => x.Caps).ToList<double>();
 
-                    List<double> averages = Enumerable.Range(0, latestCaps.Count - width - 1).
-                                      Select(i => Math.Round(latestCaps.Skip(i).Take(width).Average(), 2)).
+                    List<string> averages = Enumerable.Range(0, latestCaps.Count - width - 1).
+                                      Select(i => (Math.Round(latestCaps.Skip(i).Take(width).Average(), 2)).ToString().PadRight(5)).
                                       ToList();
 
-                    Console.WriteLine($"{capsScore.Key.PadRight(15)} | {string.Join(" | ", averages.Take(10))}");
+
+                    Console.WriteLine($"{ CultureInfo.CurrentCulture.TextInfo.ToTitleCase(capsScore.Key.PadRight(17))} |   {string.Join(" | ", averages.Take(10))}");
                 }
             }
-
-
-
-
-
-
-
-
-
-            DisplayTotalSecondsPlayed(totalSecondsPlayed);
-            Helpers.DisplaySection("End of Report", true);
-
-            Console.WriteLine("");
-            Helpers.PressToContinueIfDebug();
-            Environment.Exit(0);
         }
 
         private static async Task GetCapsScores(string chessdotcomUsername, Dictionary<string, List<(double Caps, DateTime GameDate, string GameYearMonth)>> capsScores)
