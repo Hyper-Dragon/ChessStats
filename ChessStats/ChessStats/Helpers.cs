@@ -56,7 +56,7 @@ namespace ChessStats
             Console.WriteLine(@"    |__|           \/      \/      \/      \/      \/             \/             \/for Chess.com\/  ");
             Console.WriteLine(@"   /____\                                                                                           ");
             Console.WriteLine(@"  (______)                                                                                          ");
-            Console.WriteLine(@" (________)   Hyper-Dragon :: Version 0.3 :: 03/2020 :: https://github.com/Hyper-Dragon/ChessStats  ");
+            Console.WriteLine(@" (________)   Hyper-Dragon :: Version 0.4 :: 04/2020 :: https://github.com/Hyper-Dragon/ChessStats  ");
             Console.WriteLine(@"                                                                                                    ");
         }
     }
