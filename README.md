@@ -3,6 +3,8 @@
 ## Usage
 ChessStats is a console app used to retrieve monthly play time, ratings and top openings for any chessdotcom user. Note that variant game types are not included in the stats (displayed as 'X' during game retrieval) and unrated game ('NR') information is time only. 
 
+The version 0.4 update includes CAPS averages broken down by time control.  These are available for games that have been analysed on the chess.com website (games with no analysis are marked with '-' on ingest).  
+
 If you find this useful and want to say thanks just send me a fun trophy over on chess.com :smiley:
 
 ```
@@ -50,14 +52,43 @@ Blitz     2016-02 |   2:37:17 | 2651 | 2737 |   86 | 2481 | 2506 | 2511 |    9 |
 </pre>
 ...
 <pre>
-=================== Time Played by Month ===================
+========= Time Played by Month (All Time Controls) =========
 
-Month                  | Play Time
------------------------+-----------
-2013-03                |  24:48:19
-2013-04                |   8:01:49
-2013-05                |   1:55:51
-2013-06                |   3:05:15
+Month             |  Play Time  | Cumulative  |  For Year
+------------------+-------------+-------------+-------------
+2013-03           |    24:48:19 |    24:48:19 |    24:48:19
+2013-04           |     8:01:49 |    32:50:08 |    32:50:08
+2013-05           |     1:55:51 |    34:45:59 |    34:45:59
+2013-06           |     3:05:15 |    37:51:14 |    37:51:14
+2013-12           |     0:51:21 |    38:42:35 |    38:42:35
+------------------+-------------+-------------+-------------
+2014-05           |     2:10:52 |    40:53:27 |     2:10:52
+------------------+-------------+-------------+-------------
+2016-02           |     3:02:01 |    43:55:28 |     3:02:01
+</pre>
+...
+<pre>
+========== CAPS Scoring (Month Average > 4 Games) ==========
+
+                  |      Bullet     |     Blitz     |     Rapid
+Month             |   White | Black | White | Black | White | Black
+------------------+---------+-------+-------+-------+-------+-------
+2013-03           |   77.5  |   -   |   -   |   -   |   -   |   -
+2017-08           |     -   | 88.44 | 90.09 | 97.13 |   -   |   -
+2018-12           |     -   |   -   | 92.45 | 93.46 |   -   |   -
+2019-08           |     -   |   -   |   -   |   -   | 94.43 | 96.17
+2020-04           |     -   |   -   | 94.94 |   -   |   -   |   -
+</pre>
+...
+<pre>
+========== CAPS Scoring (Rolling 10 Game Average) ==========
+
+Control/Side      |   <-Newest                                                             Oldest->
+------------------+---------------------------------------------------------------------------------
+Bullet White      |   93.08 | 93.4  | 92.63 | 93.64 | 92.79 | 90.5  | 89.78
+Bullet Black      |   88.67 | 86.87 | 88.1  | 87.75
+Blitz White       |   88.78 | 88.17 | 87.76 | 87.79 | 87.59 | 87.27 | 89.86 | 89.97 | 89.42 | 92.45
+Blitz Black       |   90.77 | 91.44 | 90.7  | 91.03 | 90.57 | 91.06 | 91.68 | 91.08 | 93.68 | 93.47
 </pre>
 ...
 <pre>
