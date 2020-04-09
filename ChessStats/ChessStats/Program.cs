@@ -115,7 +115,7 @@ namespace ChessStats
         private static void DisplayCapsTable(Dictionary<string, List<(double Caps, DateTime GameDate, string GameYearMonth)>> capsScores)
         {
             Console.WriteLine("");
-            Helpers.DisplaySection("CAPS Scoring (Month Average > 4 games)", false);
+            Helpers.DisplaySection("CAPS Scoring (Month Average > 4 Games)", false);
 
             SortedList<string, (double, double, double, double, double, double)> capsTable = new SortedList<string, (double, double, double, double, double, double)>();
             SortedList<string, string[]> capsTableReformat = new SortedList<string, string[]>();
