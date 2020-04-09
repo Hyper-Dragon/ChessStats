@@ -52,6 +52,10 @@ namespace ChessStats.Data
                                     Helpers.ProcessedDisplay(".");
                                     capsScores[iterationKey].Add((caps, gameDate, GameYearMonth));
                                 }
+                                catch (System.NullReferenceException)
+                                {
+                                    Helpers.ProcessedDisplay("-");
+                                }
                                 catch
                                 {
                                     Helpers.ProcessedDisplay("E");

@@ -36,11 +36,11 @@ namespace ChessStats
             stopwatch.Reset();
             stopwatch.Start();
 
-            Console.WriteLine($">>Fetching CAPS Scores");
+            Console.WriteLine($">>Fetching and Processing Available CAPS Scores");
 
             Dictionary<string, List<(double Caps, DateTime GameDate, string GameYearMonth)>> capsScores = await CapsFromChessDotCom.GetCapsScores(chessdotcomUsername, MAX_CAPS_PAGES).ConfigureAwait(false);
             Console.WriteLine();
-            Console.WriteLine($">>Finished Processing CAPS Scores ({stopwatch.Elapsed.Hours}:{stopwatch.Elapsed.Minutes}:{stopwatch.Elapsed.Seconds}:{stopwatch.Elapsed.Milliseconds})");
+            Console.WriteLine($">>Finished Fetching and Processing Available CAPS Scores ({stopwatch.Elapsed.Hours}:{stopwatch.Elapsed.Minutes}:{stopwatch.Elapsed.Seconds}:{stopwatch.Elapsed.Milliseconds})");
 
             stopwatch.Reset();
             stopwatch.Start();
@@ -323,7 +323,7 @@ namespace ChessStats
         private static void DisplayPlayingStats(SortedList<string, (int SecondsPlayed, int GameCount, int Win, int Loss, int Draw, int MinRating, int MaxRating, int OpponentMinRating, int OpponentMaxRating, int OpponentBestWin)> secondsPlayedRollup)
         {
             Console.WriteLine("");
-            Helpers.DisplaySection("Time Played by Time Class/Month", false);
+            Helpers.DisplaySection("Time Played by Time Control/Month", false);
             Console.WriteLine("Time Class/Month  | Play Time | Rating Min/Max/+-  | Vs Min/BestWin/Max | Win  | Loss | Draw | Tot. ");
             string lastLine = "";
 
@@ -356,14 +356,31 @@ namespace ChessStats
         private static void DisplayTimePlayedByMonth(SortedList<string, dynamic> secondsPlayedRollupMonthOnly)
         {
             Console.WriteLine("");
-            Helpers.DisplaySection("Time Played by Month", false);
-            Console.WriteLine("Month             | Play Time ");
-            Console.WriteLine("------------------+-----------");
+            Helpers.DisplaySection("Time Played by Month (All Time Controls)", false);
+            Console.WriteLine("Month             |  Play Time  | Cumulative  |  For Year ");
+
+            TimeSpan cumulativeTime = new TimeSpan(0);
+            TimeSpan cumulativeTimeForYear = new TimeSpan(0);
+            string currentYear = "";
+
             foreach (KeyValuePair<string, dynamic> rolledUp in secondsPlayedRollupMonthOnly)
             {
+                if (rolledUp.Key.Substring(0, 4) != currentYear)
+                {
+                    Console.WriteLine("------------------+-------------+-------------+-------------");
+                    currentYear = rolledUp.Key.Substring(0, 4);
+                    cumulativeTimeForYear = new TimeSpan(0);
+                }
+
                 TimeSpan timeMonth = TimeSpan.FromSeconds(rolledUp.Value);
-                System.Console.WriteLine($"{rolledUp.Key,-17} | " +
-                                         $"{((int)timeMonth.TotalHours).ToString(CultureInfo.CurrentCulture),3}:{ timeMonth.Minutes.ToString(CultureInfo.CurrentCulture).PadLeft(2, '0')}:{ timeMonth.Seconds.ToString(CultureInfo.CurrentCulture).PadLeft(2, '0')}");
+                cumulativeTime += timeMonth;
+                cumulativeTimeForYear += timeMonth;
+
+                Console.WriteLine($"{rolledUp.Key,-17} | " +
+                                  $"{((int)timeMonth.TotalHours).ToString(CultureInfo.CurrentCulture),5}:{ timeMonth.Minutes.ToString(CultureInfo.CurrentCulture).PadLeft(2, '0')}:{ timeMonth.Seconds.ToString(CultureInfo.CurrentCulture).PadLeft(2, '0')} | " +
+                                  $"{((int)cumulativeTime.TotalHours).ToString(CultureInfo.CurrentCulture),5}:{ cumulativeTime.Minutes.ToString(CultureInfo.CurrentCulture).PadLeft(2, '0')}:{ cumulativeTime.Seconds.ToString(CultureInfo.CurrentCulture).PadLeft(2, '0')} | " +
+                                  $"{((int)cumulativeTimeForYear.TotalHours).ToString(CultureInfo.CurrentCulture),5}:{ cumulativeTimeForYear.Minutes.ToString(CultureInfo.CurrentCulture).PadLeft(2, '0')}:{ cumulativeTimeForYear.Seconds.ToString(CultureInfo.CurrentCulture).PadLeft(2, '0')}"
+                                  );
             }
         }
 
@@ -372,7 +389,7 @@ namespace ChessStats
             Console.WriteLine("");
             Helpers.DisplaySection("Total Play Time (Live Chess)", false);
             TimeSpan time = TimeSpan.FromSeconds(totalSecondsPlayed);
-            Console.WriteLine($"Time Played (hh:mm:ss): {((int)time.TotalHours).ToString(CultureInfo.CurrentCulture),3}:{ time.Minutes.ToString(CultureInfo.CurrentCulture).PadLeft(2, '0')}:{ time.Seconds.ToString(CultureInfo.CurrentCulture).PadLeft(2, '0')}");
+            Console.WriteLine($"Time Played (hh:mm:ss): {((int)time.TotalHours).ToString(CultureInfo.CurrentCulture),6}:{ time.Minutes.ToString(CultureInfo.CurrentCulture).PadLeft(2, '0')}:{ time.Seconds.ToString(CultureInfo.CurrentCulture).PadLeft(2, '0')}");
             Console.WriteLine("");
         }
     }
