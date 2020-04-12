@@ -3,7 +3,9 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
+using System.IO;
 using System.Linq;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using static ChessStats.Data.GameHeader;
@@ -18,54 +20,60 @@ namespace ChessStats
         {
             const int MAX_CAPS_PAGES = 10;
 
+            //Set up data directories
+            DirectoryInfo applicationPath = new DirectoryInfo(Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName));
+            DirectoryInfo resultsDir = applicationPath.CreateSubdirectory("ChessStatsResults");
+            DirectoryInfo cacheDir = applicationPath.CreateSubdirectory("ChessStatsCache-V0.5");
+
             Stopwatch stopwatch = new Stopwatch();
             Helpers.DisplayLogo();
 
             if (args.Length != 1)
             {
-                System.Console.WriteLine($">>ChessDotCom Fetch Failed");
-                System.Console.WriteLine($"  You must specify a single valid chess.com username");
-                System.Console.WriteLine();
+                Console.WriteLine($">>ChessDotCom Fetch Failed");
+                Console.WriteLine($"  You must specify a single valid chess.com username");
+                Console.WriteLine();
                 Environment.Exit(-2);
             }
 
             string chessdotcomUsername = args[0];
-            List<ChessGame> gameList = new List<ChessGame>();
-            Helpers.DisplaySection($"Fetching Games for {chessdotcomUsername}", true);
 
             stopwatch.Reset();
             stopwatch.Start();
 
+            Helpers.DisplaySection($"Fetching Data for {chessdotcomUsername}", true);
+
             Console.WriteLine($">>Fetching and Processing Available CAPS Scores");
 
             Dictionary<string, List<(double Caps, DateTime GameDate, string GameYearMonth)>> capsScores = await CapsFromChessDotCom.GetCapsScores(chessdotcomUsername, MAX_CAPS_PAGES).ConfigureAwait(false);
+
             Console.WriteLine();
             Console.WriteLine($">>Finished Fetching and Processing Available CAPS Scores ({stopwatch.Elapsed.Hours}:{stopwatch.Elapsed.Minutes}:{stopwatch.Elapsed.Seconds}:{stopwatch.Elapsed.Milliseconds})");
 
             stopwatch.Reset();
             stopwatch.Start();
 
-            Console.WriteLine($">>Starting ChessDotCom Fetch");
+            List<ChessGame> gameList = new List<ChessGame>();
+            Console.WriteLine($">>Fetching Games From Chess.Com");
 
             try
             {
-                stopwatch.Start();
                 gameList = PgnFromChessDotCom.FetchGameRecordsForUser(chessdotcomUsername);
             }
 #pragma warning disable CA1031 // Do not catch general exception types
             catch (Exception ex)
             {
-                System.Console.WriteLine($">>ChessDotCom Fetch Failed");
-                System.Console.WriteLine($"  {ex.Message}");
-                System.Console.WriteLine();
+                Console.WriteLine($"  >>Fetching Games From Chess.Com Failed");
+                Console.WriteLine($"    {ex.Message}");
+                Console.WriteLine();
                 Environment.Exit(-1);
             }
 #pragma warning restore CA1031 // Do not catch general exception types
 
             stopwatch.Stop();
-            System.Console.WriteLine($"");
-            System.Console.WriteLine($">>Finished ChessDotCom Fetch ({stopwatch.Elapsed.Hours}:{stopwatch.Elapsed.Minutes}:{stopwatch.Elapsed.Seconds}:{stopwatch.Elapsed.Milliseconds})");
-            System.Console.WriteLine($">>Processing Games");
+            Console.WriteLine($"");
+            Console.WriteLine($">>Finished Fetching Games From Chess.Com ({stopwatch.Elapsed.Hours}:{stopwatch.Elapsed.Minutes}:{stopwatch.Elapsed.Seconds}:{stopwatch.Elapsed.Milliseconds})");
+            Console.WriteLine($">>Processing Games");
 
             //Initialise reporting lists
             SortedList<string, (int SecondsPlayed, int GameCount, int Win, int Loss, int Draw, int MinRating, int MaxRating, int OpponentMinRating, int OpponentMaxRating, int OpponentBestWin)> secondsPlayedRollup = new SortedList<string, (int, int, int, int, int, int, int, int, int, int)>();
@@ -93,9 +101,65 @@ namespace ChessStats
                 UpdateGameTimeTotals(secondsPlayedRollupMonthOnly, parsedStartDate, seconds);
             }
 
+            Console.WriteLine($">>Finished Processing Games ({stopwatch.Elapsed.Hours}:{stopwatch.Elapsed.Minutes}:{stopwatch.Elapsed.Seconds}:{stopwatch.Elapsed.Milliseconds})");
+            stopwatch.Reset();
+            stopwatch.Start();
+
+            //Write PGN by Time Class to Disk
+            Console.WriteLine($">>Writing Results to {resultsDir.FullName}");
+            Console.WriteLine($"  >>Writing PGN's");
+            foreach (string timeClass in (from x in gameList
+                                          where x.IsRatedGame
+                                          select x.TimeClass).Distinct().ToArray())
+            {
+                using StreamWriter pgnFileOutStream = File.CreateText($"{Path.Combine(resultsDir.FullName, $"{chessdotcomUsername}-{timeClass}.pgn")}");
+
+                foreach (ChessGame game in (from x in gameList
+                                            where x.TimeClass == timeClass && x.IsRatedGame
+                                            select x).
+                                      OrderBy(x => x.GameAttributes.GetAttributeAsNullOrDateTime(SupportedAttribute.Date, SupportedAttribute.StartTime)))
+                {
+                    await pgnFileOutStream.WriteAsync(game.Text).ConfigureAwait(false);
+                    await pgnFileOutStream.WriteLineAsync().ConfigureAwait(false);
+                    await pgnFileOutStream.WriteLineAsync().ConfigureAwait(false);
+                }
+            }
+
+            Console.WriteLine($"  >>Writing CAPS Data");
+            using StreamWriter capsFileOutStream = File.CreateText($"{Path.Combine(resultsDir.FullName, $"{chessdotcomUsername}-CAPS.tsv")}");
+            await capsFileOutStream.WriteLineAsync($"CAPS Data for {chessdotcomUsername}").ConfigureAwait(false);
+            await capsFileOutStream.WriteLineAsync().ConfigureAwait(false);
+
+            foreach (KeyValuePair<string, List<(double Caps, DateTime GameDate, string GameYearMonth)>> capsTimeControl in capsScores)
+            {
+                StringBuilder dateLine = new StringBuilder();
+                StringBuilder monthLine = new StringBuilder();
+                StringBuilder capsLine = new StringBuilder();
+
+                foreach ((double Caps, DateTime GameDate, string GameYearMonth) in capsTimeControl.Value.OrderBy(x => x.GameDate))
+                {
+                    dateLine.Append($"{GameDate.ToShortDateString()}\t");
+                    monthLine.Append($"{GameYearMonth}\t");
+                    capsLine.Append($"{Caps}\t");
+                }
+
+                await capsFileOutStream.WriteLineAsync($"{CultureInfo.InvariantCulture.TextInfo.ToTitleCase(capsTimeControl.Key)}").ConfigureAwait(false);
+                await capsFileOutStream.WriteLineAsync(dateLine).ConfigureAwait(false);
+                await capsFileOutStream.WriteLineAsync(monthLine).ConfigureAwait(false);
+                await capsFileOutStream.WriteLineAsync(capsLine).ConfigureAwait(false);
+                await capsFileOutStream.WriteLineAsync().ConfigureAwait(false);
+            }
+            
+            await capsFileOutStream.FlushAsync().ConfigureAwait(false);
+            capsFileOutStream.Close();
+
+            Console.WriteLine($"  >>Writing Raw Game Data (TODO)");
+            Console.WriteLine($"  >>Writing Openings Data (TODO)");
+
+            Console.WriteLine($">>Finished Writing Results ({stopwatch.Elapsed.Hours}:{stopwatch.Elapsed.Minutes}:{stopwatch.Elapsed.Seconds}:{stopwatch.Elapsed.Milliseconds})");
+            Console.WriteLine("");
+
             stopwatch.Stop();
-            System.Console.WriteLine($">>Finished Processing Games ({stopwatch.Elapsed.Hours}:{stopwatch.Elapsed.Minutes}:{stopwatch.Elapsed.Seconds}:{stopwatch.Elapsed.Milliseconds})");
-            System.Console.WriteLine("");
 
             Helpers.DisplaySection($"Live Chess Report for {chessdotcomUsername} : {DateTime.Now.ToLongDateString()}", true);
             DisplayOpeningsAsWhite(ecoPlayedRollupWhite);
@@ -105,8 +169,8 @@ namespace ChessStats
             DisplayCapsTable(capsScores);
             DisplayCapsRollingAverage(capsScores);
             DisplayTotalSecondsPlayed(totalSecondsPlayed);
-            Helpers.DisplaySection("End of Report", true);
 
+            Helpers.DisplaySection("End of Report", true);
             Console.WriteLine("");
             Helpers.PressToContinueIfDebug();
             Environment.Exit(0);
@@ -126,7 +190,7 @@ namespace ChessStats
                                                     .Where(i => i.Count() > 4)
                                                     .Select(g => new
                                                     {
-                                                        Average = (Math.Round(g.Average(p => p.Caps), 2)).ToString().PadRight(5, ' '),
+                                                        Average = Math.Round(g.Average(p => p.Caps), 2).ToString().PadRight(5, ' '),
                                                         Month = g.Key.Id,
                                                         Control = capsScore.Key.Split()[0],
                                                         Side = capsScore.Key.Split()[1],
@@ -336,7 +400,7 @@ namespace ChessStats
 
                 lastLine = rolledUp.Key.Substring(0, 10);
                 TimeSpan timeMonth = TimeSpan.FromSeconds(rolledUp.Value.SecondsPlayed);
-                System.Console.WriteLine($"{rolledUp.Key,-17} | " +
+                Console.WriteLine($"{rolledUp.Key,-17} | " +
                                          $"{((int)timeMonth.TotalHours).ToString(CultureInfo.CurrentCulture),3}:{ timeMonth.Minutes.ToString(CultureInfo.CurrentCulture).PadLeft(2, '0')}:{ timeMonth.Seconds.ToString(CultureInfo.CurrentCulture).PadLeft(2, '0')} | " +
                                          $"{rolledUp.Value.MinRating.ToString(CultureInfo.CurrentCulture).PadLeft(4).Replace("   0", "   -", true, CultureInfo.InvariantCulture)} | " +
                                          $"{rolledUp.Value.MaxRating.ToString(CultureInfo.CurrentCulture).PadLeft(4).Replace("   0", "   -", true, CultureInfo.InvariantCulture)} | " +

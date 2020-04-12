@@ -13,8 +13,8 @@ namespace ChessStats
         {
             lock (displayLock)
             {
-                if (gameCount++ > 99) { System.Console.WriteLine(); gameCount = 1; }
-                System.Console.Write(outChar);
+                if (gameCount++ > 99) { Console.WriteLine(); gameCount = 1; }
+                Console.Write(outChar);
             }
         }
 
@@ -76,7 +76,7 @@ namespace ChessStats
             Console.WriteLine(@"    |__|           \/      \/      \/      \/      \/             \/             \/for Chess.com\/  ");
             Console.WriteLine(@"   /____\                                                                                           ");
             Console.WriteLine(@"  (______)                                                                                          ");
-            Console.WriteLine(@" (________)   Hyper-Dragon :: Version 0.4 :: 04/2020 :: https://github.com/Hyper-Dragon/ChessStats  ");
+            Console.WriteLine(@" (________)   Hyper-Dragon :: Version 0.5 :: 04/2020 :: https://github.com/Hyper-Dragon/ChessStats  ");
             Console.WriteLine(@"                                                                                                    ");
         }
     }
