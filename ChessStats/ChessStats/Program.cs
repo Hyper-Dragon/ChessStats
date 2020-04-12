@@ -18,7 +18,7 @@ namespace ChessStats
         private static async Task Main(string[] args)
 #pragma warning restore CS1998 // Async method lacks 'await' operators and will run synchronously
         {
-            const int MAX_CAPS_PAGES = 10;
+            const int MAX_CAPS_PAGES = 30;
 
             //Set up data directories
             DirectoryInfo applicationPath = new DirectoryInfo(Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName));
@@ -58,7 +58,7 @@ namespace ChessStats
 
             try
             {
-                gameList = PgnFromChessDotCom.FetchGameRecordsForUser(chessdotcomUsername);
+                gameList = PgnFromChessDotCom.FetchGameRecordsForUser(chessdotcomUsername, cacheDir);
             }
 #pragma warning disable CA1031 // Do not catch general exception types
             catch (Exception ex)
