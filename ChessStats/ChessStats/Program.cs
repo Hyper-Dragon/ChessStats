@@ -126,6 +126,7 @@ namespace ChessStats
             }
 
             Console.WriteLine($"  >>Writing CAPS Data");
+
             using StreamWriter capsFileOutStream = File.CreateText($"{Path.Combine(resultsDir.FullName, $"{chessdotcomUsername}-CAPS.tsv")}");
             await capsFileOutStream.WriteLineAsync($"CAPS Data for {chessdotcomUsername}").ConfigureAwait(false);
             await capsFileOutStream.WriteLineAsync().ConfigureAwait(false);
