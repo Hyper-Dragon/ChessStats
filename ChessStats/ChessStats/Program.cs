@@ -105,6 +105,24 @@ namespace ChessStats
             stopwatch.Reset();
             stopwatch.Start();
 
+            Console.WriteLine($">>Compiling Text Report");
+            
+            StringBuilder textReport = new StringBuilder();
+            textReport.Append(Helpers.GetDisplaySection($"Live Chess Report for {chessdotcomUsername} : {DateTime.Now.ToLongDateString()}", true));
+            textReport.AppendLine();
+            textReport.Append(DisplayOpeningsAsWhite(ecoPlayedRollupWhite));
+            textReport.Append(DisplayOpeningsAsBlack(ecoPlayedRollupBlack));
+            textReport.Append(DisplayPlayingStats(secondsPlayedRollup));
+            textReport.Append(DisplayTimePlayedByMonth(secondsPlayedRollupMonthOnly));
+            textReport.Append(DisplayCapsTable(capsScores));
+            textReport.Append(DisplayCapsRollingAverage(capsScores));
+            textReport.Append(DisplayTotalSecondsPlayed(totalSecondsPlayed));
+            textReport.Append(Helpers.GetDisplaySection("End of Report", true));
+            
+            Console.WriteLine($">>Finished Compiling Text Report ({stopwatch.Elapsed.Hours}:{stopwatch.Elapsed.Minutes}:{stopwatch.Elapsed.Seconds}:{stopwatch.Elapsed.Milliseconds})");
+            stopwatch.Reset();
+            stopwatch.Start();
+
             //Write PGN by Time Class to Disk
             Console.WriteLine($">>Writing Results to {resultsDir.FullName}");
             Console.WriteLine($"  >>Writing PGN's");
@@ -154,6 +172,14 @@ namespace ChessStats
             await capsFileOutStream.FlushAsync().ConfigureAwait(false);
             capsFileOutStream.Close();
 
+            Console.WriteLine($"  >>Writing Text Report");
+
+            using StreamWriter textReportFileOutStream = File.CreateText($"{Path.Combine(resultsDir.FullName, $"{chessdotcomUsername.ToLowerInvariant()}-Summary.txt")}");
+            await textReportFileOutStream.WriteLineAsync($"{Helpers.GetDisplayLogo()}").ConfigureAwait(false);
+            await textReportFileOutStream.WriteLineAsync($"{textReport.ToString()}").ConfigureAwait(false);
+            await textReportFileOutStream.FlushAsync().ConfigureAwait(false);
+            textReportFileOutStream.Close();
+
             Console.WriteLine($"  >>Writing Raw Game Data (TODO)");
             Console.WriteLine($"  >>Writing Openings Data (TODO)");
 
@@ -162,25 +188,19 @@ namespace ChessStats
 
             stopwatch.Stop();
 
-            Helpers.DisplaySection($"Live Chess Report for {chessdotcomUsername} : {DateTime.Now.ToLongDateString()}", true);
-            DisplayOpeningsAsWhite(ecoPlayedRollupWhite);
-            DisplayOpeningsAsBlack(ecoPlayedRollupBlack);
-            DisplayPlayingStats(secondsPlayedRollup);
-            DisplayTimePlayedByMonth(secondsPlayedRollupMonthOnly);
-            DisplayCapsTable(capsScores);
-            DisplayCapsRollingAverage(capsScores);
-            DisplayTotalSecondsPlayed(totalSecondsPlayed);
-
-            Helpers.DisplaySection("End of Report", true);
+            Console.WriteLine(textReport.ToString());
             Console.WriteLine("");
+
             Helpers.PressToContinueIfDebug();
             Environment.Exit(0);
         }
 
-        private static void DisplayCapsTable(Dictionary<string, List<(double Caps, DateTime GameDate, string GameYearMonth)>> capsScores)
+        private static string DisplayCapsTable(Dictionary<string, List<(double Caps, DateTime GameDate, string GameYearMonth)>> capsScores)
         {
-            Console.WriteLine("");
-            Helpers.DisplaySection("CAPS Scoring (Month Average > 4 Games)", false);
+            StringBuilder textOut = new StringBuilder();
+
+            textOut.AppendLine("");
+            textOut.AppendLine(Helpers.GetDisplaySection("CAPS Scoring (Month Average > 4 Games)", false));
 
             SortedList<string, (double, double, double, double, double, double)> capsTable = new SortedList<string, (double, double, double, double, double, double)>();
             SortedList<string, string[]> capsTableReformat = new SortedList<string, string[]>();
@@ -213,24 +233,27 @@ namespace ChessStats
                 }
             }
 
-            Console.WriteLine($"                  |      Bullet     |     Blitz     |     Rapid     ");
-            Console.WriteLine($"Month             |   White | Black | White | Black | White | Black ");
-            Console.WriteLine($"------------------+---------+-------+-------+-------+-------+-------");
+            textOut.AppendLine($"                  |      Bullet     |     Blitz     |     Rapid     ");
+            textOut.AppendLine($"Month             |   White | Black | White | Black | White | Black ");
+            textOut.AppendLine($"------------------+---------+-------+-------+-------+-------+-------");
 
             foreach (KeyValuePair<string, string[]> line in capsTableReformat)
             {
-                Console.WriteLine($"{ line.Key,-17 } |   {string.Join(" | ", line.Value)}");
+                textOut.AppendLine($"{ line.Key,-17 } |   {string.Join(" | ", line.Value)}");
             }
+
+            return textOut.ToString();
         }
 
-        private static void DisplayCapsRollingAverage(Dictionary<string, List<(double Caps, DateTime GameDate, string GameYearMonth)>> capsScores)
+        private static string DisplayCapsRollingAverage(Dictionary<string, List<(double Caps, DateTime GameDate, string GameYearMonth)>> capsScores)
         {
+            StringBuilder textOut = new StringBuilder();
             int width = 10;
-            Console.WriteLine("");
-            Helpers.DisplaySection($"CAPS Scoring (Rolling {width} Game Average)", false);
+            textOut.AppendLine("");
+            textOut.AppendLine(Helpers.GetDisplaySection($"CAPS Scoring (Rolling {width} Game Average)", false));
 
-            Console.WriteLine("Control/Side      |   <-Newest                                                             Oldest-> ");
-            Console.WriteLine("------------------+---------------------------------------------------------------------------------");
+            textOut.AppendLine("Control/Side      |   <-Newest                                                             Oldest-> ");
+            textOut.AppendLine("------------------+---------------------------------------------------------------------------------");
 
             foreach (KeyValuePair<string, List<(double Caps, DateTime GameDate, string GameYearMonth)>> capsScore in capsScores)
             {
@@ -243,9 +266,11 @@ namespace ChessStats
                                       ToList();
 
 
-                    Console.WriteLine($"{ CultureInfo.CurrentCulture.TextInfo.ToTitleCase(capsScore.Key.PadRight(17))} |   {string.Join(" | ", averages.Take(10))}");
+                    textOut.AppendLine($"{ CultureInfo.CurrentCulture.TextInfo.ToTitleCase(capsScore.Key.PadRight(17))} |   {string.Join(" | ", averages.Take(10))}");
                 }
             }
+
+            return textOut.ToString();
         }
 
 
@@ -356,52 +381,62 @@ namespace ChessStats
         }
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Globalization", "CA1303:Do not pass literals as localized parameters", Justification = "<Pending>")]
-        private static void DisplayOpeningsAsWhite(SortedList<string, int> ecoPlayedRollupWhite)
+        private static string DisplayOpeningsAsWhite(SortedList<string, int> ecoPlayedRollupWhite)
         {
-            Console.WriteLine("");
-            Helpers.DisplaySection($"Openings Occurring More Than Once (Max 15)", false);
-            Console.WriteLine("Playing As White                                                        | Tot.");
-            Console.WriteLine("------------------------------------------------------------------------+------");
+            StringBuilder textOut = new StringBuilder();
+
+            textOut.AppendLine("");
+            textOut.AppendLine(Helpers.GetDisplaySection($"Openings Occurring More Than Once (Max 15)", false));
+            textOut.AppendLine("Playing As White                                                        | Tot.");
+            textOut.AppendLine("------------------------------------------------------------------------+------");
 
             foreach (KeyValuePair<string, int> ecoCount in ecoPlayedRollupWhite.OrderByDescending(uses => uses.Value).Take(15))
             {
                 if (ecoCount.Value < 2) { break; }
-                Console.WriteLine($"{ecoCount.Key,-71} | {ecoCount.Value.ToString(CultureInfo.CurrentCulture),4}");
+                textOut.AppendLine($"{ecoCount.Key,-71} | {ecoCount.Value.ToString(CultureInfo.CurrentCulture),4}");
             }
+
+            return textOut.ToString();
         }
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Globalization", "CA1303:Do not pass literals as localized parameters", Justification = "<Pending>")]
-        private static void DisplayOpeningsAsBlack(SortedList<string, int> ecoPlayedRollupBlack)
+        private static string DisplayOpeningsAsBlack(SortedList<string, int> ecoPlayedRollupBlack)
         {
-            Console.WriteLine("");
-            Console.WriteLine("Playing As Black                                                        | Tot.");
-            Console.WriteLine("------------------------------------------------------------------------+------");
+            StringBuilder textOut = new StringBuilder();
+
+            textOut.AppendLine("");
+            textOut.AppendLine("Playing As Black                                                        | Tot.");
+            textOut.AppendLine("------------------------------------------------------------------------+------");
 
             foreach (KeyValuePair<string, int> ecoCount in ecoPlayedRollupBlack.OrderByDescending(uses => uses.Value).Take(15))
             {
                 if (ecoCount.Value < 2) { break; }
-                Console.WriteLine($"{ecoCount.Key,-71} | {ecoCount.Value.ToString(CultureInfo.CurrentCulture),4}");
+                textOut.AppendLine($"{ecoCount.Key,-71} | {ecoCount.Value.ToString(CultureInfo.CurrentCulture),4}");
             }
+
+            return textOut.ToString();
         }
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Globalization", "CA1303:Do not pass literals as localized parameters", Justification = "<Pending>")]
-        private static void DisplayPlayingStats(SortedList<string, (int SecondsPlayed, int GameCount, int Win, int Loss, int Draw, int MinRating, int MaxRating, int OpponentMinRating, int OpponentMaxRating, int OpponentBestWin)> secondsPlayedRollup)
+        private static string DisplayPlayingStats(SortedList<string, (int SecondsPlayed, int GameCount, int Win, int Loss, int Draw, int MinRating, int MaxRating, int OpponentMinRating, int OpponentMaxRating, int OpponentBestWin)> secondsPlayedRollup)
         {
-            Console.WriteLine("");
-            Helpers.DisplaySection("Time Played by Time Control/Month", false);
-            Console.WriteLine("Time Class/Month  | Play Time | Rating Min/Max/+-  | Vs Min/BestWin/Max | Win  | Loss | Draw | Tot. ");
+            StringBuilder textOut = new StringBuilder();
+
+            textOut.AppendLine("");
+            textOut.AppendLine(Helpers.GetDisplaySection("Time Played by Time Control/Month", false));
+            textOut.AppendLine("Time Class/Month  | Play Time | Rating Min/Max/+-  | Vs Min/BestWin/Max | Win  | Loss | Draw | Tot. ");
             string lastLine = "";
 
             foreach (KeyValuePair<string, (int SecondsPlayed, int GameCount, int Win, int Loss, int Draw, int MinRating, int MaxRating, int OpponentMinRating, int OpponentMaxRating, int OpponentBestWin)> rolledUp in secondsPlayedRollup)
             {
                 if (lastLine != rolledUp.Key.Substring(0, 10))
                 {
-                    Console.WriteLine("------------------+-----------+--------------------+--------------------+------+------+------+------");
+                    textOut.AppendLine("------------------+-----------+--------------------+--------------------+------+------+------+------");
                 }
 
                 lastLine = rolledUp.Key.Substring(0, 10);
                 TimeSpan timeMonth = TimeSpan.FromSeconds(rolledUp.Value.SecondsPlayed);
-                Console.WriteLine($"{rolledUp.Key,-17} | " +
+                textOut.AppendLine($"{rolledUp.Key,-17} | " +
                                          $"{((int)timeMonth.TotalHours).ToString(CultureInfo.CurrentCulture),3}:{ timeMonth.Minutes.ToString(CultureInfo.CurrentCulture).PadLeft(2, '0')}:{ timeMonth.Seconds.ToString(CultureInfo.CurrentCulture).PadLeft(2, '0')} | " +
                                          $"{rolledUp.Value.MinRating.ToString(CultureInfo.CurrentCulture).PadLeft(4).Replace("   0", "   -", true, CultureInfo.InvariantCulture)} | " +
                                          $"{rolledUp.Value.MaxRating.ToString(CultureInfo.CurrentCulture).PadLeft(4).Replace("   0", "   -", true, CultureInfo.InvariantCulture)} | " +
@@ -415,14 +450,18 @@ namespace ChessStats
                                          $"{rolledUp.Value.GameCount.ToString(CultureInfo.CurrentCulture).PadLeft(4).Replace("   0", "   -", true, CultureInfo.InvariantCulture)}"
                                          );
             }
+
+            return textOut.ToString();
         }
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Globalization", "CA1303:Do not pass literals as localized parameters", Justification = "<Pending>")]
-        private static void DisplayTimePlayedByMonth(SortedList<string, dynamic> secondsPlayedRollupMonthOnly)
+        private static string DisplayTimePlayedByMonth(SortedList<string, dynamic> secondsPlayedRollupMonthOnly)
         {
-            Console.WriteLine("");
-            Helpers.DisplaySection("Time Played by Month (All Time Controls)", false);
-            Console.WriteLine("Month             |  Play Time  | Cumulative  |  For Year ");
+            StringBuilder textOut = new StringBuilder();
+
+            textOut.AppendLine("");
+            textOut.AppendLine(Helpers.GetDisplaySection("Time Played by Month (All Time Controls)", false));
+            textOut.AppendLine("Month             |  Play Time  | Cumulative  |  For Year ");
 
             TimeSpan cumulativeTime = new TimeSpan(0);
             TimeSpan cumulativeTimeForYear = new TimeSpan(0);
@@ -432,7 +471,7 @@ namespace ChessStats
             {
                 if (rolledUp.Key.Substring(0, 4) != currentYear)
                 {
-                    Console.WriteLine("------------------+-------------+-------------+-------------");
+                    textOut.AppendLine("------------------+-------------+-------------+-------------");
                     currentYear = rolledUp.Key.Substring(0, 4);
                     cumulativeTimeForYear = new TimeSpan(0);
                 }
@@ -441,21 +480,27 @@ namespace ChessStats
                 cumulativeTime += timeMonth;
                 cumulativeTimeForYear += timeMonth;
 
-                Console.WriteLine($"{rolledUp.Key,-17} | " +
+                textOut.AppendLine($"{rolledUp.Key,-17} | " +
                                   $"{((int)timeMonth.TotalHours).ToString(CultureInfo.CurrentCulture),5}:{ timeMonth.Minutes.ToString(CultureInfo.CurrentCulture).PadLeft(2, '0')}:{ timeMonth.Seconds.ToString(CultureInfo.CurrentCulture).PadLeft(2, '0')} | " +
                                   $"{((int)cumulativeTime.TotalHours).ToString(CultureInfo.CurrentCulture),5}:{ cumulativeTime.Minutes.ToString(CultureInfo.CurrentCulture).PadLeft(2, '0')}:{ cumulativeTime.Seconds.ToString(CultureInfo.CurrentCulture).PadLeft(2, '0')} | " +
                                   $"{((int)cumulativeTimeForYear.TotalHours).ToString(CultureInfo.CurrentCulture),5}:{ cumulativeTimeForYear.Minutes.ToString(CultureInfo.CurrentCulture).PadLeft(2, '0')}:{ cumulativeTimeForYear.Seconds.ToString(CultureInfo.CurrentCulture).PadLeft(2, '0')}"
                                   );
             }
+
+            return textOut.ToString();
         }
 
-        private static void DisplayTotalSecondsPlayed(double totalSecondsPlayed)
+        private static string DisplayTotalSecondsPlayed(double totalSecondsPlayed)
         {
-            Console.WriteLine("");
-            Helpers.DisplaySection("Total Play Time (Live Chess)", false);
+            StringBuilder textOut = new StringBuilder();
+
+            textOut.AppendLine("");
+            textOut.AppendLine(Helpers.GetDisplaySection("Total Play Time (Live Chess)", false));
             TimeSpan time = TimeSpan.FromSeconds(totalSecondsPlayed);
-            Console.WriteLine($"Time Played (hh:mm:ss): {((int)time.TotalHours).ToString(CultureInfo.CurrentCulture),6}:{ time.Minutes.ToString(CultureInfo.CurrentCulture).PadLeft(2, '0')}:{ time.Seconds.ToString(CultureInfo.CurrentCulture).PadLeft(2, '0')}");
-            Console.WriteLine("");
+            textOut.AppendLine($"Time Played (hh:mm:ss): {((int)time.TotalHours).ToString(CultureInfo.CurrentCulture),6}:{ time.Minutes.ToString(CultureInfo.CurrentCulture).PadLeft(2, '0')}:{ time.Seconds.ToString(CultureInfo.CurrentCulture).PadLeft(2, '0')}");
+            textOut.AppendLine("");
+
+            return textOut.ToString();
         }
     }
 }

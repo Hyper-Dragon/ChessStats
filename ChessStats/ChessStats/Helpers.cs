@@ -26,7 +26,7 @@ namespace ChessStats
             }
         }
 
-        public static void DisplaySection(string title, bool isHeader)
+        public static string GetDisplaySection(string title, bool isHeader)
         {
             _ = title ?? throw new ArgumentNullException(nameof(title));
 
@@ -42,12 +42,17 @@ namespace ChessStats
             sb.Append($" {title} ");
             sb.Append('=', midRowLength - (int)Math.Floor(spacerLength));
 
-            Console.WriteLine(sb.ToString());
-
             if (!isHeader)
             {
-                Console.WriteLine("");
+                sb.AppendLine("");
             }
+
+            return sb.ToString();
+        }
+
+        public static void DisplaySection(string title, bool isHeader)
+        {
+            Console.WriteLine(GetDisplaySection(title,isHeader));
         }
 
         public static string FixedWidth(string s, int width)
@@ -66,18 +71,27 @@ namespace ChessStats
 
         public static void DisplayLogo()
         {
-            Console.WriteLine(@"                                                                                                    ");
-            Console.WriteLine(@"     ()                                                                                             ");
-            Console.WriteLine(@"   <~~~~>  _________  .__                                   _________  __             __            ");
-            Console.WriteLine(@"    \__/   \_   ___ \ |  |__    ____    ______  ______     /   _____/_/  |_ _____   _/  |_   ______ ");
-            Console.WriteLine(@"   (____)  /    \  \/ |  |  \ _/ __ \  /  ___/ /  ___/     \_____  \ \   __\\__  \  \   __\ /  ___/ ");
-            Console.WriteLine(@"    |  |   \     \____|   Y  \\  ___/  \___ \  \___ \      /        \ |  |   / __ \_ |  |   \___ \  ");
-            Console.WriteLine(@"    |  |    \______  /|___|  / \___  >/____  >/____  >    /_______  / |__|  (____  / |__|  /____  > ");
-            Console.WriteLine(@"    |__|           \/      \/      \/      \/      \/             \/             \/for Chess.com\/  ");
-            Console.WriteLine(@"   /____\                                                                                           ");
-            Console.WriteLine(@"  (______)                                                                                          ");
-            Console.WriteLine(@" (________)   Hyper-Dragon :: Version 0.5 :: 04/2020 :: https://github.com/Hyper-Dragon/ChessStats  ");
-            Console.WriteLine(@"                                                                                                    ");
+            Console.WriteLine(GetDisplayLogo());
+        }
+
+        public static string GetDisplayLogo()
+        {
+            StringBuilder textOut = new StringBuilder();
+
+            textOut.AppendLine(@"                                                                                                    ");
+            textOut.AppendLine(@"     ()                                                                                             ");
+            textOut.AppendLine(@"   <~~~~>  _________  .__                                   _________  __             __            ");
+            textOut.AppendLine(@"    \__/   \_   ___ \ |  |__    ____    ______  ______     /   _____/_/  |_ _____   _/  |_   ______ ");
+            textOut.AppendLine(@"   (____)  /    \  \/ |  |  \ _/ __ \  /  ___/ /  ___/     \_____  \ \   __\\__  \  \   __\ /  ___/ ");
+            textOut.AppendLine(@"    |  |   \     \____|   Y  \\  ___/  \___ \  \___ \      /        \ |  |   / __ \_ |  |   \___ \  ");
+            textOut.AppendLine(@"    |  |    \______  /|___|  / \___  >/____  >/____  >    /_______  / |__|  (____  / |__|  /____  > ");
+            textOut.AppendLine(@"    |__|           \/      \/      \/      \/      \/             \/             \/for Chess.com\/  ");
+            textOut.AppendLine(@"   /____\                                                                                           ");
+            textOut.AppendLine(@"  (______)                                                                                          ");
+            textOut.AppendLine(@" (________)   Hyper-Dragon :: Version 0.5 :: 04/2020 :: https://github.com/Hyper-Dragon/ChessStats  ");
+            textOut.AppendLine(@"                                                                                                    ");
+
+            return textOut.ToString();
         }
     }
 }
