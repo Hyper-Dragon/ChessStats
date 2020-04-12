@@ -82,8 +82,8 @@ namespace ChessStats.Data
             
             if (File.Exists(cacheFileName)) 
             {
-                using FileStream capsFileInStream = File.OpenRead(cacheFileName);
-                myGames = await JsonSerializer.DeserializeAsync<PlayerArchivedGames>(capsFileInStream);
+                using FileStream gameFileInStream = File.OpenRead(cacheFileName);
+                myGames = await JsonSerializer.DeserializeAsync<PlayerArchivedGames>(gameFileInStream);
             }
             else 
             {
@@ -97,8 +97,8 @@ namespace ChessStats.Data
                     // Never cache data for this month
                     if (!(DateTime.UtcNow.Year == year && DateTime.UtcNow.Month == month))
                     {
-                        using var capsFileOutStream = File.Create(cacheFileName);
-                        await JsonSerializer.SerializeAsync(capsFileOutStream, myGames).ConfigureAwait(false);
+                        using var gameFileOutStream = File.Create(cacheFileName);
+                        await JsonSerializer.SerializeAsync(gameFileOutStream, myGames).ConfigureAwait(false);
                     }
                 }
                 finally

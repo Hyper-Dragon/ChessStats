@@ -1,18 +1,29 @@
 ﻿using HtmlAgilityPack;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net.Http;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace ChessStats.Data
 {
     public static class CapsFromChessDotCom
     {
-        public static async Task<Dictionary<string, List<(double Caps, DateTime GameDate, string GameYearMonth)>>> GetCapsScores(string chessdotcomUsername, int maxPages)
+        public static async Task<Dictionary<string, List<(double Caps, DateTime GameDate, string GameYearMonth)>>> GetCapsScores(DirectoryInfo cache, string chessdotcomUsername, int maxPages)
         {
             Helpers.ResetDisplayCounter();
+
+            string cacheFileName = $"{Path.Combine(cache.FullName,$"{chessdotcomUsername.ToLowerInvariant()}Caps")}";
             Dictionary<string, List<(double Caps, DateTime GameDate, string GameYearMonth)>> capsScores = new Dictionary<string, List<(double Caps, DateTime GameDate, string GameYearMonth)>>();
+
+            if (File.Exists(cacheFileName))
+            {
+                using FileStream capsFileInStream = File.OpenRead(cacheFileName);
+                capsScores = await JsonSerializer.DeserializeAsync<Dictionary<string, List<(double Caps, DateTime GameDate, string GameYearMonth)>>>(capsFileInStream);
+                capsScores.Clear();
+            }
 
             foreach (string control in new string[] { "bullet", "blitz", "rapid" })
             {
@@ -65,6 +76,11 @@ namespace ChessStats.Data
                     }
                 }
             }
+
+
+            using var capsFileOutStream = File.Create(cacheFileName);
+            await JsonSerializer.SerializeAsync(capsFileOutStream, capsScores).ConfigureAwait(false);
+            await capsFileOutStream.FlushAsync().ConfigureAwait(false);
 
             return capsScores;
         }
