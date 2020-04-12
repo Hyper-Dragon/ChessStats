@@ -1,9 +1,12 @@
 ﻿using ChessDotComSharp.Models;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace ChessStats.Data
@@ -14,12 +17,12 @@ namespace ChessStats.Data
         public static List<ChessGame> FetchGameRecordsForUser(string username, DirectoryInfo cacheDir)
         {
             Helpers.ResetDisplayCounter();
-            List<ChessGame> PgnList = new List<ChessGame>();
-
+            ConcurrentBag<ChessGame> PgnList = new ConcurrentBag<ChessGame>();
+            
             Task<ArchivedGamesList> t = GetPlayerMonthlyArchive(username);
             t.Wait();
 
-            Parallel.ForEach(t.Result.Archives, new ParallelOptions { MaxDegreeOfParallelism = 1 }, (dataForMonth) =>
+            Parallel.ForEach(t.Result.Archives, new ParallelOptions { MaxDegreeOfParallelism = 4 }, (dataForMonth) =>
             {
                 string[] urlSplit = dataForMonth.Split('/');
                 Task<PlayerArchivedGames> t2 = GetAllPlayerMonthlyGames(cacheDir,username, int.Parse(urlSplit[7], CultureInfo.InvariantCulture), int.Parse(urlSplit[8], CultureInfo.InvariantCulture));
@@ -59,7 +62,7 @@ namespace ChessStats.Data
                 }
             });
 
-            return PgnList;
+            return PgnList.ToList();
         }
 
         private static async System.Threading.Tasks.Task<ArchivedGamesList> GetPlayerMonthlyArchive(string username)
@@ -68,6 +71,9 @@ namespace ChessStats.Data
             ArchivedGamesList myGames = await client.GetPlayerGameArchivesAsync(username).ConfigureAwait(true);
             return myGames;
         }
+
+        //Api lock
+        private static SemaphoreSlim apiSemaphore = new SemaphoreSlim(1,1);
 
         private static async System.Threading.Tasks.Task<PlayerArchivedGames> GetAllPlayerMonthlyGames(DirectoryInfo cache,string username, int year, int month)
         {
@@ -81,14 +87,23 @@ namespace ChessStats.Data
             }
             else 
             {
-                using ChessDotComSharp.ChessDotComClient client = new ChessDotComSharp.ChessDotComClient();
-                myGames = await client.GetPlayerGameMonthlyArchiveAsync(username, year, month).ConfigureAwait(true);
-
-                // Never cache data for this month
-                if ( !(DateTime.UtcNow.Year == year && DateTime.UtcNow.Month == month) )
+                //Prevent rate limit errors on the API
+                await apiSemaphore.WaitAsync().ConfigureAwait(false);
+                try
                 {
-                    using var capsFileOutStream = File.Create(cacheFileName);
-                    await JsonSerializer.SerializeAsync(capsFileOutStream, myGames).ConfigureAwait(false);
+                    using ChessDotComSharp.ChessDotComClient client = new ChessDotComSharp.ChessDotComClient();
+                    myGames = await client.GetPlayerGameMonthlyArchiveAsync(username, year, month).ConfigureAwait(true);
+
+                    // Never cache data for this month
+                    if (!(DateTime.UtcNow.Year == year && DateTime.UtcNow.Month == month))
+                    {
+                        using var capsFileOutStream = File.Create(cacheFileName);
+                        await JsonSerializer.SerializeAsync(capsFileOutStream, myGames).ConfigureAwait(false);
+                    }
+                }
+                finally
+                {
+                    apiSemaphore.Release();
                 }
             }
 
