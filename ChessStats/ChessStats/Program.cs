@@ -112,7 +112,7 @@ namespace ChessStats
                                           where x.IsRatedGame
                                           select x.TimeClass).Distinct().ToArray())
             {
-                using StreamWriter pgnFileOutStream = File.CreateText($"{Path.Combine(resultsDir.FullName, $"{chessdotcomUsername}-{timeClass}.pgn")}");
+                using StreamWriter pgnFileOutStream = File.CreateText($"{Path.Combine(resultsDir.FullName, $"{chessdotcomUsername.ToLowerInvariant()}-Pgn-{timeClass}.pgn")}");
 
                 foreach (ChessGame game in (from x in gameList
                                             where x.TimeClass == timeClass && x.IsRatedGame
@@ -127,7 +127,7 @@ namespace ChessStats
 
             Console.WriteLine($"  >>Writing CAPS Data");
 
-            using StreamWriter capsFileOutStream = File.CreateText($"{Path.Combine(resultsDir.FullName, $"{chessdotcomUsername}-CAPS.tsv")}");
+            using StreamWriter capsFileOutStream = File.CreateText($"{Path.Combine(resultsDir.FullName, $"{chessdotcomUsername.ToLowerInvariant()}-Caps-All.tsv")}");
             await capsFileOutStream.WriteLineAsync($"CAPS Data for {chessdotcomUsername}").ConfigureAwait(false);
             await capsFileOutStream.WriteLineAsync().ConfigureAwait(false);
 
