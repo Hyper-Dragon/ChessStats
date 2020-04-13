@@ -52,7 +52,7 @@ namespace ChessStats
 
         public static void DisplaySection(string title, bool isHeader)
         {
-            Console.WriteLine(GetDisplaySection(title,isHeader));
+            Console.WriteLine(GetDisplaySection(title, isHeader));
         }
 
         public static string FixedWidth(string s, int width)

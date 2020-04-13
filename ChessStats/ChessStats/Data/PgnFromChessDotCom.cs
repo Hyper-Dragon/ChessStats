@@ -18,14 +18,14 @@ namespace ChessStats.Data
         {
             Helpers.ResetDisplayCounter();
             ConcurrentBag<ChessGame> PgnList = new ConcurrentBag<ChessGame>();
-            
+
             Task<ArchivedGamesList> t = GetPlayerMonthlyArchive(username);
             t.Wait();
 
             Parallel.ForEach(t.Result.Archives, new ParallelOptions { MaxDegreeOfParallelism = 4 }, (dataForMonth) =>
             {
                 string[] urlSplit = dataForMonth.Split('/');
-                Task<PlayerArchivedGames> t2 = GetAllPlayerMonthlyGames(cacheDir,username, int.Parse(urlSplit[7], CultureInfo.InvariantCulture), int.Parse(urlSplit[8], CultureInfo.InvariantCulture));
+                Task<PlayerArchivedGames> t2 = GetAllPlayerMonthlyGames(cacheDir, username, int.Parse(urlSplit[7], CultureInfo.InvariantCulture), int.Parse(urlSplit[8], CultureInfo.InvariantCulture));
                 t2.Wait();
 
                 try
@@ -73,19 +73,19 @@ namespace ChessStats.Data
         }
 
         //Api lock
-        private static SemaphoreSlim apiSemaphore = new SemaphoreSlim(1,1);
+        private static readonly SemaphoreSlim apiSemaphore = new SemaphoreSlim(1, 1);
 
-        private static async System.Threading.Tasks.Task<PlayerArchivedGames> GetAllPlayerMonthlyGames(DirectoryInfo cache,string username, int year, int month)
+        private static async System.Threading.Tasks.Task<PlayerArchivedGames> GetAllPlayerMonthlyGames(DirectoryInfo cache, string username, int year, int month)
         {
             PlayerArchivedGames myGames;
-            string cacheFileName = $"{Path.Combine(cache.FullName,$"{username.ToLowerInvariant()}{year}{month.ToString().PadLeft(2,'0')}")}";
-            
-            if (File.Exists(cacheFileName)) 
+            string cacheFileName = $"{Path.Combine(cache.FullName, $"{username.ToLowerInvariant()}{year}{month.ToString().PadLeft(2, '0')}")}";
+
+            if (File.Exists(cacheFileName))
             {
                 using FileStream gameFileInStream = File.OpenRead(cacheFileName);
                 myGames = await JsonSerializer.DeserializeAsync<PlayerArchivedGames>(gameFileInStream);
             }
-            else 
+            else
             {
                 //Prevent rate limit errors on the API
                 await apiSemaphore.WaitAsync().ConfigureAwait(false);
@@ -97,7 +97,7 @@ namespace ChessStats.Data
                     // Never cache data for this month
                     if (!(DateTime.UtcNow.Year == year && DateTime.UtcNow.Month == month))
                     {
-                        using var gameFileOutStream = File.Create(cacheFileName);
+                        using FileStream gameFileOutStream = File.Create(cacheFileName);
                         await JsonSerializer.SerializeAsync(gameFileOutStream, myGames).ConfigureAwait(false);
                     }
                 }

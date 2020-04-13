@@ -105,21 +105,33 @@ namespace ChessStats
             stopwatch.Reset();
             stopwatch.Start();
 
-            Console.WriteLine($">>Compiling Text Report");
-            
+            Console.WriteLine($">>Compiling Reports");
+
+            (string whiteOpeningstextOut, string whiteOpeningshtmlOut) = DisplayOpeningsAsWhite(ecoPlayedRollupWhite);
+            (string blackOpeningstextOut, string blackOpeningshtmlOut) = DisplayOpeningsAsWhite(ecoPlayedRollupBlack);
+            (string playingStatstextOut, string playingStatshtmlOut) = DisplayPlayingStats(secondsPlayedRollup);
+
             StringBuilder textReport = new StringBuilder();
             textReport.Append(Helpers.GetDisplaySection($"Live Chess Report for {chessdotcomUsername} : {DateTime.Now.ToLongDateString()}", true));
             textReport.AppendLine();
-            textReport.Append(DisplayOpeningsAsWhite(ecoPlayedRollupWhite));
-            textReport.Append(DisplayOpeningsAsBlack(ecoPlayedRollupBlack));
-            textReport.Append(DisplayPlayingStats(secondsPlayedRollup));
+            textReport.Append(whiteOpeningstextOut);
+            textReport.Append(blackOpeningstextOut);
+            textReport.Append(playingStatstextOut);
             textReport.Append(DisplayTimePlayedByMonth(secondsPlayedRollupMonthOnly));
             textReport.Append(DisplayCapsTable(capsScores));
             textReport.Append(DisplayCapsRollingAverage(capsScores));
             textReport.Append(DisplayTotalSecondsPlayed(totalSecondsPlayed));
             textReport.Append(Helpers.GetDisplaySection("End of Report", true));
-            
-            Console.WriteLine($">>Finished Compiling Text Report ({stopwatch.Elapsed.Hours}:{stopwatch.Elapsed.Minutes}:{stopwatch.Elapsed.Seconds}:{stopwatch.Elapsed.Milliseconds})");
+
+            StringBuilder htmlReport = new StringBuilder();
+            htmlReport.AppendLine("<html><head></head><body>");
+            htmlReport.AppendLine(whiteOpeningshtmlOut);
+            htmlReport.AppendLine(blackOpeningshtmlOut);
+            htmlReport.AppendLine(playingStatshtmlOut);
+            htmlReport.AppendLine("<br/><br/><hr/><i>ChessStats (for <a href='https://chess.com'>Chess.com</a>) :: <a href='https://www.chess.com/member/hyper-dragon'>Hyper-Dragon</a> :: Version 0.5 :: 04/2020 :: <a href='https://github.com/Hyper-Dragon/ChessStats'>https://github.com/Hyper-Dragon/ChessStats</a></i>");
+            htmlReport.AppendLine("</body><html>");
+
+            Console.WriteLine($">>Finished Compiling Reports ({stopwatch.Elapsed.Hours}:{stopwatch.Elapsed.Minutes}:{stopwatch.Elapsed.Seconds}:{stopwatch.Elapsed.Milliseconds})");
             stopwatch.Reset();
             stopwatch.Start();
 
@@ -168,7 +180,7 @@ namespace ChessStats
                 await capsFileOutStream.WriteLineAsync(capsLine).ConfigureAwait(false);
                 await capsFileOutStream.WriteLineAsync().ConfigureAwait(false);
             }
-            
+
             await capsFileOutStream.FlushAsync().ConfigureAwait(false);
             capsFileOutStream.Close();
 
@@ -179,6 +191,13 @@ namespace ChessStats
             await textReportFileOutStream.WriteLineAsync($"{textReport.ToString()}").ConfigureAwait(false);
             await textReportFileOutStream.FlushAsync().ConfigureAwait(false);
             textReportFileOutStream.Close();
+
+            Console.WriteLine($"  >>Writing Html Report");
+
+            using StreamWriter htmlReportFileOutStream = File.CreateText($"{Path.Combine(resultsDir.FullName, $"{chessdotcomUsername.ToLowerInvariant()}-Summary.html")}");
+            await htmlReportFileOutStream.WriteLineAsync($"{htmlReport.ToString()}").ConfigureAwait(false);
+            await htmlReportFileOutStream.FlushAsync().ConfigureAwait(false);
+            htmlReportFileOutStream.Close();
 
             Console.WriteLine($"  >>Writing Raw Game Data (TODO)");
             Console.WriteLine($"  >>Writing Openings Data (TODO)");
@@ -381,51 +400,66 @@ namespace ChessStats
         }
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Globalization", "CA1303:Do not pass literals as localized parameters", Justification = "<Pending>")]
-        private static string DisplayOpeningsAsWhite(SortedList<string, int> ecoPlayedRollupWhite)
+        private static (string textOut, string htmlOut) DisplayOpeningsAsWhite(SortedList<string, int> ecoPlayedRollupWhite)
         {
             StringBuilder textOut = new StringBuilder();
+            StringBuilder htmlOut = new StringBuilder();
 
             textOut.AppendLine("");
             textOut.AppendLine(Helpers.GetDisplaySection($"Openings Occurring More Than Once (Max 15)", false));
             textOut.AppendLine("Playing As White                                                        | Tot.");
             textOut.AppendLine("------------------------------------------------------------------------+------");
 
+            htmlOut.AppendLine("<table><th><tr><td>Playing As White</td><td>Total</td></tr></th>");
+
             foreach (KeyValuePair<string, int> ecoCount in ecoPlayedRollupWhite.OrderByDescending(uses => uses.Value).Take(15))
             {
                 if (ecoCount.Value < 2) { break; }
                 textOut.AppendLine($"{ecoCount.Key,-71} | {ecoCount.Value.ToString(CultureInfo.CurrentCulture),4}");
+                htmlOut.AppendLine($"<tr><td>{ecoCount.Key,-71}</td><td>{ecoCount.Value.ToString(CultureInfo.CurrentCulture),4}</td></tr>");
             }
 
-            return textOut.ToString();
+            htmlOut.AppendLine("</table>");
+
+            return (textOut.ToString(), htmlOut.ToString());
         }
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Globalization", "CA1303:Do not pass literals as localized parameters", Justification = "<Pending>")]
-        private static string DisplayOpeningsAsBlack(SortedList<string, int> ecoPlayedRollupBlack)
+        private static (string textOut, string htmlOut) DisplayOpeningsAsBlack(SortedList<string, int> ecoPlayedRollupBlack)
         {
             StringBuilder textOut = new StringBuilder();
+            StringBuilder htmlOut = new StringBuilder();
 
             textOut.AppendLine("");
             textOut.AppendLine("Playing As Black                                                        | Tot.");
             textOut.AppendLine("------------------------------------------------------------------------+------");
 
+            htmlOut.AppendLine("<table><th><tr><td>Playing As Black</td><td>Total</td></tr></th>");
+
             foreach (KeyValuePair<string, int> ecoCount in ecoPlayedRollupBlack.OrderByDescending(uses => uses.Value).Take(15))
             {
                 if (ecoCount.Value < 2) { break; }
                 textOut.AppendLine($"{ecoCount.Key,-71} | {ecoCount.Value.ToString(CultureInfo.CurrentCulture),4}");
+                htmlOut.AppendLine($"<tr><td>{ecoCount.Key,-71}</td><td>{ecoCount.Value.ToString(CultureInfo.CurrentCulture),4}</td></tr>");
             }
 
-            return textOut.ToString();
+            htmlOut.AppendLine("</table>");
+
+            return (textOut.ToString(), htmlOut.ToString());
         }
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Globalization", "CA1303:Do not pass literals as localized parameters", Justification = "<Pending>")]
-        private static string DisplayPlayingStats(SortedList<string, (int SecondsPlayed, int GameCount, int Win, int Loss, int Draw, int MinRating, int MaxRating, int OpponentMinRating, int OpponentMaxRating, int OpponentBestWin)> secondsPlayedRollup)
+        private static (string textOut, string htmlOut) DisplayPlayingStats(SortedList<string, (int SecondsPlayed, int GameCount, int Win, int Loss, int Draw, int MinRating, int MaxRating, int OpponentMinRating, int OpponentMaxRating, int OpponentBestWin)> secondsPlayedRollup)
         {
             StringBuilder textOut = new StringBuilder();
+            StringBuilder htmlOut = new StringBuilder();
 
             textOut.AppendLine("");
             textOut.AppendLine(Helpers.GetDisplaySection("Time Played by Time Control/Month", false));
             textOut.AppendLine("Time Class/Month  | Play Time | Rating Min/Max/+-  | Vs Min/BestWin/Max | Win  | Loss | Draw | Tot. ");
             string lastLine = "";
+
+            htmlOut.AppendLine("<table><th><tr><td>Time Class/Month</td><td>Play Time</td><td>Rating Min/Max/+-</td><td>Vs Min/BestWin/Max</td><td>Win</td><td>Loss</td><td>Draw</td><td>Total</td></tr></th>");
 
             foreach (KeyValuePair<string, (int SecondsPlayed, int GameCount, int Win, int Loss, int Draw, int MinRating, int MaxRating, int OpponentMinRating, int OpponentMaxRating, int OpponentBestWin)> rolledUp in secondsPlayedRollup)
             {
@@ -451,7 +485,9 @@ namespace ChessStats
                                          );
             }
 
-            return textOut.ToString();
+            htmlOut.AppendLine("</table>");
+
+            return (textOut.ToString(), htmlOut.ToString());
         }
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Globalization", "CA1303:Do not pass literals as localized parameters", Justification = "<Pending>")]

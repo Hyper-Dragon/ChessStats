@@ -15,7 +15,7 @@ namespace ChessStats.Data
         {
             Helpers.ResetDisplayCounter();
 
-            string cacheFileName = $"{Path.Combine(cache.FullName,$"{chessdotcomUsername.ToLowerInvariant()}Caps")}";
+            string cacheFileName = $"{Path.Combine(cache.FullName, $"{chessdotcomUsername.ToLowerInvariant()}Caps")}";
             Dictionary<string, List<(double Caps, DateTime GameDate, string GameYearMonth)>> capsScores = new Dictionary<string, List<(double Caps, DateTime GameDate, string GameYearMonth)>>();
 
             if (File.Exists(cacheFileName))
@@ -77,8 +77,7 @@ namespace ChessStats.Data
                 }
             }
 
-
-            using var capsFileOutStream = File.Create(cacheFileName);
+            using FileStream capsFileOutStream = File.Create(cacheFileName);
             await JsonSerializer.SerializeAsync(capsFileOutStream, capsScores).ConfigureAwait(false);
             await capsFileOutStream.FlushAsync().ConfigureAwait(false);
 
