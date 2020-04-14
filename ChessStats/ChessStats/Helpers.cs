@@ -69,27 +69,27 @@ namespace ChessStats
 #endif
         }
 
-        public static void DisplayLogo()
+        public static void DisplayLogo(string versionNo)
         {
-            Console.WriteLine(GetDisplayLogo());
+            Console.WriteLine(GetDisplayLogo(versionNo));
         }
 
-        public static string GetDisplayLogo()
+        public static string GetDisplayLogo(string versionNo)
         {
             StringBuilder textOut = new StringBuilder();
 
-            textOut.AppendLine(@"                                                                                                    ");
-            textOut.AppendLine(@"     ()                                                                                             ");
-            textOut.AppendLine(@"   <~~~~>  _________  .__                                   _________  __             __            ");
-            textOut.AppendLine(@"    \__/   \_   ___ \ |  |__    ____    ______  ______     /   _____/_/  |_ _____   _/  |_   ______ ");
-            textOut.AppendLine(@"   (____)  /    \  \/ |  |  \ _/ __ \  /  ___/ /  ___/     \_____  \ \   __\\__  \  \   __\ /  ___/ ");
-            textOut.AppendLine(@"    |  |   \     \____|   Y  \\  ___/  \___ \  \___ \      /        \ |  |   / __ \_ |  |   \___ \  ");
-            textOut.AppendLine(@"    |  |    \______  /|___|  / \___  >/____  >/____  >    /_______  / |__|  (____  / |__|  /____  > ");
-            textOut.AppendLine(@"    |__|           \/      \/      \/      \/      \/             \/             \/for Chess.com\/  ");
-            textOut.AppendLine(@"   /____\                                                                                           ");
-            textOut.AppendLine(@"  (______)                                                                                          ");
-            textOut.AppendLine(@" (________)   Hyper-Dragon :: Version 0.5 :: 04/2020 :: https://github.com/Hyper-Dragon/ChessStats  ");
-            textOut.AppendLine(@"                                                                                                    ");
+            textOut.AppendLine(@$"                                                                                                    ");
+            textOut.AppendLine(@$"     ()                                                                                             ");
+            textOut.AppendLine(@$"   <~~~~>  _________  .__                                   _________  __             __            ");
+            textOut.AppendLine(@$"    \__/   \_   ___ \ |  |__    ____    ______  ______     /   _____/_/  |_ _____   _/  |_   ______ ");
+            textOut.AppendLine(@$"   (____)  /    \  \/ |  |  \ _/ __ \  /  ___/ /  ___/     \_____  \ \   __\\__  \  \   __\ /  ___/ ");
+            textOut.AppendLine(@$"    |  |   \     \____|   Y  \\  ___/  \___ \  \___ \      /        \ |  |   / __ \_ |  |   \___ \  ");
+            textOut.AppendLine(@$"    |  |    \______  /|___|  / \___  >/____  >/____  >    /_______  / |__|  (____  / |__|  /____  > ");
+            textOut.AppendLine(@$"    |__|           \/      \/      \/      \/      \/             \/             \/for Chess.com\/  ");
+            textOut.AppendLine(@$"   /____\                                                                                           ");
+            textOut.AppendLine(@$"  (______)                                                                                          ");
+            textOut.AppendLine(@$" (________)   Hyper-Dragon :: Version {versionNo} :: 04/2020 :: https://github.com/Hyper-Dragon/ChessStats  ");
+            textOut.AppendLine(@$"                                                                                                    ");
 
             return textOut.ToString();
         }
