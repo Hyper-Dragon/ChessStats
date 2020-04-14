@@ -110,7 +110,7 @@ namespace ChessStats
             Console.WriteLine($">>Compiling Reports");
 
             (string whiteOpeningstextOut, string whiteOpeningshtmlOut) = DisplayOpeningsAsWhite(ecoPlayedRollupWhite);
-            (string blackOpeningstextOut, string blackOpeningshtmlOut) = DisplayOpeningsAsWhite(ecoPlayedRollupBlack);
+            (string blackOpeningstextOut, string blackOpeningshtmlOut) = DisplayOpeningsAsBlack(ecoPlayedRollupBlack);
             (string playingStatstextOut, string playingStatshtmlOut) = DisplayPlayingStats(secondsPlayedRollup);
             (string timePlayedByMonthtextOut, string timePlayedByMonthhtmlOut) = DisplayTimePlayedByMonth(secondsPlayedRollupMonthOnly);
             (string capsTabletextOut, string capsTablehtmlOut) = DisplayCapsTable(capsScores);
@@ -137,17 +137,25 @@ namespace ChessStats
             htmlReport.AppendLine("<meta name='generator' content='ChessStats'> ");
             //htmlReport.AppendLine("<meta name='viewport' content='width=device-width, initial-scale=1.0'>");
             htmlReport.AppendLine("<style>");
-            htmlReport.AppendLine("*                  {margin: 0;padding: 0;}");
-            htmlReport.AppendLine("body               {background-color: whitesmoke;width: 80%;}");
-            htmlReport.AppendLine("h1                 {padding: 10px;text-align: left;background: #1abc9c;color: white;font-size: 25px;}");
-            htmlReport.AppendLine("h2                 {padding: 5px;text-align: left;background: darkblue;color: white;font-size: 18px;}");
-            htmlReport.AppendLine("table              {width: 100%;background: white;}");
-            //htmlReport.AppendLine("th                 {padding-top: 12px;padding-bottom: 12px;text-align: left;background-color: #4CAF50; color: white;}");
-            htmlReport.AppendLine("tr:nth-child(even) {background-color: #f2f2f2;}");
-            htmlReport.AppendLine(".oneColumn         {float: left;width: 100%;}");
-            htmlReport.AppendLine(".oneRow: after     {content: ''; display: table; clear: both;}");
-            htmlReport.AppendLine(".twoColumn         {float: left;width: 50%;}");
-            htmlReport.AppendLine(".twoRow: after     {content: '';display: table;clear: both;}");            
+            htmlReport.AppendLine("*                                      {margin: 0;padding: 0;}                                                                           ");
+            htmlReport.AppendLine("body                                   {background-color:whitesmoke;width: 90%; margin: auto}                                            ");
+            htmlReport.AppendLine("h1                                     {padding: 10px;text-align: left;background: #1abc9c;color: white;font-size: 25px;}                ");
+            htmlReport.AppendLine("h2                                     {padding: 5px;text-align: left;background: darkblue;color: white;font-size: 18px;}                ");
+            htmlReport.AppendLine("table                                  {width: 100%;background: white;table-layout: fixed ;border-collapse: collapse; overflow-x:auto; } ");
+            htmlReport.AppendLine("tbody                                  {text-align: right;font-size: 14px;}                                                              ");
+            htmlReport.AppendLine("thead                                  {text-align: center;background: #1abc9c;color: white;font-size: 16px; font-weight: bold;}         ");
+            htmlReport.AppendLine("td                                     {padding-right: 10px;}                                                                            ");
+            htmlReport.AppendLine("td:nth-child(1)                        {text-align: left; width:20%; font-weight: bold;}                                                 ");
+            htmlReport.AppendLine("tbody tr:nth-child(odd)                {background-color: lightestgrey;}                                                                 ");
+            htmlReport.AppendLine("tbody tr:nth-child(even)               {background-color: aliceblue;}                                                                    ");
+            htmlReport.AppendLine(".whiteOpeningsTable td:nth-child(1)    {text-align: left; width:90%}                                                                     ");
+            htmlReport.AppendLine(".blackOpeningsTable td:nth-child(1)    {text-align: left; width:90%}                                                                     ");
+            htmlReport.AppendLine(".capsRollingTable thead td:nth-child(2){text-align: left;}                                                                               ");
+            htmlReport.AppendLine(".oneColumn                             {float: left;width: 100%;}                                                                        ");
+            htmlReport.AppendLine(".oneRow: after                         {content: ''; display: table; clear: both;}                                                       ");
+            htmlReport.AppendLine(".twoColumn                             {float: left;width: 50%;}                                                                         ");
+            htmlReport.AppendLine(".twoRow: after                         {content: '';display: table;clear: both;}                                                         ");
+            htmlReport.AppendLine(".footer                                {text-align: right}                                                                               ");                             
             htmlReport.AppendLine("</style></head><body>");
 
             using HttpClient c = new HttpClient();
@@ -156,13 +164,12 @@ namespace ChessStats
             htmlReport.AppendLine($"<img alt='logo' src='data:image/png;base64,{o}'/>");
 
             htmlReport.AppendLine($"<h1>Live Chess Report for hyper-dragon : 12 April 2020 </h1>");
-            
+
             htmlReport.AppendLine($"<h2>Openings Occurring More Than Once (Max 15)</h2>");
             htmlReport.AppendLine($"<div class='tworow'>");
             htmlReport.AppendLine($"<div class='twocolumn'>{whiteOpeningshtmlOut}</div>");
             htmlReport.AppendLine($"<div class='twocolumn'>{blackOpeningshtmlOut}</div>");
             htmlReport.AppendLine($"</div><br/><div class='onerow'><div class='onecolumn'>");
-
             htmlReport.AppendLine($"<h2>Time Played by Time Control/Month</h2>");
             htmlReport.AppendLine(playingStatshtmlOut);
             htmlReport.AppendLine($"<h2>Time Played by Month (All Time Controls)</h2>");
@@ -173,7 +180,7 @@ namespace ChessStats
             htmlReport.AppendLine(capsRollingAveragehtmlOut);
             htmlReport.AppendLine($"<h2>Total Play Time (Live Chess)</h2>");
             htmlReport.AppendLine(totalSecondsPlayedhtmlOut);
-            htmlReport.AppendLine($"<br/><br/><hr/><i>Generated by ChessStats (for <a href='https://chess.com'>Chess.com</a>) :: <a href='https://www.chess.com/member/hyper-dragon'>Hyper-Dragon</a> :: Version {VERSION_NUMBER} :: 04/2020 :: <a href='https://github.com/Hyper-Dragon/ChessStats'>https://github.com/Hyper-Dragon/ChessStats</a></i><br/><br/><br/>");
+            htmlReport.AppendLine($"<div class='footer'><br/><br/><hr/><i>Generated by ChessStats (for <a href='https://chess.com'>Chess.com</a>) :: <a href='https://www.chess.com/member/hyper-dragon'>Hyper-Dragon</a> :: Version {VERSION_NUMBER} :: 04/2020 :: <a href='https://github.com/Hyper-Dragon/ChessStats'>https://github.com/Hyper-Dragon/ChessStats</a></i><br/><br/><br/></div>");
             htmlReport.AppendLine("</div></div></body></html>");
 
             Console.WriteLine($">>Finished Compiling Reports ({stopwatch.Elapsed.Hours}:{stopwatch.Elapsed.Minutes}:{stopwatch.Elapsed.Seconds}:{stopwatch.Elapsed.Milliseconds})");
@@ -302,7 +309,7 @@ namespace ChessStats
             textOut.AppendLine($"Month             |   White | Black | White | Black | White | Black ");
             textOut.AppendLine($"------------------+---------+-------+-------+-------+-------+-------");
 
-            htmlOut.AppendLine("<table><thead><tr><td>Month</td><td>Bullet White</td><td>Bullet Black</td><td>Blitz White</td><td>Blitz Black</td><td>Rapid White</td><td>Rapid Black</td></thead><tbody>");
+            htmlOut.AppendLine("<table class='capsByMonthTable'><thead><tr><td>Month</td><td>Bullet White</td><td>Bullet Black</td><td>Blitz White</td><td>Blitz Black</td><td>Rapid White</td><td>Rapid Black</td></thead><tbody>");
 
             foreach (KeyValuePair<string, string[]> line in capsTableReformat)
             {
@@ -327,7 +334,7 @@ namespace ChessStats
             textOut.AppendLine("Control/Side      |   <-Newest                                                             Oldest-> ");
             textOut.AppendLine("------------------+---------------------------------------------------------------------------------");
 
-            htmlOut.AppendLine("<table><thead><tr><td>Control/Side</td><td colspan='9'>Newest</td><td>Oldest</td></thead><tbody>");
+            htmlOut.AppendLine("<table class='capsRollingTable'><thead><tr><td>Control/Side</td><td colspan='9'>Newest</td><td>Oldest</td></thead><tbody>");
 
             foreach (KeyValuePair<string, List<(double Caps, DateTime GameDate, string GameYearMonth)>> capsScore in capsScores)
             {
@@ -468,7 +475,7 @@ namespace ChessStats
             textOut.AppendLine("Playing As White                                                        | Tot.");
             textOut.AppendLine("------------------------------------------------------------------------+------");
 
-            htmlOut.AppendLine("<table><thead><tr><td>Playing As White</td><td>Total</td></tr></thead><tbody>");
+            htmlOut.AppendLine("<table class='whiteOpeningsTable'><thead><tr><td>Playing As White</td><td>Total</td></tr></thead><tbody>");
 
             foreach (KeyValuePair<string, int> ecoCount in ecoPlayedRollupWhite.OrderByDescending(uses => uses.Value).Take(15))
             {
@@ -492,7 +499,7 @@ namespace ChessStats
             textOut.AppendLine("Playing As Black                                                        | Tot.");
             textOut.AppendLine("------------------------------------------------------------------------+------");
 
-            htmlOut.AppendLine("<table><thead><tr><td>Playing As Black</td><td>Total</td></tr></thead><tbody>");
+            htmlOut.AppendLine("<table class='blackOpeningsTable'><thead><tr><td>Playing As Black</td><td>Total</td></tr></thead><tbody>");
 
             foreach (KeyValuePair<string, int> ecoCount in ecoPlayedRollupBlack.OrderByDescending(uses => uses.Value).Take(15))
             {
@@ -517,13 +524,12 @@ namespace ChessStats
             textOut.AppendLine("Time Class/Month  | Play Time | Rating Min/Max/+-  | Vs Min/BestWin/Max | Win  | Loss | Draw | Tot. ");
             string lastLine = "";
 
-            htmlOut.AppendLine("<table><thead><tr><td>Time Class/Month</td><td>Play Time</td><td>Min</td><td>Max</td><td>+-</td><td>Min</td><td>BestWin</td><td>Max</td><td>Win</td><td>Loss</td><td>Draw</td><td>Total</td></tr></thead><tbody>");
-
             foreach (KeyValuePair<string, (int SecondsPlayed, int GameCount, int Win, int Loss, int Draw, int MinRating, int MaxRating, int OpponentMinRating, int OpponentMaxRating, int OpponentBestWin)> rolledUp in secondsPlayedRollup)
             {
                 if (lastLine != rolledUp.Key.Substring(0, 10))
                 {
                     textOut.AppendLine("------------------+-----------+--------------------+--------------------+------+------+------+------");
+                    htmlOut.AppendLine($"{((string.IsNullOrEmpty(lastLine))?"":"</tbody></table>")}<table><thead class='playingStatsTable'><tr><td>Time Class/Month</td><td>Time</td><td>Min</td><td>Max</td><td>+-</td><td>Min</td><td>BestWin</td><td>Max</td><td>Win</td><td>Loss</td><td>Draw</td><td>Total</td></tr></thead><tbody>");
                 }
 
                 lastLine = rolledUp.Key.Substring(0, 10);
@@ -572,7 +578,7 @@ namespace ChessStats
             textOut.AppendLine(Helpers.GetDisplaySection("Time Played by Month (All Time Controls)", false));
             textOut.AppendLine("Month             |  Play Time  | Cumulative  |  For Year ");
 
-            htmlOut.AppendLine("<table><thead><tr><td>Month</td><td>Play Time</td><td>Cumulative</td><td>For Year</td></tr></thead><tbody>");
+            htmlOut.AppendLine("<table class='playingStatsMonthTable'><thead><tr><td>Month</td><td>Play Time</td><td>Cumulative</td><td>For Year</td></tr></thead><tbody>");
 
             TimeSpan cumulativeTime = new TimeSpan(0);
             TimeSpan cumulativeTimeForYear = new TimeSpan(0);
@@ -617,11 +623,11 @@ namespace ChessStats
             textOut.AppendLine("");
             textOut.AppendLine(Helpers.GetDisplaySection("Total Play Time (Live Chess)", false));
 
-            htmlOut.AppendLine("<table><tbody>");
+            htmlOut.AppendLine("<table class='playingTimeTable'><tbody>");
 
 
             TimeSpan time = TimeSpan.FromSeconds(totalSecondsPlayed);
-            textOut.AppendLine($"Time Played (hh:mm:ss): {((int)time.TotalHours).ToString(CultureInfo.CurrentCulture),6}:{ time.Minutes.ToString(CultureInfo.CurrentCulture).PadLeft(2, '0')}:{ time.Seconds.ToString(CultureInfo.CurrentCulture).PadLeft(2, '0')}");            
+            textOut.AppendLine($"Time Played (hh:mm:ss): {((int)time.TotalHours).ToString(CultureInfo.CurrentCulture),6}:{ time.Minutes.ToString(CultureInfo.CurrentCulture).PadLeft(2, '0')}:{ time.Seconds.ToString(CultureInfo.CurrentCulture).PadLeft(2, '0')}");
             textOut.AppendLine("");
 
             htmlOut.AppendLine($"<tr><td>Time Played (hh:mm:ss)</td><td>{((int)time.TotalHours).ToString(CultureInfo.CurrentCulture),6}:{ time.Minutes.ToString(CultureInfo.CurrentCulture).PadLeft(2, '0')}:{ time.Seconds.ToString(CultureInfo.CurrentCulture).PadLeft(2, '0')}</td><tr>");
