@@ -120,7 +120,8 @@ namespace ChessStats
             (string playingStatstextOut, string playingStatshtmlOut) = DisplayPlayingStats(secondsPlayedRollup);
             (string timePlayedByMonthtextOut, string timePlayedByMonthhtmlOut) = DisplayTimePlayedByMonth(secondsPlayedRollupMonthOnly);
             (string capsTabletextOut, string capsTablehtmlOut) = DisplayCapsTable(capsScores);
-            (string capsRollingAveragetextOut, string capsRollingAveragehtmlOut) = DisplayCapsRollingAverage(capsScores);
+            (string capsRollingAverageFivetextOut, string capsRollingAverageFivehtmlOut) = DisplayCapsRollingAverage(5, capsScores);
+            (string capsRollingAverageTentextOut, string capsRollingAverageTenhtmlOut) = DisplayCapsRollingAverage(10,capsScores);
             (string totalSecondsPlayedtextOut, string totalSecondsPlayedhtmlOut) = DisplayTotalSecondsPlayed(totalSecondsPlayed);
 
             StringBuilder textReport = new StringBuilder();
@@ -131,7 +132,7 @@ namespace ChessStats
             textReport.Append(playingStatstextOut);
             textReport.Append(timePlayedByMonthtextOut);
             textReport.Append(capsTabletextOut);
-            textReport.Append(capsRollingAveragetextOut);
+            textReport.Append(capsRollingAverageTentextOut);
             textReport.Append(totalSecondsPlayedtextOut);
             textReport.Append(Helpers.GetDisplaySection("End of Report", true));
 
@@ -168,20 +169,22 @@ namespace ChessStats
             htmlReport.AppendLine(".footer a                              {color: #e58b09;}                                                                                                                         ");                             
             htmlReport.AppendLine("</style></head><body>");
 
-            using HttpClient c = new HttpClient();
-            string userLogo = string.IsNullOrEmpty(userRecord.Avatar) ? "https://images.chesscomfiles.com/uploads/v1/group/57796.67ee0038.160x160o.2dc0953ad64e.png" : userRecord.Avatar;
-            var d = await c.GetByteArrayAsync(userLogo).ConfigureAwait(false);
+            using HttpClient httpClient = new HttpClient();
+            Uri userLogo = new Uri(string.IsNullOrEmpty(userRecord.Avatar) ? "https://images.chesscomfiles.com/uploads/v1/group/57796.67ee0038.160x160o.2dc0953ad64e.png" : userRecord.Avatar);
+            var d = await httpClient.GetByteArrayAsync(userLogo).ConfigureAwait(false);
             string o = Convert.ToBase64String(d);
             htmlReport.AppendLine($"<a href='{userRecord.Url}'><img alt='logo' src='data:image/png;base64,{o}'/><a>");
 
-            htmlReport.AppendLine($"<h1>Live Chess Report for <a class='headerLink' href='{userRecord.Url}'>{chessdotcomUsername}</a> <small>({DateTime.Now.ToShortDateString()}@{DateTime.Now.ToShortTimeString()})<small></h1>");
+            htmlReport.AppendLine($"<h1>Live Games Report for <a class='headerLink' href='{userRecord.Url}'>{chessdotcomUsername}</a> <small>({DateTime.Now.ToShortDateString()}@{DateTime.Now.ToShortTimeString()})<small></h1>");
             htmlReport.AppendLine($"<h2>Openings Occurring More Than Once (Max 15)</h2>");
             htmlReport.AppendLine($"<div class='tworow'>");
             htmlReport.AppendLine($"<div class='twocolumn'>{whiteOpeningshtmlOut}</div>");
             htmlReport.AppendLine($"<div class='twocolumn'>{blackOpeningshtmlOut}</div>");
             htmlReport.AppendLine($"</div><br/><div class='onerow'><div class='onecolumn'>");
             htmlReport.AppendLine($"<h2>CAPS Scoring (Rolling 10 Game Average)</h2>");
-            htmlReport.AppendLine(capsRollingAveragehtmlOut);
+            htmlReport.AppendLine(capsRollingAverageTenhtmlOut);
+            htmlReport.AppendLine($"<h2>CAPS Scoring (Rolling 5 Game Average)</h2>");
+            htmlReport.AppendLine(capsRollingAverageFivehtmlOut);
             htmlReport.AppendLine($"<h2>CAPS Scoring (Month Average > 4 Games)</h2>");
             htmlReport.AppendLine(capsTablehtmlOut);
             htmlReport.AppendLine($"<h2>Time Played by Time Control/Month</h2>");
@@ -250,7 +253,7 @@ namespace ChessStats
 
             using StreamWriter textReportFileOutStream = File.CreateText($"{Path.Combine(resultsDir.FullName, $"{chessdotcomUsername}-Summary.txt")}");
             await textReportFileOutStream.WriteLineAsync($"{Helpers.GetDisplayLogo(VERSION_NUMBER)}").ConfigureAwait(false);
-            await textReportFileOutStream.WriteLineAsync($"{textReport.ToString()}").ConfigureAwait(false);
+            await textReportFileOutStream.WriteLineAsync($"{textReport}").ConfigureAwait(false);
             await textReportFileOutStream.FlushAsync().ConfigureAwait(false);
             textReportFileOutStream.Close();
 
@@ -332,14 +335,13 @@ namespace ChessStats
             return (textOut.ToString(), htmlOut.ToString());
         }
 
-        private static (string textOut, string htmlOut) DisplayCapsRollingAverage(Dictionary<string, List<(double Caps, DateTime GameDate, string GameYearMonth)>> capsScores)
+        private static (string textOut, string htmlOut) DisplayCapsRollingAverage(int averageOver, Dictionary<string, List<(double Caps, DateTime GameDate, string GameYearMonth)>> capsScores)
         {
             StringBuilder textOut = new StringBuilder();
             StringBuilder htmlOut = new StringBuilder();
 
-            int width = 10;
             textOut.AppendLine("");
-            textOut.AppendLine(Helpers.GetDisplaySection($"CAPS Scoring (Rolling {width} Game Average)", false));
+            textOut.AppendLine(Helpers.GetDisplaySection($"CAPS Scoring (Rolling {averageOver} Game Average)", false));
 
             textOut.AppendLine("Control/Side      |   <-Newest                                                             Oldest-> ");
             textOut.AppendLine("------------------+---------------------------------------------------------------------------------");
@@ -348,12 +350,12 @@ namespace ChessStats
 
             foreach (KeyValuePair<string, List<(double Caps, DateTime GameDate, string GameYearMonth)>> capsScore in capsScores)
             {
-                if (capsScore.Value.Count > width)
+                if (capsScore.Value.Count > averageOver)
                 {
                     List<double> latestCaps = capsScore.Value.Select(x => x.Caps).ToList<double>();
 
-                    List<string> averages = Enumerable.Range(0, latestCaps.Count - width - 1).
-                                      Select(i => Math.Round(latestCaps.Skip(i).Take(width).Average(), 2).ToString().PadRight(5)).
+                    List<string> averages = Enumerable.Range(0, latestCaps.Count - averageOver - 1).
+                                      Select(i => Math.Round(latestCaps.Skip(i).Take(averageOver).Average(), 2).ToString().PadRight(5)).
                                       ToList();
 
 
