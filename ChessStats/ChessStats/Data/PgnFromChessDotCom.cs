@@ -86,7 +86,7 @@ namespace ChessStats.Data
         private static async System.Threading.Tasks.Task<PlayerArchivedGames> GetAllPlayerMonthlyGames(DirectoryInfo cache, string username, int year, int month)
         {
             PlayerArchivedGames myGames;
-            string cacheFileName = $"{Path.Combine(cache.FullName, $"{username.ToLowerInvariant()}{year}{month.ToString().PadLeft(2, '0')}")}";
+            string cacheFileName = $"{Path.Combine(cache.FullName, $"{username}{year}{month.ToString().PadLeft(2, '0')}")}";
 
             if (File.Exists(cacheFileName))
             {
