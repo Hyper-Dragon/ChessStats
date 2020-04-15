@@ -125,7 +125,7 @@ namespace ChessStats
             (string totalSecondsPlayedtextOut, string totalSecondsPlayedhtmlOut) = DisplayTotalSecondsPlayed(totalSecondsPlayed);
 
             StringBuilder textReport = new StringBuilder();
-            textReport.Append(Helpers.GetDisplaySection($"Live Chess Report for {chessdotcomUsername} : {DateTime.Now.ToLongDateString()}", true));
+            textReport.Append(Helpers.GetDisplaySection($"Live Chess Report for {chessdotcomUsername} : {DateTime.UtcNow.ToShortDateString()}@{DateTime.UtcNow.ToShortTimeString()} UTC", true));
             textReport.AppendLine();
             textReport.Append(whiteOpeningstextOut);
             textReport.Append(blackOpeningstextOut);
@@ -146,7 +146,7 @@ namespace ChessStats
             htmlReport.AppendLine("<style>");
             htmlReport.AppendLine("*                                      {margin: 0;padding: 0;}                                                                                                                   ");
             htmlReport.AppendLine("body                                   {background-color:#312e2b;width: 90%; margin: auto; font-family: -apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif;}   ");
-            htmlReport.AppendLine("h1                                     {padding: 10px;text-align: left;font-size: 20px;background-color: rgba(0,0,0,.13);color: hsla(0,0%,100%,.65);}                            ");
+            htmlReport.AppendLine("h1                                     {padding: 10px;text-align: left;font-size: 30px;background-color: rgba(0,0,0,.13);color: hsla(0,0%,100%,.65);}                            ");
             htmlReport.AppendLine(".headerLink                            {color: #e58b09;}                                                                                                                         ");         
             htmlReport.AppendLine("h2                                     {padding: 5px;text-align: left;font-size: 16px;background-color: rgba(0,0,0,.13);color: hsla(0,0%,100%,.65);}                             ");
             htmlReport.AppendLine("table                                  {width: 100%;background: white;table-layout: fixed ;border-collapse: collapse; overflow-x:auto; }                                         ");
@@ -173,9 +173,10 @@ namespace ChessStats
             Uri userLogo = new Uri(string.IsNullOrEmpty(userRecord.Avatar) ? "https://images.chesscomfiles.com/uploads/v1/group/57796.67ee0038.160x160o.2dc0953ad64e.png" : userRecord.Avatar);
             var d = await httpClient.GetByteArrayAsync(userLogo).ConfigureAwait(false);
             string o = Convert.ToBase64String(d);
-            htmlReport.AppendLine($"<a href='{userRecord.Url}'><img alt='logo' src='data:image/png;base64,{o}'/><a>");
 
-            htmlReport.AppendLine($"<h1>Live Games Report for <a class='headerLink' href='{userRecord.Url}'>{chessdotcomUsername}</a> <small>({DateTime.Now.ToShortDateString()}@{DateTime.Now.ToShortTimeString()})<small></h1>");
+            htmlReport.AppendLine($"<h1>");
+            htmlReport.AppendLine($"<a href='{userRecord.Url}'><img alt='logo' src='data:image/png;base64,{o}'/><a>");
+            htmlReport.AppendLine($"Live Games Report for <a class='headerLink' href='{userRecord.Url}'>{chessdotcomUsername}</a> <small>({DateTime.UtcNow.ToShortDateString()}@{DateTime.UtcNow.ToShortTimeString()} UTC)</small></h1>");
             htmlReport.AppendLine($"<h2>Openings Occurring More Than Once (Max 15)</h2>");
             htmlReport.AppendLine($"<div class='tworow'>");
             htmlReport.AppendLine($"<div class='twocolumn'>{whiteOpeningshtmlOut}</div>");
