@@ -39,7 +39,12 @@ namespace ChessStats
                 Environment.Exit(-2);
             }
 
-            string chessdotcomUsername = args[0];
+            PlayerProfile userRecord = null;
+            PlayerStats userStats = null;
+            (userRecord, userStats) = await PgnFromChessDotCom.FetchUserData(args[0]).ConfigureAwait(false);
+            //Replace username with correct case - api returns ID in lower case so extract from URL property
+            string chessdotcomUsername = userRecord.Url.Replace("https://www.chess.com/member/", "");
+
 
             stopwatch.Reset();
             stopwatch.Start();
@@ -56,18 +61,11 @@ namespace ChessStats
             stopwatch.Reset();
             stopwatch.Start();
 
-            PlayerProfile userRecord = null;
-            PlayerStats userStats = null;
             List <ChessGame> gameList = new List<ChessGame>();
             Console.WriteLine($">>Fetching Games From Chess.Com");
 
             try
             {
-                (userRecord,userStats) = await PgnFromChessDotCom.FetchUserData(chessdotcomUsername).ConfigureAwait(false);
-
-                //Replace username with correct case
-                chessdotcomUsername = userRecord.Username;
-
                 gameList = await PgnFromChessDotCom.FetchGameRecordsForUser(chessdotcomUsername, cacheDir).ConfigureAwait(false);
             }
 #pragma warning disable CA1031 // Do not catch general exception types
