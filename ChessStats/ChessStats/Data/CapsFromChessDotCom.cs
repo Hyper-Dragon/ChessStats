@@ -15,7 +15,7 @@ namespace ChessStats.Data
         {
             Helpers.ResetDisplayCounter();
 
-            string cacheFileName = $"{Path.Combine(cache.FullName, $"{chessdotcomUsername.ToLowerInvariant()}Caps")}";
+            string cacheFileName = $"{Path.Combine(cache.FullName, $"{chessdotcomUsername}Caps")}";
             Dictionary<string, List<(double Caps, DateTime GameDate, string GameYearMonth)>> capsScores = new Dictionary<string, List<(double Caps, DateTime GameDate, string GameYearMonth)>>();
 
             if (File.Exists(cacheFileName))

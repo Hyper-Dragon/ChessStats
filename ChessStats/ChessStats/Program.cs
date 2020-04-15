@@ -1,4 +1,5 @@
-﻿using ChessStats.Data;
+﻿using ChessDotComSharp.Models;
+using ChessStats.Data;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -55,12 +56,19 @@ namespace ChessStats
             stopwatch.Reset();
             stopwatch.Start();
 
-            List<ChessGame> gameList = new List<ChessGame>();
+            PlayerProfile userRecord = null;
+            PlayerStats userStats = null;
+            List <ChessGame> gameList = new List<ChessGame>();
             Console.WriteLine($">>Fetching Games From Chess.Com");
 
             try
             {
-                gameList = PgnFromChessDotCom.FetchGameRecordsForUser(chessdotcomUsername, cacheDir);
+                (userRecord,userStats) = await PgnFromChessDotCom.FetchUserData(chessdotcomUsername).ConfigureAwait(false);
+
+                //Replace username with correct case
+                chessdotcomUsername = userRecord.Username;
+
+                gameList = await PgnFromChessDotCom.FetchGameRecordsForUser(chessdotcomUsername, cacheDir).ConfigureAwait(false);
             }
 #pragma warning disable CA1031 // Do not catch general exception types
             catch (Exception ex)
@@ -132,7 +140,7 @@ namespace ChessStats
             StringBuilder htmlReport = new StringBuilder();
             //htmlReport.AppendLine("<!DOCTYPE html>");
             htmlReport.AppendLine("<html lang='en'><head>");
-            htmlReport.AppendLine($"<title>ChessStats for {chessdotcomUsername.ToLowerInvariant()}</title>");
+            htmlReport.AppendLine($"<title>ChessStats for {chessdotcomUsername}</title>");
             htmlReport.AppendLine("<meta charset='UTF-8'>");
             htmlReport.AppendLine("<meta name='generator' content='ChessStats'> ");
             //htmlReport.AppendLine("<meta name='viewport' content='width=device-width, initial-scale=1.0'>");
@@ -148,10 +156,8 @@ namespace ChessStats
             htmlReport.AppendLine("td:nth-child(1)                        {text-align: left; width:20%; font-weight: bold;}                                                                                         ");
             htmlReport.AppendLine("tbody tr:nth-child(odd)                {background-color: lightestgrey;}                                                                                                         ");
             htmlReport.AppendLine("tbody tr:nth-child(even)               {background-color: aliceblue;}                                                                                                            ");
-
             htmlReport.AppendLine(".whiteOpeningsTable thead td:nth-child(1)    {font-weight: bold;}                                                                                                             ");
             htmlReport.AppendLine(".blackOpeningsTable thead td:nth-child(1)    {font-weight: bold;}                                                                                                             ");
-
             htmlReport.AppendLine(".whiteOpeningsTable td:nth-child(1)    {text-align: left; width:90%; font-weight: normal;}                                                                                                             ");
             htmlReport.AppendLine(".blackOpeningsTable td:nth-child(1)    {text-align: left; width:90%; font-weight: normal;}                                                                                                             ");
             htmlReport.AppendLine(".capsRollingTable thead td:nth-child(2){text-align: left;}                                                                                                                       ");
@@ -164,8 +170,9 @@ namespace ChessStats
             htmlReport.AppendLine("</style></head><body>");
 
             using HttpClient c = new HttpClient();
-            var d = c.GetByteArrayAsync("https://images.chesscomfiles.com/uploads/v1/group/57796.67ee0038.160x160o.2dc0953ad64e.png");
-            string o = Convert.ToBase64String(d.Result);
+            string userLogo = string.IsNullOrEmpty(userRecord.Avatar) ? "https://images.chesscomfiles.com/uploads/v1/group/57796.67ee0038.160x160o.2dc0953ad64e.png" : userRecord.Avatar;
+            var d = await c.GetByteArrayAsync(userLogo).ConfigureAwait(false);
+            string o = Convert.ToBase64String(d);
             htmlReport.AppendLine($"<img alt='logo' src='data:image/png;base64,{o}'/>");
 
             htmlReport.AppendLine($"<h1>Live Chess Report for hyper-dragon : 12 April 2020 </h1>");
@@ -198,7 +205,7 @@ namespace ChessStats
                                           where x.IsRatedGame
                                           select x.TimeClass).Distinct().ToArray())
             {
-                using StreamWriter pgnFileOutStream = File.CreateText($"{Path.Combine(resultsDir.FullName, $"{chessdotcomUsername.ToLowerInvariant()}-Pgn-{timeClass}.pgn")}");
+                using StreamWriter pgnFileOutStream = File.CreateText($"{Path.Combine(resultsDir.FullName, $"{chessdotcomUsername}-Pgn-{timeClass}.pgn")}");
 
                 foreach (ChessGame game in (from x in gameList
                                             where x.TimeClass == timeClass && x.IsRatedGame
@@ -213,7 +220,7 @@ namespace ChessStats
 
             Console.WriteLine($"  >>Writing CAPS Data");
 
-            using StreamWriter capsFileOutStream = File.CreateText($"{Path.Combine(resultsDir.FullName, $"{chessdotcomUsername.ToLowerInvariant()}-Caps-All.tsv")}");
+            using StreamWriter capsFileOutStream = File.CreateText($"{Path.Combine(resultsDir.FullName, $"{chessdotcomUsername}-Caps-All.tsv")}");
             await capsFileOutStream.WriteLineAsync($"CAPS Data for {chessdotcomUsername}").ConfigureAwait(false);
             await capsFileOutStream.WriteLineAsync().ConfigureAwait(false);
 
@@ -242,7 +249,7 @@ namespace ChessStats
 
             Console.WriteLine($"  >>Writing Text Report");
 
-            using StreamWriter textReportFileOutStream = File.CreateText($"{Path.Combine(resultsDir.FullName, $"{chessdotcomUsername.ToLowerInvariant()}-Summary.txt")}");
+            using StreamWriter textReportFileOutStream = File.CreateText($"{Path.Combine(resultsDir.FullName, $"{chessdotcomUsername}-Summary.txt")}");
             await textReportFileOutStream.WriteLineAsync($"{Helpers.GetDisplayLogo(VERSION_NUMBER)}").ConfigureAwait(false);
             await textReportFileOutStream.WriteLineAsync($"{textReport.ToString()}").ConfigureAwait(false);
             await textReportFileOutStream.FlushAsync().ConfigureAwait(false);
@@ -250,7 +257,7 @@ namespace ChessStats
 
             Console.WriteLine($"  >>Writing Html Report");
 
-            using var htmlReportFileOutStream = File.Create($"{Path.Combine(resultsDir.FullName, $"{chessdotcomUsername.ToLowerInvariant()}-Summary.html")}");
+            using var htmlReportFileOutStream = File.Create($"{Path.Combine(resultsDir.FullName, $"{chessdotcomUsername}-Summary.html")}");
             await htmlReportFileOutStream.WriteAsync(Encoding.UTF8.GetBytes(htmlReport.ToString())).ConfigureAwait(false);
             await htmlReportFileOutStream.FlushAsync().ConfigureAwait(false);
             htmlReportFileOutStream.Close();

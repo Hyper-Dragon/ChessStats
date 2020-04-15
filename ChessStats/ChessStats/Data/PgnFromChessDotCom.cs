@@ -13,16 +13,24 @@ namespace ChessStats.Data
 {
     public static class PgnFromChessDotCom
     {
+        public static async Task<(PlayerProfile userRecord, PlayerStats userStats)> FetchUserData(string username)
+        {
+            using ChessDotComSharp.ChessDotComClient client = new ChessDotComSharp.ChessDotComClient();
+            PlayerProfile userRecord = await client.GetPlayerProfileAsync(username).ConfigureAwait(true);
+            PlayerStats userStats = await client.GetPlayerStatsAsync(username).ConfigureAwait(true);
+
+            return (userRecord, userStats);
+        }
+
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "<Pending>")]
-        public static List<ChessGame> FetchGameRecordsForUser(string username, DirectoryInfo cacheDir)
+        public static async  Task<List<ChessGame>> FetchGameRecordsForUser(string username, DirectoryInfo cacheDir)
         {
             Helpers.ResetDisplayCounter();
             ConcurrentBag<ChessGame> PgnList = new ConcurrentBag<ChessGame>();
 
-            Task<ArchivedGamesList> t = GetPlayerMonthlyArchive(username);
-            t.Wait();
-
-            Parallel.ForEach(t.Result.Archives, new ParallelOptions { MaxDegreeOfParallelism = 4 }, (dataForMonth) =>
+            ArchivedGamesList monthlyArchive = await GetPlayerMonthlyArchive(username).ConfigureAwait(false);
+            
+            Parallel.ForEach(monthlyArchive.Archives, new ParallelOptions { MaxDegreeOfParallelism = 4 }, (dataForMonth) =>
             {
                 string[] urlSplit = dataForMonth.Split('/');
                 Task<PlayerArchivedGames> t2 = GetAllPlayerMonthlyGames(cacheDir, username, int.Parse(urlSplit[7], CultureInfo.InvariantCulture), int.Parse(urlSplit[8], CultureInfo.InvariantCulture));
