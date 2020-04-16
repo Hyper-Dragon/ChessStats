@@ -84,7 +84,7 @@ namespace ChessStats
             Console.WriteLine($">>Processing Games");
 
             //Initialise reporting lists
-            SortedList<string, (int SecondsPlayed, int GameCount, int Win, int Loss, int Draw, int MinRating, int MaxRating, int OpponentMinRating, int OpponentMaxRating, int OpponentBestWin)> secondsPlayedRollup = new SortedList<string, (int, int, int, int, int, int, int, int, int, int)>();
+            SortedList<string, (int SecondsPlayed, int GameCount, int Win, int Loss, int Draw, int MinRating, int MaxRating, int OpponentMinRating, int OpponentMaxRating, int OpponentWorstLoss, int OpponentBestWin)> secondsPlayedRollup = new SortedList<string, (int, int, int, int, int, int, int, int, int, int, int)>();
             SortedList<string, dynamic> secondsPlayedRollupMonthOnly = new SortedList<string, dynamic>();
             SortedList<string, (string href, int total)> ecoPlayedRollupWhite = new SortedList<string, (string, int)>();
             SortedList<string, (string href, int total)> ecoPlayedRollupBlack = new SortedList<string, (string, int)>();
@@ -175,6 +175,8 @@ namespace ChessStats
             htmlReport.AppendLine(".whiteOpeningsTable td:nth-child(1)          {text-align: left; width:90%; font-weight: normal;}                                                                                       ");
             htmlReport.AppendLine(".blackOpeningsTable td:nth-child(1)          {text-align: left; width:90%; font-weight: normal;}                                                                                       ");
             htmlReport.AppendLine(".capsRollingTable thead td:nth-child(2)      {text-align: left;}                                                                                                                       ");
+            htmlReport.AppendLine(".playingStatsTable tbody td:nth-child(6)     {border-left: thin dotted; border-color: #1583b7;}");
+            htmlReport.AppendLine(".playingStatsTable tbody td:nth-child(10)    {border-left: thin dotted; border-color: #1583b7;}");
             htmlReport.AppendLine(".oneColumn                                   {float: left;width: 100%;}                                                                                                                ");
             htmlReport.AppendLine(".oneRow:after                                {content: ''; display: table; clear: both;}                                                                                               ");
             htmlReport.AppendLine(".twoColumn                                   {float: left;width: 50%;}                                                                                                                 ");
@@ -190,10 +192,10 @@ namespace ChessStats
             htmlReport.AppendLine($"<div class='twocolumn'>{whiteOpeningshtmlOut}</div>");
             htmlReport.AppendLine($"<div class='twocolumn'>{blackOpeningshtmlOut}</div>");
             htmlReport.AppendLine($"</div><br/><div class='onerow'><div class='onecolumn'>");
-            htmlReport.AppendLine($"<h2>CAPS Scoring (Rolling 10 Game Average)</h2>");
-            htmlReport.AppendLine(capsRollingAverageTenhtmlOut);
             htmlReport.AppendLine($"<h2>CAPS Scoring (Rolling 5 Game Average)</h2>");
             htmlReport.AppendLine(capsRollingAverageFivehtmlOut);
+            htmlReport.AppendLine($"<h2>CAPS Scoring (Rolling 10 Game Average)</h2>");
+            htmlReport.AppendLine(capsRollingAverageTenhtmlOut);
             htmlReport.AppendLine($"<h2>CAPS Scoring (Month Average > 4 Games)</h2>");
             htmlReport.AppendLine(capsTablehtmlOut);
             htmlReport.AppendLine($"<h2>Time Played by Time Control/Month</h2>");
@@ -415,7 +417,7 @@ namespace ChessStats
             }
         }
 
-        private static void UpdateGameTypeTimeTotals(SortedList<string, (int SecondsPlayed, int GameCount, int Win, int Loss, int Draw, int MinRating, int MaxRating, int OpponentMinRating, int OpponentMaxRating, int OpponentBestWin)> secondsPlayedRollup, int playerRating, int opponentRating, bool? isWin, DateTime parsedStartDate, double seconds, string gameTime)
+        private static void UpdateGameTypeTimeTotals(SortedList<string, (int SecondsPlayed, int GameCount, int Win, int Loss, int Draw, int MinRating, int MaxRating, int OpponentMinRating, int OpponentMaxRating, int OpponentWorstLoss, int OpponentBestWin)> secondsPlayedRollup, int playerRating, int opponentRating, bool? isWin, DateTime parsedStartDate, double seconds, string gameTime)
         {
             string key = $"{gameTime} {parsedStartDate.Year}-{((parsedStartDate.Month < 10) ? "0" : "")}{parsedStartDate.Month}";
             if (secondsPlayedRollup.ContainsKey(key))
@@ -429,6 +431,7 @@ namespace ChessStats
                                             MaxRating: Math.Max(playerRating, secondsPlayedRollup[key].MaxRating),
                                             OpponentMinRating: Math.Min(opponentRating, secondsPlayedRollup[key].OpponentMinRating),
                                             OpponentMaxRating: Math.Max(opponentRating, secondsPlayedRollup[key].OpponentMaxRating),
+                                            OpponentWorstLoss: ((isWin != null && isWin.Value == false && opponentRating != 0) ? Math.Min(opponentRating, secondsPlayedRollup[key].OpponentWorstLoss) : secondsPlayedRollup[key].OpponentWorstLoss),
                                             OpponentBestWin: ((isWin != null && isWin.Value == true) ? Math.Max(opponentRating, secondsPlayedRollup[key].OpponentBestWin) : secondsPlayedRollup[key].OpponentBestWin));
             }
             else
@@ -442,6 +445,7 @@ namespace ChessStats
                                               MaxRating: playerRating,
                                               OpponentMinRating: opponentRating,
                                               OpponentMaxRating: opponentRating,
+                                              OpponentWorstLoss: ((isWin != null && isWin.Value == false && opponentRating != 0) ? opponentRating : 9999),
                                               OpponentBestWin: ((isWin != null && isWin.Value == true) ? opponentRating : 0)));
             }
         }
@@ -536,7 +540,7 @@ namespace ChessStats
         }
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Globalization", "CA1303:Do not pass literals as localized parameters", Justification = "<Pending>")]
-        private static (string textOut, string htmlOut) DisplayPlayingStats(SortedList<string, (int SecondsPlayed, int GameCount, int Win, int Loss, int Draw, int MinRating, int MaxRating, int OpponentMinRating, int OpponentMaxRating, int OpponentBestWin)> secondsPlayedRollup, int? bulletRating, int? blitzRating, int? rapidRating)
+        private static (string textOut, string htmlOut) DisplayPlayingStats(SortedList<string, (int SecondsPlayed, int GameCount, int Win, int Loss, int Draw, int MinRating, int MaxRating, int OpponentMinRating, int OpponentMaxRating, int OpponentWorstLoss, int OpponentBestWin)> secondsPlayedRollup, int? bulletRating, int? blitzRating, int? rapidRating)
         {
             StringBuilder textOut = new StringBuilder();
             StringBuilder htmlOut = new StringBuilder();
@@ -547,7 +551,7 @@ namespace ChessStats
             string lastLine = "";
             int ratingComparison = 0;
 
-            foreach (KeyValuePair<string, (int SecondsPlayed, int GameCount, int Win, int Loss, int Draw, int MinRating, int MaxRating, int OpponentMinRating, int OpponentMaxRating, int OpponentBestWin)> rolledUp in secondsPlayedRollup)
+            foreach (KeyValuePair<string, (int SecondsPlayed, int GameCount, int Win, int Loss, int Draw, int MinRating, int MaxRating, int OpponentMinRating, int OpponentMaxRating, int OpponentWorstLoss, int OpponentBestWin)> rolledUp in secondsPlayedRollup)
             {
                 ratingComparison = rolledUp.Key.Substring(0, 2).ToUpperInvariant() switch
                 {
@@ -560,7 +564,7 @@ namespace ChessStats
                 if (lastLine != rolledUp.Key.Substring(0, 10))
                 {
                     textOut.AppendLine("------------------+-----------+--------------------+--------------------+------+------+------+------");
-                    htmlOut.AppendLine($"{((string.IsNullOrEmpty(lastLine)) ? "" : "</tbody></table>")}<table><thead class='playingStatsTable'><tr><td>Time Control/Month</td><td>Time</td><td>Min</td><td>Max</td><td>Range +-</td><td>Vs. Min</td><td>Best Win</td><td>Vs. Max</td><td>Win</td><td>Loss</td><td>Draw</td><td>Total</td></tr></thead><tbody>");
+                    htmlOut.AppendLine($"{((string.IsNullOrEmpty(lastLine)) ? "" : "</tbody></table>")}<table class='playingStatsTable'><thead><tr><td>Time Control/Month</td><td>Time</td><td>Min</td><td>Max</td><td>Range +-</td><td>Vs. Min</td><td>Worst</td><td>Best</td><td>Vs. Max</td><td>Win</td><td>Loss</td><td>Draw</td><td>Total</td></tr></thead><tbody>");
                 }
 
                 lastLine = rolledUp.Key.Substring(0, 10);
@@ -579,19 +583,20 @@ namespace ChessStats
                                          $"{rolledUp.Value.GameCount.ToString(CultureInfo.CurrentCulture).PadLeft(4).Replace("   0", "   -", true, CultureInfo.InvariantCulture)}"
                                          );
 
-                htmlOut.AppendLine($"<tr><td>{rolledUp.Key,-17}</td>" +
-                         $"<td>{((int)timeMonth.TotalHours).ToString(CultureInfo.CurrentCulture),3}:{ timeMonth.Minutes.ToString(CultureInfo.CurrentCulture).PadLeft(2, '0')}:{ timeMonth.Seconds.ToString(CultureInfo.CurrentCulture).PadLeft(2, '0')}</td>" +
-                         $"<td{((ratingComparison == 0) ? "" : ((ratingComparison < rolledUp.Value.MinRating) ? " class='lower'" : " class='higher'"))}>{rolledUp.Value.MinRating.ToString(CultureInfo.CurrentCulture).PadLeft(4).Replace("   0", "   -", true, CultureInfo.InvariantCulture)}</td>" +
-                         $"<td{((ratingComparison == 0) ? "" : ((ratingComparison < rolledUp.Value.MaxRating) ? " class='lower'" : " class='higher'"))}>{rolledUp.Value.MaxRating.ToString(CultureInfo.CurrentCulture).PadLeft(4).Replace("   0", "   -", true, CultureInfo.InvariantCulture)}</td>" +
-                         $"<td>{(rolledUp.Value.MaxRating - rolledUp.Value.MinRating).ToString(CultureInfo.CurrentCulture).PadLeft(4).Replace("   0", "   -", true, CultureInfo.InvariantCulture)}</td>" +
-                         $"<td>{rolledUp.Value.OpponentMinRating.ToString(CultureInfo.CurrentCulture).PadLeft(4).Replace("   0", "   -", true, CultureInfo.InvariantCulture)}</td>" +
-                         $"<td>{rolledUp.Value.OpponentBestWin.ToString(CultureInfo.CurrentCulture).PadLeft(4).Replace("   0", "   -", true, CultureInfo.InvariantCulture)}</td>" +
-                         $"<td>{rolledUp.Value.OpponentMaxRating.ToString(CultureInfo.CurrentCulture).PadLeft(4).Replace("   0", "   -", true, CultureInfo.InvariantCulture)}</td>" +
-                         $"<td>{rolledUp.Value.Win.ToString(CultureInfo.CurrentCulture).PadLeft(4).Replace("   0", "   -", true, CultureInfo.InvariantCulture)}</td>" +
-                         $"<td>{rolledUp.Value.Loss.ToString(CultureInfo.CurrentCulture).PadLeft(4).Replace("   0", "   -", true, CultureInfo.InvariantCulture)}</td>" +
-                         $"<td>{rolledUp.Value.Draw.ToString(CultureInfo.CurrentCulture).PadLeft(4).Replace("   0", "   -", true, CultureInfo.InvariantCulture)}</td>" +
-                         $"<td>{rolledUp.Value.GameCount.ToString(CultureInfo.CurrentCulture).PadLeft(4).Replace("   0", "   -", true, CultureInfo.InvariantCulture)}</td>"
-                         );
+                htmlOut.AppendLine($"<tr><td>{rolledUp.Key}</td>" +
+                                        $"<td>{((int)timeMonth.TotalHours).ToString(CultureInfo.CurrentCulture),3}:{ timeMonth.Minutes.ToString(CultureInfo.CurrentCulture).PadLeft(2, '0')}:{ timeMonth.Seconds.ToString(CultureInfo.CurrentCulture).PadLeft(2, '0')}</td>" +
+                                        $"<td{((ratingComparison == 0) ? "" : ((ratingComparison < rolledUp.Value.MinRating) ? " class='lower'" : " class='higher'"))}>{rolledUp.Value.MinRating.ToString(CultureInfo.CurrentCulture).PadLeft(4).Replace("   0", "   -", true, CultureInfo.InvariantCulture)}</td>" +
+                                        $"<td{((ratingComparison == 0) ? "" : ((ratingComparison < rolledUp.Value.MaxRating) ? " class='lower'" : " class='higher'"))}>{rolledUp.Value.MaxRating.ToString(CultureInfo.CurrentCulture).PadLeft(4).Replace("   0", "   -", true, CultureInfo.InvariantCulture)}</td>" +
+                                        $"<td>{(rolledUp.Value.MaxRating - rolledUp.Value.MinRating).ToString(CultureInfo.CurrentCulture).PadLeft(4).Replace("   0", "   -", true, CultureInfo.InvariantCulture)}</td>" +
+                                        $"<td>{rolledUp.Value.OpponentMinRating.ToString(CultureInfo.CurrentCulture).PadLeft(4).Replace("   0", "   -", true, CultureInfo.InvariantCulture)}</td>" +
+                                        $"<td>{rolledUp.Value.OpponentWorstLoss.ToString(CultureInfo.CurrentCulture).PadLeft(4).Replace("9999", "   -", true, CultureInfo.InvariantCulture)}</td>" +
+                                        $"<td>{rolledUp.Value.OpponentBestWin.ToString(CultureInfo.CurrentCulture).PadLeft(4).Replace("   0", "   -", true, CultureInfo.InvariantCulture)}</td>" +
+                                        $"<td>{rolledUp.Value.OpponentMaxRating.ToString(CultureInfo.CurrentCulture).PadLeft(4).Replace("   0", "   -", true, CultureInfo.InvariantCulture)}</td>" +
+                                        $"<td>{rolledUp.Value.Win.ToString(CultureInfo.CurrentCulture).PadLeft(4).Replace("   0", "   -", true, CultureInfo.InvariantCulture)}</td>" +
+                                        $"<td>{rolledUp.Value.Loss.ToString(CultureInfo.CurrentCulture).PadLeft(4).Replace("   0", "   -", true, CultureInfo.InvariantCulture)}</td>" +
+                                        $"<td>{rolledUp.Value.Draw.ToString(CultureInfo.CurrentCulture).PadLeft(4).Replace("   0", "   -", true, CultureInfo.InvariantCulture)}</td>" +
+                                        $"<td>{rolledUp.Value.GameCount.ToString(CultureInfo.CurrentCulture).PadLeft(4).Replace("   0", "   -", true, CultureInfo.InvariantCulture)}</td>"
+                                        );
             }
 
             htmlOut.AppendLine("</tbody></table>");

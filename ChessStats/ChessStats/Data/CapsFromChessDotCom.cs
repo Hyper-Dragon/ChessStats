@@ -45,7 +45,7 @@ namespace ChessStats.Data
 
                         HtmlNodeCollection nodeCollection = pageDocument.DocumentNode.SelectNodes("//*[contains(@class,'archive-games-table')]");
 
-                        if (nodeCollection == null || nodeCollection[0].InnerText.Contains("No results found."))
+                        if (nodeCollection == null || nodeCollection[0].InnerText.Contains("No results found"))
                         {
                             Helpers.ProcessedDisplay("X");
                             break;
