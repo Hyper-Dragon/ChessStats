@@ -1,9 +1,6 @@
-﻿using Newtonsoft.Json;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using J = Newtonsoft.Json.JsonPropertyAttribute;
-using System.Globalization;
 
 
 namespace ChessDotComSharp.Models

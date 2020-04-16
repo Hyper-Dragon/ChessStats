@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
 using J = Newtonsoft.Json.JsonPropertyAttribute;
 
 namespace ChessDotComSharp.Models
@@ -40,4 +39,4 @@ namespace ChessDotComSharp.Models
     {
         [J("games")] public IReadOnlyList<ArchiveGame> Games { get; set; }
     }
- }
+}

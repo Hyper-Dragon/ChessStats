@@ -3,7 +3,6 @@
 using ChessDotComSharp.Resources;
 using System;
 using System.IO;
-using System.Net.Http;
 using System.Threading.Tasks;
 
 namespace ChessDotComSharp
@@ -27,7 +26,7 @@ namespace ChessDotComSharp
         /// <returns></returns>
         public async Task<bool> GetIsPlayerOnlineAsync(string username)
         {
-            var online = await GetAsync<PlayerOnlineStatus>(Endpoints.Player.GetIsPlayerOnline(username)).ConfigureAwait(false);
+            PlayerOnlineStatus online = await GetAsync<PlayerOnlineStatus>(Endpoints.Player.GetIsPlayerOnline(username)).ConfigureAwait(false);
             return online.Online;
         }
 
@@ -119,17 +118,27 @@ namespace ChessDotComSharp
         /// <returns></returns>
         public async Task DownloadPlayerGameArchiveToFileAsync(string username, int year, int month, string filename = null, bool overwrite = false, bool throwIfExists = true)
         {
-            var path = Path.GetFullPath(filename ?? $"{username}_{year}_{month}.pgn");
+            string path = Path.GetFullPath(filename ?? $"{username}_{year}_{month}.pgn");
 
             if (!overwrite && File.Exists(path))
-                if (throwIfExists) throw new InvalidOperationException($"File {path} already exists.");
-                else return;
+            {
+                if (throwIfExists)
+                {
+                    throw new InvalidOperationException($"File {path} already exists.");
+                }
+                else
+                {
+                    return;
+                }
+            }
 
-            using (var stream = await DownloadPlayerGameArchiveAsStreamAsync(username, year, month))
-            using (var fs = new FileStream(path, FileMode.Create))
+            using (Stream stream = await DownloadPlayerGameArchiveAsStreamAsync(username, year, month))
+            using (FileStream fs = new FileStream(path, FileMode.Create))
             {
                 if (stream.Length > 0)
+                {
                     await stream.CopyToAsync(fs);
+                }
             }
         }
 

@@ -61,7 +61,7 @@ namespace ChessStats
             stopwatch.Reset();
             stopwatch.Start();
 
-            List <ChessGame> gameList = new List<ChessGame>();
+            List<ChessGame> gameList = new List<ChessGame>();
             Console.WriteLine($">>Fetching Games From Chess.Com");
 
             try
@@ -86,7 +86,7 @@ namespace ChessStats
             //Initialise reporting lists
             SortedList<string, (int SecondsPlayed, int GameCount, int Win, int Loss, int Draw, int MinRating, int MaxRating, int OpponentMinRating, int OpponentMaxRating, int OpponentBestWin)> secondsPlayedRollup = new SortedList<string, (int, int, int, int, int, int, int, int, int, int)>();
             SortedList<string, dynamic> secondsPlayedRollupMonthOnly = new SortedList<string, dynamic>();
-            SortedList<string, (string href, int total)> ecoPlayedRollupWhite = new SortedList<string, (string,int)>();
+            SortedList<string, (string href, int total)> ecoPlayedRollupWhite = new SortedList<string, (string, int)>();
             SortedList<string, (string href, int total)> ecoPlayedRollupBlack = new SortedList<string, (string, int)>();
             double totalSecondsPlayed = 0;
 
@@ -117,11 +117,11 @@ namespace ChessStats
 
             (string whiteOpeningstextOut, string whiteOpeningshtmlOut) = DisplayOpeningsAsWhite(ecoPlayedRollupWhite);
             (string blackOpeningstextOut, string blackOpeningshtmlOut) = DisplayOpeningsAsBlack(ecoPlayedRollupBlack);
-            (string playingStatstextOut, string playingStatshtmlOut) = DisplayPlayingStats(secondsPlayedRollup);
+            (string playingStatstextOut, string playingStatshtmlOut) = DisplayPlayingStats(secondsPlayedRollup, userStats.ChessBullet?.Last.Rating, userStats.ChessBlitz?.Last.Rating, userStats.ChessRapid?.Last.Rating);
             (string timePlayedByMonthtextOut, string timePlayedByMonthhtmlOut) = DisplayTimePlayedByMonth(secondsPlayedRollupMonthOnly);
             (string capsTabletextOut, string capsTablehtmlOut) = DisplayCapsTable(capsScores);
             (string capsRollingAverageFivetextOut, string capsRollingAverageFivehtmlOut) = DisplayCapsRollingAverage(5, capsScores);
-            (string capsRollingAverageTentextOut, string capsRollingAverageTenhtmlOut) = DisplayCapsRollingAverage(10,capsScores);
+            (string capsRollingAverageTentextOut, string capsRollingAverageTenhtmlOut) = DisplayCapsRollingAverage(10, capsScores);
             (string totalSecondsPlayedtextOut, string totalSecondsPlayedhtmlOut) = DisplayTotalSecondsPlayed(totalSecondsPlayed);
 
             StringBuilder textReport = new StringBuilder();
@@ -136,10 +136,9 @@ namespace ChessStats
             textReport.Append(totalSecondsPlayedtextOut);
             textReport.Append(Helpers.GetDisplaySection("End of Report", true));
 
-
             //Build the HTML report
             using HttpClient httpClient = new HttpClient();
-            
+
             Uri userLogoUri = new Uri(string.IsNullOrEmpty(userRecord.Avatar) ? "https://images.chesscomfiles.com/uploads/v1/group/57796.67ee0038.160x160o.2dc0953ad64e.png" : userRecord.Avatar);
             string userLogoBase64 = Convert.ToBase64String(await httpClient.GetByteArrayAsync(userLogoUri).ConfigureAwait(false));
 
@@ -156,30 +155,32 @@ namespace ChessStats
             //htmlReport.AppendLine("<meta name='viewport' content='width=device-width, initial-scale=1.0'>");
             htmlReport.AppendLine("<style>");
             //htmlReport.AppendLine($"@font-face {{font-family: 'icon-font-chess'; src: url(data:font/wolf2;charset=utf-8;base64,{iconFileBase64});}}");
-            htmlReport.AppendLine("*                                      {margin: 0;padding: 0;}                                                                                                                   ");
-            htmlReport.AppendLine("body                                   {background-color:#312e2b;width: 90%; margin: auto; font-family: -apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif;}   ");
-            htmlReport.AppendLine("h1                                     {padding: 10px;text-align: left;font-size: 30px;background-color: rgba(0,0,0,.13);color: hsla(0,0%,100%,.65);}                            ");
-            htmlReport.AppendLine("h1 small                               {font-size: 15px;}                                                                                                                        ");
-            htmlReport.AppendLine(".headerLink                            {color: #e58b09;}                                                                                                                         ");         
-            htmlReport.AppendLine("h2                                     {padding: 5px;text-align: left;font-size: 16px;background-color: rgba(0,0,0,.13);color: hsla(0,0%,100%,.65);}                             ");
-            htmlReport.AppendLine("table                                  {width: 100%;background: white;table-layout: fixed ;border-collapse: collapse; overflow-x:auto; }                                         ");
-            htmlReport.AppendLine("thead                                  {text-align: center;background: #1583b7;color: white;font-size: 14px; font-weight: bold;}                                                ");
-            htmlReport.AppendLine("tbody                                  {text-align: right;font-size: 13px;}                                                                                                      ");
-            htmlReport.AppendLine("td                                     {padding-right: 10px;}                                                                                                                    ");
-            htmlReport.AppendLine("td:nth-child(1)                        {text-align: left; width:20%; font-weight: bold;}                                                                                         ");
-            htmlReport.AppendLine("tbody tr:nth-child(odd)                {background-color: #F9F9FF;}                                                                                                              ");
-            htmlReport.AppendLine("tbody tr:nth-child(even)               {background-color: #F4F4FF;}                                                                                                              ");
+            htmlReport.AppendLine("*                                            {margin: 0;padding: 0;}                                                                                                                   ");
+            htmlReport.AppendLine("body                                         {background-color:#312e2b;width: 90%; margin: auto; font-family: -apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif;}   ");
+            htmlReport.AppendLine("h1                                           {padding: 10px;text-align: left;font-size: 30px;background-color: rgba(0,0,0,.13);color: hsla(0,0%,100%,.65);}                            ");
+            htmlReport.AppendLine("h1 small                                     {font-size: 15px;}                                                                                                                        ");
+            htmlReport.AppendLine(".headerLink                                  {color: #e58b09;}                                                                                                                         ");
+            htmlReport.AppendLine("h2                                           {padding: 5px;text-align: left;font-size: 16px;background-color: rgba(0,0,0,.13);color: hsla(0,0%,100%,.65);}                             ");
+            htmlReport.AppendLine("table                                        {width: 100%;background: white;table-layout: fixed ;border-collapse: collapse; overflow-x:auto; }                                         ");
+            htmlReport.AppendLine("thead                                        {text-align: center;background: #1583b7;color: white;font-size: 14px; font-weight: bold;}                                                ");
+            htmlReport.AppendLine("tbody                                        {text-align: right;font-size: 13px;}                                                                                                      ");
+            htmlReport.AppendLine("td                                           {padding-right: 10px;}                                                                                                                    ");
+            htmlReport.AppendLine("td:nth-child(1)                              {text-align: left; width:20%; font-weight: bold;}                                                                                         ");
+            htmlReport.AppendLine("tbody tr:nth-child(odd)                      {background-color: #F9F9FF;}                                                                                                              ");
+            htmlReport.AppendLine("tbody tr:nth-child(even)                     {background-color: #F4F4FF;}                                                                                                              ");
+            htmlReport.AppendLine(".higher                                      {background-color: hsla(120, 100%, 50%, 0.2);}");
+            htmlReport.AppendLine(".lower                                       {background-color: hsla(0, 100%, 70%, 0.2);}");
             htmlReport.AppendLine(".whiteOpeningsTable thead td:nth-child(1)    {font-weight: bold;}                                                                                                                ");
             htmlReport.AppendLine(".blackOpeningsTable thead td:nth-child(1)    {font-weight: bold;}                                                                                                                ");
-            htmlReport.AppendLine(".whiteOpeningsTable td:nth-child(1)    {text-align: left; width:90%; font-weight: normal;}                                                                                       ");
-            htmlReport.AppendLine(".blackOpeningsTable td:nth-child(1)    {text-align: left; width:90%; font-weight: normal;}                                                                                       ");
-            htmlReport.AppendLine(".capsRollingTable thead td:nth-child(2){text-align: left;}                                                                                                                       ");
-            htmlReport.AppendLine(".oneColumn                             {float: left;width: 100%;}                                                                                                                ");
-            htmlReport.AppendLine(".oneRow:after                          {content: ''; display: table; clear: both;}                                                                                               ");
-            htmlReport.AppendLine(".twoColumn                             {float: left;width: 50%;}                                                                                                                 ");
-            htmlReport.AppendLine(".twoRow:after                          {content: '';display: table;clear: both;}                                                                                                 ");
-            htmlReport.AppendLine(".footer                                {text-align: right;color: white;}                                                                                                         ");
-            htmlReport.AppendLine(".footer a                              {color: #e58b09;}                                                                                                                         ");                             
+            htmlReport.AppendLine(".whiteOpeningsTable td:nth-child(1)          {text-align: left; width:90%; font-weight: normal;}                                                                                       ");
+            htmlReport.AppendLine(".blackOpeningsTable td:nth-child(1)          {text-align: left; width:90%; font-weight: normal;}                                                                                       ");
+            htmlReport.AppendLine(".capsRollingTable thead td:nth-child(2)      {text-align: left;}                                                                                                                       ");
+            htmlReport.AppendLine(".oneColumn                                   {float: left;width: 100%;}                                                                                                                ");
+            htmlReport.AppendLine(".oneRow:after                                {content: ''; display: table; clear: both;}                                                                                               ");
+            htmlReport.AppendLine(".twoColumn                                   {float: left;width: 50%;}                                                                                                                 ");
+            htmlReport.AppendLine(".twoRow:after                                {content: '';display: table;clear: both;}                                                                                                 ");
+            htmlReport.AppendLine(".footer                                      {text-align: right;color: white;}                                                                                                         ");
+            htmlReport.AppendLine(".footer a                                    {color: #e58b09;}                                                                                                                         ");
             htmlReport.AppendLine("</style></head><body>");
             htmlReport.AppendLine($"<h1>");
             htmlReport.AppendLine($"<a href='{userRecord.Url}'><img alt='logo' src='data:image/png;base64,{userLogoBase64}'/><a>");
@@ -267,7 +268,7 @@ namespace ChessStats
 
             Console.WriteLine($"  >>Writing Html Report");
 
-            using var htmlReportFileOutStream = File.Create($"{Path.Combine(resultsDir.FullName, $"{chessdotcomUsername}-Summary.html")}");
+            using FileStream htmlReportFileOutStream = File.Create($"{Path.Combine(resultsDir.FullName, $"{chessdotcomUsername}-Summary.html")}");
             await htmlReportFileOutStream.WriteAsync(Encoding.UTF8.GetBytes(htmlReport.ToString())).ConfigureAwait(false);
             await htmlReportFileOutStream.FlushAsync().ConfigureAwait(false);
             htmlReportFileOutStream.Close();
@@ -470,11 +471,11 @@ namespace ChessStats
 
                 if (ecoPlayedRollup.ContainsKey(ecoKey))
                 {
-                    ecoPlayedRollup[ecoKey] = (ecoPlayedRollup[ecoKey].href, ecoPlayedRollup[ecoKey].total+1);
+                    ecoPlayedRollup[ecoKey] = (ecoPlayedRollup[ecoKey].href, ecoPlayedRollup[ecoKey].total + 1);
                 }
                 else
                 {
-                    ecoPlayedRollup.Add(ecoKey, (ecoHref,1));
+                    ecoPlayedRollup.Add(ecoKey, (ecoHref, 1));
                 }
             }
 #pragma warning disable CA1031 // Do not catch general exception types
@@ -486,7 +487,7 @@ namespace ChessStats
         }
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Globalization", "CA1303:Do not pass literals as localized parameters", Justification = "<Pending>")]
-        private static (string textOut, string htmlOut) DisplayOpeningsAsWhite(SortedList<string, (string href,int total)> ecoPlayedRollupWhite)
+        private static (string textOut, string htmlOut) DisplayOpeningsAsWhite(SortedList<string, (string href, int total)> ecoPlayedRollupWhite)
         {
             StringBuilder textOut = new StringBuilder();
             StringBuilder htmlOut = new StringBuilder();
@@ -535,7 +536,7 @@ namespace ChessStats
         }
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Globalization", "CA1303:Do not pass literals as localized parameters", Justification = "<Pending>")]
-        private static (string textOut, string htmlOut) DisplayPlayingStats(SortedList<string, (int SecondsPlayed, int GameCount, int Win, int Loss, int Draw, int MinRating, int MaxRating, int OpponentMinRating, int OpponentMaxRating, int OpponentBestWin)> secondsPlayedRollup)
+        private static (string textOut, string htmlOut) DisplayPlayingStats(SortedList<string, (int SecondsPlayed, int GameCount, int Win, int Loss, int Draw, int MinRating, int MaxRating, int OpponentMinRating, int OpponentMaxRating, int OpponentBestWin)> secondsPlayedRollup, int? bulletRating, int? blitzRating, int? rapidRating)
         {
             StringBuilder textOut = new StringBuilder();
             StringBuilder htmlOut = new StringBuilder();
@@ -544,13 +545,22 @@ namespace ChessStats
             textOut.AppendLine(Helpers.GetDisplaySection("Time Played/Ratings by Time Control/Month", false));
             textOut.AppendLine("Time Control/Month| Play Time | Rating Min/Max/+-  | Vs Min/BestWin/Max | Win  | Loss | Draw | Tot. ");
             string lastLine = "";
+            int ratingComparison = 0;
 
             foreach (KeyValuePair<string, (int SecondsPlayed, int GameCount, int Win, int Loss, int Draw, int MinRating, int MaxRating, int OpponentMinRating, int OpponentMaxRating, int OpponentBestWin)> rolledUp in secondsPlayedRollup)
             {
+                ratingComparison = rolledUp.Key.Substring(0, 2).ToUpperInvariant() switch
+                {
+                    "BU" => rolledUp.Key.Contains("NR") ? 0 : bulletRating.Value,
+                    "BL" => rolledUp.Key.Contains("NR") ? 0 : blitzRating.Value,
+                    "RA" => rolledUp.Key.Contains("NR") ? 0 : rapidRating.Value,
+                    _ => 0,
+                };
+
                 if (lastLine != rolledUp.Key.Substring(0, 10))
                 {
                     textOut.AppendLine("------------------+-----------+--------------------+--------------------+------+------+------+------");
-                    htmlOut.AppendLine($"{((string.IsNullOrEmpty(lastLine))?"":"</tbody></table>")}<table><thead class='playingStatsTable'><tr><td>Time Control/Month</td><td>Time</td><td>Min</td><td>Max</td><td>+-</td><td>Min</td><td>BestWin</td><td>Max</td><td>Win</td><td>Loss</td><td>Draw</td><td>Total</td></tr></thead><tbody>");
+                    htmlOut.AppendLine($"{((string.IsNullOrEmpty(lastLine)) ? "" : "</tbody></table>")}<table><thead class='playingStatsTable'><tr><td>Time Control/Month</td><td>Time</td><td>Min</td><td>Max</td><td>Range +-</td><td>Vs. Min</td><td>Best Win</td><td>Vs. Max</td><td>Win</td><td>Loss</td><td>Draw</td><td>Total</td></tr></thead><tbody>");
                 }
 
                 lastLine = rolledUp.Key.Substring(0, 10);
@@ -571,8 +581,8 @@ namespace ChessStats
 
                 htmlOut.AppendLine($"<tr><td>{rolledUp.Key,-17}</td>" +
                          $"<td>{((int)timeMonth.TotalHours).ToString(CultureInfo.CurrentCulture),3}:{ timeMonth.Minutes.ToString(CultureInfo.CurrentCulture).PadLeft(2, '0')}:{ timeMonth.Seconds.ToString(CultureInfo.CurrentCulture).PadLeft(2, '0')}</td>" +
-                         $"<td>{rolledUp.Value.MinRating.ToString(CultureInfo.CurrentCulture).PadLeft(4).Replace("   0", "   -", true, CultureInfo.InvariantCulture)}</td>" +
-                         $"<td>{rolledUp.Value.MaxRating.ToString(CultureInfo.CurrentCulture).PadLeft(4).Replace("   0", "   -", true, CultureInfo.InvariantCulture)}</td>" +
+                         $"<td{((ratingComparison == 0) ? "" : ((ratingComparison < rolledUp.Value.MinRating) ? " class='lower'" : " class='higher'"))}>{rolledUp.Value.MinRating.ToString(CultureInfo.CurrentCulture).PadLeft(4).Replace("   0", "   -", true, CultureInfo.InvariantCulture)}</td>" +
+                         $"<td{((ratingComparison == 0) ? "" : ((ratingComparison < rolledUp.Value.MaxRating) ? " class='lower'" : " class='higher'"))}>{rolledUp.Value.MaxRating.ToString(CultureInfo.CurrentCulture).PadLeft(4).Replace("   0", "   -", true, CultureInfo.InvariantCulture)}</td>" +
                          $"<td>{(rolledUp.Value.MaxRating - rolledUp.Value.MinRating).ToString(CultureInfo.CurrentCulture).PadLeft(4).Replace("   0", "   -", true, CultureInfo.InvariantCulture)}</td>" +
                          $"<td>{rolledUp.Value.OpponentMinRating.ToString(CultureInfo.CurrentCulture).PadLeft(4).Replace("   0", "   -", true, CultureInfo.InvariantCulture)}</td>" +
                          $"<td>{rolledUp.Value.OpponentBestWin.ToString(CultureInfo.CurrentCulture).PadLeft(4).Replace("   0", "   -", true, CultureInfo.InvariantCulture)}</td>" +

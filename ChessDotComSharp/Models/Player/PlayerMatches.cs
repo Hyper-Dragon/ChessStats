@@ -1,7 +1,4 @@
-﻿
-using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Collections.Generic;
 using J = Newtonsoft.Json.JsonPropertyAttribute;
 
 
@@ -21,7 +18,7 @@ namespace ChessDotComSharp.Models
         [J("@id")] public string Id { get; set; }
         [J("club")] public string Club { get; set; }
     }
-   
+
     public class MatchInProgress : Match
     {
         [J("board")] public string Board { get; set; }

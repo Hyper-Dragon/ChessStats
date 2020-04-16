@@ -23,13 +23,13 @@ namespace ChessStats.Data
         }
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "<Pending>")]
-        public static async  Task<List<ChessGame>> FetchGameRecordsForUser(string username, DirectoryInfo cacheDir)
+        public static async Task<List<ChessGame>> FetchGameRecordsForUser(string username, DirectoryInfo cacheDir)
         {
             Helpers.ResetDisplayCounter();
             ConcurrentBag<ChessGame> PgnList = new ConcurrentBag<ChessGame>();
 
             ArchivedGamesList monthlyArchive = await GetPlayerMonthlyArchive(username).ConfigureAwait(false);
-            
+
             Parallel.ForEach(monthlyArchive.Archives, new ParallelOptions { MaxDegreeOfParallelism = 4 }, (dataForMonth) =>
             {
                 string[] urlSplit = dataForMonth.Split('/');
