@@ -16,8 +16,8 @@ namespace ChessStats.Data
         public static async Task<(PlayerProfile userRecord, PlayerStats userStats)> FetchUserData(string username)
         {
             using ChessDotComSharp.ChessDotComClient client = new ChessDotComSharp.ChessDotComClient();
-            PlayerProfile userRecord = await client.GetPlayerProfileAsync(username).ConfigureAwait(true);
-            PlayerStats userStats = await client.GetPlayerStatsAsync(username).ConfigureAwait(true);
+            PlayerProfile userRecord = await client.GetPlayerProfileAsync(username).ConfigureAwait(false);
+            PlayerStats userStats = await client.GetPlayerStatsAsync(username).ConfigureAwait(false);
 
             return (userRecord, userStats);
         }

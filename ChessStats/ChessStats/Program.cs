@@ -136,48 +136,55 @@ namespace ChessStats
             textReport.Append(totalSecondsPlayedtextOut);
             textReport.Append(Helpers.GetDisplaySection("End of Report", true));
 
+
+            //Build the HTML report
+            using HttpClient httpClient = new HttpClient();
+            
+            Uri userLogoUri = new Uri(string.IsNullOrEmpty(userRecord.Avatar) ? "https://images.chesscomfiles.com/uploads/v1/group/57796.67ee0038.160x160o.2dc0953ad64e.png" : userRecord.Avatar);
+            string userLogoBase64 = Convert.ToBase64String(await httpClient.GetByteArrayAsync(userLogoUri).ConfigureAwait(false));
+
+            Uri iconFileUri = new Uri("https://www.chess.com/bundles/web/fonts/chessglyph-regular.a237a476.woff2");
+            string iconFileBase64 = Convert.ToBase64String(await httpClient.GetByteArrayAsync(iconFileUri).ConfigureAwait(false));
+
             StringBuilder htmlReport = new StringBuilder();
             //htmlReport.AppendLine("<!DOCTYPE html>");
             htmlReport.AppendLine("<html lang='en'><head>");
             htmlReport.AppendLine($"<title>ChessStats for {chessdotcomUsername}</title>");
             htmlReport.AppendLine("<meta charset='UTF-8'>");
             htmlReport.AppendLine("<meta name='generator' content='ChessStats'> ");
+            //htmlReport.AppendLine($"<link as='font' crossorigin='crossorigin' src='url(data:font/truetype;charset=utf-8;base64,{iconFileBase64})' rel='preload' type='font/woff2'>");
             //htmlReport.AppendLine("<meta name='viewport' content='width=device-width, initial-scale=1.0'>");
             htmlReport.AppendLine("<style>");
+            //htmlReport.AppendLine($"@font-face {{font-family: 'icon-font-chess'; src: url(data:font/wolf2;charset=utf-8;base64,{iconFileBase64});}}");
             htmlReport.AppendLine("*                                      {margin: 0;padding: 0;}                                                                                                                   ");
             htmlReport.AppendLine("body                                   {background-color:#312e2b;width: 90%; margin: auto; font-family: -apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif;}   ");
             htmlReport.AppendLine("h1                                     {padding: 10px;text-align: left;font-size: 30px;background-color: rgba(0,0,0,.13);color: hsla(0,0%,100%,.65);}                            ");
+            htmlReport.AppendLine("h1 small                               {font-size: 15px;}                                                                                                                        ");
             htmlReport.AppendLine(".headerLink                            {color: #e58b09;}                                                                                                                         ");         
             htmlReport.AppendLine("h2                                     {padding: 5px;text-align: left;font-size: 16px;background-color: rgba(0,0,0,.13);color: hsla(0,0%,100%,.65);}                             ");
             htmlReport.AppendLine("table                                  {width: 100%;background: white;table-layout: fixed ;border-collapse: collapse; overflow-x:auto; }                                         ");
-            htmlReport.AppendLine("thead                                  {text-align: center;background: darkgrey;color: white;font-size: 14px; font-weight: bold;}                                                ");
+            htmlReport.AppendLine("thead                                  {text-align: center;background: #1583b7;color: white;font-size: 14px; font-weight: bold;}                                                ");
             htmlReport.AppendLine("tbody                                  {text-align: right;font-size: 13px;}                                                                                                      ");
             htmlReport.AppendLine("td                                     {padding-right: 10px;}                                                                                                                    ");
             htmlReport.AppendLine("td:nth-child(1)                        {text-align: left; width:20%; font-weight: bold;}                                                                                         ");
-            htmlReport.AppendLine("tbody tr:nth-child(odd)                {background-color: lightestgrey;}                                                                                                         ");
-            htmlReport.AppendLine("tbody tr:nth-child(even)               {background-color: aliceblue;}                                                                                                            ");
+            htmlReport.AppendLine("tbody tr:nth-child(odd)                {background-color: #F9F9FF;}                                                                                                              ");
+            htmlReport.AppendLine("tbody tr:nth-child(even)               {background-color: #F4F4FF;}                                                                                                              ");
             htmlReport.AppendLine(".whiteOpeningsTable thead td:nth-child(1)    {font-weight: bold;}                                                                                                                ");
             htmlReport.AppendLine(".blackOpeningsTable thead td:nth-child(1)    {font-weight: bold;}                                                                                                                ");
             htmlReport.AppendLine(".whiteOpeningsTable td:nth-child(1)    {text-align: left; width:90%; font-weight: normal;}                                                                                       ");
             htmlReport.AppendLine(".blackOpeningsTable td:nth-child(1)    {text-align: left; width:90%; font-weight: normal;}                                                                                       ");
             htmlReport.AppendLine(".capsRollingTable thead td:nth-child(2){text-align: left;}                                                                                                                       ");
             htmlReport.AppendLine(".oneColumn                             {float: left;width: 100%;}                                                                                                                ");
-            htmlReport.AppendLine(".oneRow: after                         {content: ''; display: table; clear: both;}                                                                                               ");
+            htmlReport.AppendLine(".oneRow:after                          {content: ''; display: table; clear: both;}                                                                                               ");
             htmlReport.AppendLine(".twoColumn                             {float: left;width: 50%;}                                                                                                                 ");
-            htmlReport.AppendLine(".twoRow: after                         {content: '';display: table;clear: both;}                                                                                                 ");
+            htmlReport.AppendLine(".twoRow:after                          {content: '';display: table;clear: both;}                                                                                                 ");
             htmlReport.AppendLine(".footer                                {text-align: right;color: white;}                                                                                                         ");
             htmlReport.AppendLine(".footer a                              {color: #e58b09;}                                                                                                                         ");                             
             htmlReport.AppendLine("</style></head><body>");
-
-            using HttpClient httpClient = new HttpClient();
-            Uri userLogo = new Uri(string.IsNullOrEmpty(userRecord.Avatar) ? "https://images.chesscomfiles.com/uploads/v1/group/57796.67ee0038.160x160o.2dc0953ad64e.png" : userRecord.Avatar);
-            var d = await httpClient.GetByteArrayAsync(userLogo).ConfigureAwait(false);
-            string o = Convert.ToBase64String(d);
-
             htmlReport.AppendLine($"<h1>");
-            htmlReport.AppendLine($"<a href='{userRecord.Url}'><img alt='logo' src='data:image/png;base64,{o}'/><a>");
+            htmlReport.AppendLine($"<a href='{userRecord.Url}'><img alt='logo' src='data:image/png;base64,{userLogoBase64}'/><a>");
             htmlReport.AppendLine($"Live Games Report for <a class='headerLink' href='{userRecord.Url}'>{chessdotcomUsername}</a> <small>({DateTime.UtcNow.ToShortDateString()}@{DateTime.UtcNow.ToShortTimeString()} UTC)</small></h1>");
-            htmlReport.AppendLine($"<h2>Openings Occurring More Than Once (Max 15)</h2>");
+            htmlReport.AppendLine($"<h2><span class='icon-font-chess book-alt'></span>Openings Occurring More Than Once (Max 15)</h2>");
             htmlReport.AppendLine($"<div class='tworow'>");
             htmlReport.AppendLine($"<div class='twocolumn'>{whiteOpeningshtmlOut}</div>");
             htmlReport.AppendLine($"<div class='twocolumn'>{blackOpeningshtmlOut}</div>");
