@@ -147,72 +147,74 @@ namespace ChessStats
             string pawnFragment = $"<img src='data:image/png;base64,{pawnFileBase64}'/>";
 
             StringBuilder htmlReport = new StringBuilder();
-            htmlReport.AppendLine("<!DOCTYPE html>");
-            htmlReport.AppendLine("<html lang='en'><head>");
-            htmlReport.AppendLine($"<title>ChessStats for {chessdotcomUsername}</title>");
-            htmlReport.AppendLine("<meta charset='UTF-8'>");
-            htmlReport.AppendLine("<meta name='generator' content='ChessStats'> ");
-            htmlReport.AppendLine("<meta name='viewport' content='width=device-width, initial-scale=1.0'>");
-            htmlReport.AppendLine("   <style>");
-            htmlReport.AppendLine("     *                                            {margin: 0;padding: 0;}                                                                                                                   ");
-            htmlReport.AppendLine("     body                                         {background-color:#312e2b;width: 90%; margin: auto; font-family: -apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif;}   ");
-            htmlReport.AppendLine("     h1                                           {padding: 10px;text-align: left;font-size: 40px; background-color: rgba(0,0,0,.13);color: hsla(0,0%,100%,.65);}                            ");
-            htmlReport.AppendLine("     h1 img                                       {padding-right: 10px; float: left}");
-            htmlReport.AppendLine("     h1 small                                     {font-size: 15px; vertical-align: bottom}                                                                                                                        ");
-            htmlReport.AppendLine("     .headerLink                                  {color: #e58b09;}                                                                                                                         ");
-            htmlReport.AppendLine("     h2                                           {clear:left;padding: 5px;text-align: left;font-size: 16px;background-color: rgba(0,0,0,.13);color: hsla(0,0%,100%,.65);}                             ");
-            htmlReport.AppendLine("     table                                        {width: 100%;background: white;table-layout: fixed ;border-collapse: collapse; overflow-x:auto; }                                         ");
-            htmlReport.AppendLine("     thead                                        {text-align: center;background: #1583b7;color: white;font-size: 14px; font-weight: bold;}                                                 ");
-            htmlReport.AppendLine("     tbody                                        {text-align: center;font-size: 11px;}                                                                                                     ");
-            htmlReport.AppendLine("     td                                           {padding-right: 0px;}                                                                                                                     ");
-            htmlReport.AppendLine("     tbody td:nth-child(n+2)                      {font-family: Courier New;}                                                                                                               ");
-            htmlReport.AppendLine("     td:nth-child(1)                              {text-align: left; width:12%; font-weight: bold;}                                                                                         ");
-            htmlReport.AppendLine("     tbody tr:nth-child(odd)                      {background-color: #F9F9FF;}                                                                                                              ");
-            htmlReport.AppendLine("     tbody tr:nth-child(even)                     {background-color: #F4F4FF;}                                                                                                              ");
-            htmlReport.AppendLine("     .higher                                      {background-color: hsla(120, 100%, 50%, 0.2);}                                                                                            ");
-            htmlReport.AppendLine("     .lower                                       {background-color: hsla(0, 100%, 70%, 0.2);}                                                                                              ");
-            htmlReport.AppendLine("     .whiteOpeningsTable thead td:nth-child(1)    {font-weight: bold;}                                                                                                                      ");
-            htmlReport.AppendLine("     .blackOpeningsTable thead td:nth-child(1)    {font-weight: bold;}                                                                                                                      ");
-            htmlReport.AppendLine("     .whiteOpeningsTable td:nth-child(1)          {text-align: left; width:90%; font-weight: normal;}                                                                                       ");
-            htmlReport.AppendLine("     .blackOpeningsTable td:nth-child(1)          {text-align: left; width:90%; font-weight: normal;}                                                                                       ");
-            htmlReport.AppendLine("     .capsRollingTable thead td:nth-child(2)      {text-align: left;}                                                                                                                       ");
-            htmlReport.AppendLine("     .playingStatsTable tbody td:nth-child(6)     {border-left: thin solid; border-color: #1583b7;}");
-            htmlReport.AppendLine("     .playingStatsTable tbody td:nth-child(8)     {border-left: thin dotted; border-color: #1583b7;}");
-            htmlReport.AppendLine("     .playingStatsTable tbody td:nth-child(11)    {border-left: thin dotted; border-color: #1583b7;}");
-            htmlReport.AppendLine("     .playingStatsTable tbody td:nth-child(13)    {border-left: thin solid; border-color: #1583b7;}");
-            htmlReport.AppendLine("     .oneColumn                                   {float: left;width: 100%;}                                                                                                                ");
-            htmlReport.AppendLine("     .oneRow:after                                {content: ''; display: table; clear: both;}                                                                                               ");
-            htmlReport.AppendLine("     .twoColumn                                   {float: left;width: 50%;}                                                                                                                 ");
-            htmlReport.AppendLine("     .twoRow:after                                {content: '';display: table;clear: both;}                                                                                                 ");
-            htmlReport.AppendLine("     .footer                                      {text-align: right;color: white; font-size: 11px}                                                                                                         ");
-            htmlReport.AppendLine("     .footer a                                    {color: #e58b09;}                                                                                                                         ");
-            htmlReport.AppendLine("   </style>");
-            htmlReport.AppendLine("</head><body>");
-            htmlReport.AppendLine($"<h1>");
+            _ = htmlReport.AppendLine("<!DOCTYPE html>")
+                          .AppendLine("<html lang='en'><head>")
+                          .AppendLine($"<title>ChessStats for {chessdotcomUsername}</title>")
+                          .AppendLine("<meta charset='UTF-8'>")
+                          .AppendLine("<meta name='generator' content='ChessStats'> ")
+                          .AppendLine("<meta name='viewport' content='width=device-width, initial-scale=1.0'>");
+            
+            _ = htmlReport.AppendLine("   <style>                                                                                                                                                                                  ")
+                          .AppendLine("     *                                            {margin: 0;padding: 0;}                                                                                                                   ")
+                          .AppendLine("     body                                         {background-color:#312e2b;width: 90%; margin: auto; font-family: -apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif;}   ")
+                          .AppendLine("     h1                                           {padding: 10px;text-align: left;font-size: 40px; background-color: rgba(0,0,0,.13);color: hsla(0,0%,100%,.65);}                           ")
+                          .AppendLine("     h1 img                                       {padding-right: 10px; float: left}                                                                                                        ")
+                          .AppendLine("     h1 small                                     {font-size: 15px; vertical-align: bottom}                                                                                                 ")
+                          .AppendLine("     .headerLink                                  {color: #e58b09;}                                                                                                                         ")
+                          .AppendLine("     h2                                           {clear:left;padding: 5px;text-align: left;font-size: 16px;background-color: rgba(0,0,0,.13);color: hsla(0,0%,100%,.65);}                  ")
+                          .AppendLine("     table                                        {width: 100%;background: white;table-layout: fixed ;border-collapse: collapse; overflow-x:auto; }                                         ")
+                          .AppendLine("     thead                                        {text-align: center;background: #1583b7;color: white;font-size: 14px; font-weight: bold;}                                                 ")
+                          .AppendLine("     tbody                                        {text-align: center;font-size: 11px;}                                                                                                     ")
+                          .AppendLine("     td                                           {padding-right: 0px;}                                                                                                                     ")
+                          .AppendLine("     tbody td:nth-child(n+2)                      {font-family: Courier New;}                                                                                                               ")
+                          .AppendLine("     td:nth-child(1)                              {text-align: left; width:12%; font-weight: bold;}                                                                                         ")
+                          .AppendLine("     tbody tr:nth-child(odd)                      {background-color: #F9F9FF;}                                                                                                              ")
+                          .AppendLine("     tbody tr:nth-child(even)                     {background-color: #F4F4FF;}                                                                                                              ")
+                          .AppendLine("     .yearSplit                                   {border-top: thin dotted; border-color: #1583b7;}                                                                                         ")
+                          .AppendLine("     .higher                                      {background-color: hsla(120, 100%, 50%, 0.2);}                                                                                            ")
+                          .AppendLine("     .lower                                       {background-color: hsla(0, 100%, 70%, 0.2);}                                                                                              ")
+                          .AppendLine("     .whiteOpeningsTable thead td:nth-child(1)    {font-weight: bold;}                                                                                                                      ")
+                          .AppendLine("     .blackOpeningsTable thead td:nth-child(1)    {font-weight: bold;}                                                                                                                      ")
+                          .AppendLine("     .whiteOpeningsTable td:nth-child(1)          {text-align: left; width:90%; font-weight: normal;}                                                                                       ")
+                          .AppendLine("     .blackOpeningsTable td:nth-child(1)          {text-align: left; width:90%; font-weight: normal;}                                                                                       ")
+                          .AppendLine("     .capsRollingTable thead td:nth-child(2)      {text-align: left;}                                                                                                                       ")
+                          .AppendLine("     .playingStatsTable tbody td:nth-child(6)     {border-left: thin solid; border-color: #1583b7;}                                                                                         ")
+                          .AppendLine("     .playingStatsTable tbody td:nth-child(8)     {border-left: thin dotted; border-color: #1583b7;}                                                                                        ")
+                          .AppendLine("     .playingStatsTable tbody td:nth-child(11)    {border-left: thin dotted; border-color: #1583b7;}                                                                                        ")
+                          .AppendLine("     .playingStatsTable tbody td:nth-child(13)    {border-left: thin solid; border-color: #1583b7;}                                                                                         ")
+                          .AppendLine("     .oneColumn                                   {float: left;width: 100%;}                                                                                                                ")
+                          .AppendLine("     .oneRow:after                                {content: ''; display: table; clear: both;}                                                                                               ")
+                          .AppendLine("     .twoColumn                                   {float: left;width: 50%;}                                                                                                                 ")
+                          .AppendLine("     .twoRow:after                                {content: '';display: table;clear: both;}                                                                                                 ")
+                          .AppendLine("     .footer                                      {text-align: right;color: white; font-size: 11px}                                                                                         ")
+                          .AppendLine("     .footer a                                    {color: #e58b09;}                                                                                                                         ")
+                          .AppendLine("   </style>                                                                                                                                                                                 ");
+            
+            _ = htmlReport.AppendLine("</head><body>").AppendLine($"<h1>");
 
             //userStats.ChessBullet.Last.Date
             
-            htmlReport.AppendLine($"<a href='{userRecord.Url}'><img alt='logo' src='data:image/png;base64,{userLogoBase64}'/><a>");
-            htmlReport.AppendLine($"Live Games Report <br/>for <a class='headerLink' href='{userRecord.Url}'>{chessdotcomUsername}</a><br/><small>({DateTime.UtcNow.ToShortDateString()}@{DateTime.UtcNow.ToShortTimeString()} UTC)</small></h1>");
-            htmlReport.AppendLine($"<h2>{pawnFragment}Openings Occurring More Than Once (Max 15)</h2>");
-            htmlReport.AppendLine($"<div class='tworow'>");
-            htmlReport.AppendLine($"<div class='twocolumn'>{whiteOpeningshtmlOut}</div>");
-            htmlReport.AppendLine($"<div class='twocolumn'>{blackOpeningshtmlOut}</div>");
-            htmlReport.AppendLine($"</div><br/><div class='onerow'><div class='onecolumn'>");
-            htmlReport.AppendLine($"<h2>{pawnFragment}CAPS Scoring (Rolling 5 Game Average)</h2>");
-            htmlReport.AppendLine(capsRollingAverageFivehtmlOut);
-            htmlReport.AppendLine($"<h2>{pawnFragment}CAPS Scoring (Rolling 10 Game Average)</h2>");
-            htmlReport.AppendLine(capsRollingAverageTenhtmlOut);
-            htmlReport.AppendLine($"<h2>{pawnFragment}CAPS Scoring (Month Average > 4 Games)</h2>");
-            htmlReport.AppendLine(capsTablehtmlOut);
-            htmlReport.AppendLine($"<h2>{pawnFragment}Time Played by Time Control/Month</h2>");
-            htmlReport.AppendLine(playingStatshtmlOut);
-            htmlReport.AppendLine($"<h2>{pawnFragment}Time Played by Month (All Time Controls)</h2>");
-            htmlReport.AppendLine(timePlayedByMonthhtmlOut);
-            //htmlReport.AppendLine($"<h2>Total Play Time (Live Chess)</h2>");
-            //htmlReport.AppendLine(totalSecondsPlayedhtmlOut);
-            htmlReport.AppendLine($"<div class='footer'><br/><hr/><i>Generated by ChessStats (for <a href='https://chess.com'>Chess.com</a>)<br/><a href='https://www.chess.com/member/hyper-dragon'>Hyper-Dragon</a> Ver {VERSION_NUMBER}<br/><a href='https://github.com/Hyper-Dragon/ChessStats'>https://github.com/Hyper-Dragon/ChessStats</a></i><br/><br/><br/></div>");
-            htmlReport.AppendLine("</div></div></body></html>");
+            _ = htmlReport.AppendLine($"<a href='{userRecord.Url}'><img alt='logo' src='data:image/png;base64,{userLogoBase64}'/><a>")
+                          .AppendLine($"Live Games Report <br/>for <a class='headerLink' href='{userRecord.Url}'>{chessdotcomUsername}</a><br/><small>({DateTime.UtcNow.ToShortDateString()}@{DateTime.UtcNow.ToShortTimeString()} UTC)</small></h1>")
+                          .AppendLine($"<h2>{pawnFragment}Openings Occurring More Than Once (Max 15)</h2>")
+                          .AppendLine($"<div class='tworow'>")
+                          .AppendLine($"<div class='twocolumn'>{whiteOpeningshtmlOut}</div>")
+                          .AppendLine($"<div class='twocolumn'>{blackOpeningshtmlOut}</div>")
+                          .AppendLine($"</div><br/><div class='onerow'><div class='onecolumn'>")
+                          .AppendLine($"<h2>{pawnFragment}CAPS Scoring (Rolling 5 Game Average)</h2>")
+                          .AppendLine(capsRollingAverageFivehtmlOut)
+                          .AppendLine($"<h2>{pawnFragment}CAPS Scoring (Rolling 10 Game Average)</h2>")
+                          .AppendLine(capsRollingAverageTenhtmlOut)
+                          .AppendLine($"<h2>{pawnFragment}CAPS Scoring (Month Average > 4 Games)</h2>")
+                          .AppendLine(capsTablehtmlOut)
+                          .AppendLine($"<h2>{pawnFragment}Time Played by Time Control/Month</h2>")
+                          .AppendLine(playingStatshtmlOut)
+                          .AppendLine($"<h2>{pawnFragment}Time Played by Month (All Time Controls)</h2>")
+                          .AppendLine(timePlayedByMonthhtmlOut)
+                          //htmlReport.AppendLine($"<h2>Total Play Time (Live Chess)</h2>")
+                          //htmlReport.AppendLine(totalSecondsPlayedhtmlOut)
+                          .AppendLine($"<div class='footer'><br/><hr/><i>Generated by ChessStats (for <a href='https://chess.com'>Chess.com</a>)<br/><a href='https://www.chess.com/member/hyper-dragon'>Hyper-Dragon</a> Ver {VERSION_NUMBER}<br/><a href='https://github.com/Hyper-Dragon/ChessStats'>https://github.com/Hyper-Dragon/ChessStats</a></i><br/><br/><br/></div>")
+                          .AppendLine("</div></div></body></html>");
 
             Console.WriteLine($">>Finished Compiling Reports ({stopwatch.Elapsed.Hours}:{stopwatch.Elapsed.Minutes}:{stopwatch.Elapsed.Seconds}:{stopwatch.Elapsed.Milliseconds})");
             stopwatch.Reset();
@@ -314,7 +316,7 @@ namespace ChessStats
                                                     .Where(i => i.Count() > 4)
                                                     .Select(g => new
                                                     {
-                                                        Average = Math.Round(g.Average(p => p.Caps), 2).ToString().PadRight(5, ' '),
+                                                        Average = Math.Round(g.Average(p => p.Caps), 2).ToString().PadRight(5, '0'),
                                                         Month = g.Key.Id,
                                                         Control = capsScore.Key.Split()[0],
                                                         Side = capsScore.Key.Split()[1],
@@ -373,7 +375,7 @@ namespace ChessStats
                     List<double> latestCaps = capsScore.Value.Select(x => x.Caps).ToList<double>();
 
                     List<string> averages = Enumerable.Range(0, latestCaps.Count - averageOver - 1).
-                                      Select(i => Math.Round(latestCaps.Skip(i).Take(averageOver).Average(), 2).ToString().PadRight(5)).
+                                      Select(i => Math.Round(latestCaps.Skip(i).Take(averageOver).Average(), 2).ToString().PadRight(5,'0')).
                                       ToList();
 
 
@@ -599,7 +601,7 @@ namespace ChessStats
                                          );
 
                 htmlOut.AppendLine($"<tr><td>{rolledUp.Key}</td>" +
-                                        $"<td>{((int)timeMonth.TotalHours).ToString(CultureInfo.CurrentCulture).PadLeft(4,'$').Replace("$", "&nbsp;", true, CultureInfo.InvariantCulture)}:{ timeMonth.Minutes.ToString(CultureInfo.CurrentCulture).PadLeft(2, '0')}:{ timeMonth.Seconds.ToString(CultureInfo.CurrentCulture).PadLeft(2, '0')}</td>" +
+                                        $"<td>{((int)timeMonth.TotalHours).ToString(CultureInfo.CurrentCulture).PadLeft(4,'$').Replace("$", "&nbsp;", true, CultureInfo.InvariantCulture)}:{ timeMonth.Minutes.ToString(CultureInfo.CurrentCulture).PadLeft(2, '0')}</td>" +
                                         $"<td{((ratingComparison == 0) ? "" : ((ratingComparison < rolledUp.Value.MinRating) ? " class='lower'" : " class='higher'"))}>{rolledUp.Value.MinRating.ToString(CultureInfo.CurrentCulture).PadLeft(4, '$').Replace("$$$0", "$$$-", true, CultureInfo.InvariantCulture).Replace("$", "&nbsp;", true, CultureInfo.InvariantCulture)}</td>" +
                                         $"<td{((ratingComparison == 0) ? "" : ((ratingComparison < rolledUp.Value.MaxRating) ? " class='lower'" : " class='higher'"))}>{rolledUp.Value.MaxRating.ToString(CultureInfo.CurrentCulture).PadLeft(4, '$').Replace("$$$0", "$$$-", true, CultureInfo.InvariantCulture).Replace("$", "&nbsp;", true, CultureInfo.InvariantCulture)}</td>" +
                                         $"<td>{(rolledUp.Value.MaxRating - rolledUp.Value.MinRating).ToString(CultureInfo.CurrentCulture).PadLeft(4, '$').Replace("$$$0", "$$$-", true, CultureInfo.InvariantCulture).Replace("$", "&nbsp;", true, CultureInfo.InvariantCulture)}</td>" +
@@ -630,19 +632,24 @@ namespace ChessStats
 
             textOut.AppendLine("");
             textOut.AppendLine(Helpers.GetDisplaySection("Time Played by Month (All Time Controls)", false));
-            textOut.AppendLine("Month             |  Play Time  | Cumulative  |  For Year ");
+            textOut.AppendLine("Month             |  Play Time  |   For Year  |  Cumulative ");
 
-            htmlOut.AppendLine("<table class='playingStatsMonthTable'><thead><tr><td>Month</td><td>Play Time</td><td>Cumulative</td><td>For Year</td></tr></thead><tbody>");
+            htmlOut.AppendLine("<table class='playingStatsMonthTable'><thead><tr><td>Month</td><td>Play Time</td><td>For Year</td><td>Cumulative</td></tr></thead><tbody>");
 
             TimeSpan cumulativeTime = new TimeSpan(0);
             TimeSpan cumulativeTimeForYear = new TimeSpan(0);
             string currentYear = "";
+            string yearSplitClass = "";
 
             foreach (KeyValuePair<string, dynamic> rolledUp in secondsPlayedRollupMonthOnly)
             {
                 if (rolledUp.Key.Substring(0, 4) != currentYear)
                 {
                     textOut.AppendLine("------------------+-------------+-------------+-------------");
+                    
+                    //Skip for 1st year (text div only)
+                    yearSplitClass = string.IsNullOrEmpty(currentYear)? "" : " class='yearSplit'";
+
                     currentYear = rolledUp.Key.Substring(0, 4);
                     cumulativeTimeForYear = new TimeSpan(0);
                 }
@@ -651,17 +658,20 @@ namespace ChessStats
                 cumulativeTime += timeMonth;
                 cumulativeTimeForYear += timeMonth;
 
-                textOut.AppendLine($"{rolledUp.Key,-17} | " +
+                _ = textOut.AppendLine($"{rolledUp.Key,-17} | " +
                                   $"{((int)timeMonth.TotalHours).ToString(CultureInfo.CurrentCulture),5}:{ timeMonth.Minutes.ToString(CultureInfo.CurrentCulture).PadLeft(2, '0')}:{ timeMonth.Seconds.ToString(CultureInfo.CurrentCulture).PadLeft(2, '0')} | " +
-                                  $"{((int)cumulativeTime.TotalHours).ToString(CultureInfo.CurrentCulture),5}:{ cumulativeTime.Minutes.ToString(CultureInfo.CurrentCulture).PadLeft(2, '0')}:{ cumulativeTime.Seconds.ToString(CultureInfo.CurrentCulture).PadLeft(2, '0')} | " +
-                                  $"{((int)cumulativeTimeForYear.TotalHours).ToString(CultureInfo.CurrentCulture),5}:{ cumulativeTimeForYear.Minutes.ToString(CultureInfo.CurrentCulture).PadLeft(2, '0')}:{ cumulativeTimeForYear.Seconds.ToString(CultureInfo.CurrentCulture).PadLeft(2, '0')}"
+                                  $"{((int)cumulativeTimeForYear.TotalHours).ToString(CultureInfo.CurrentCulture),5}:{ cumulativeTimeForYear.Minutes.ToString(CultureInfo.CurrentCulture).PadLeft(2, '0')}:{ cumulativeTimeForYear.Seconds.ToString(CultureInfo.CurrentCulture).PadLeft(2, '0')} | " +
+                                  $"{((int)cumulativeTime.TotalHours).ToString(CultureInfo.CurrentCulture),5}:{ cumulativeTime.Minutes.ToString(CultureInfo.CurrentCulture).PadLeft(2, '0')}:{ cumulativeTime.Seconds.ToString(CultureInfo.CurrentCulture).PadLeft(2, '0')}"
                                   );
 
-                htmlOut.AppendLine($"<tr><td>{rolledUp.Key,-17}</td>" +
-                                   $"<td>{((int)timeMonth.TotalHours).ToString(CultureInfo.CurrentCulture),5}:{ timeMonth.Minutes.ToString(CultureInfo.CurrentCulture).PadLeft(2, '0')}:{ timeMonth.Seconds.ToString(CultureInfo.CurrentCulture).PadLeft(2, '0')}</td>" +
-                                   $"<td>{((int)cumulativeTime.TotalHours).ToString(CultureInfo.CurrentCulture),5}:{ cumulativeTime.Minutes.ToString(CultureInfo.CurrentCulture).PadLeft(2, '0')}:{ cumulativeTime.Seconds.ToString(CultureInfo.CurrentCulture).PadLeft(2, '0')}</td>" +
-                                   $"<td>{((int)cumulativeTimeForYear.TotalHours).ToString(CultureInfo.CurrentCulture),5}:{ cumulativeTimeForYear.Minutes.ToString(CultureInfo.CurrentCulture).PadLeft(2, '0')}:{ cumulativeTimeForYear.Seconds.ToString(CultureInfo.CurrentCulture).PadLeft(2, '0')}</td></tr>"
+                _ = htmlOut.AppendLine($"<tr{yearSplitClass}><td>{rolledUp.Key}</td>" +
+                                   $"<td>{((int)timeMonth.TotalHours).ToString(CultureInfo.CurrentCulture).PadLeft(5,'$').Replace("$","&nbsp;")}:{ timeMonth.Minutes.ToString(CultureInfo.CurrentCulture).PadLeft(2, '0')}</td>" +
+                                   $"<td>{((int)cumulativeTimeForYear.TotalHours).ToString(CultureInfo.CurrentCulture).PadLeft(5, '$').Replace("$", "&nbsp;")}:{ cumulativeTimeForYear.Minutes.ToString(CultureInfo.CurrentCulture).PadLeft(2, '0')}</td>" +
+                                   $"<td>{((int)cumulativeTime.TotalHours).ToString(CultureInfo.CurrentCulture).PadLeft(5, '$').Replace("$", "&nbsp;")}:{ cumulativeTime.Minutes.ToString(CultureInfo.CurrentCulture).PadLeft(2, '0')}</td></tr>"
                                   );
+
+                //Reset until next year detected
+                yearSplitClass = "";
             }
 
             htmlOut.AppendLine("</tbody></table>");
