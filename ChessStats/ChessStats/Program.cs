@@ -86,8 +86,8 @@ namespace ChessStats
             //Initialise reporting lists
             SortedList<string, (int SecondsPlayed, int GameCount, int Win, int Loss, int Draw, int MinRating, int MaxRating, int OpponentMinRating, int OpponentMaxRating, int OpponentWorstLoss, int OpponentBestWin, int TotalWin, int TotalDraw, int TotalLoss)> secondsPlayedRollup = new SortedList<string, (int, int, int, int, int, int, int, int, int, int, int, int, int, int)>();
             SortedList<string, dynamic> secondsPlayedRollupMonthOnly = new SortedList<string, dynamic>();
-            SortedList<string, (string href, int total)> ecoPlayedRollupWhite = new SortedList<string, (string, int)>();
-            SortedList<string, (string href, int total)> ecoPlayedRollupBlack = new SortedList<string, (string, int)>();
+            SortedList<string, (string href, int total, int winCount, int drawCount, int lossCount)> ecoPlayedRollupWhite = new SortedList<string, (string, int,int,int,int)>();
+            SortedList<string, (string href, int total, int winCount, int drawCount, int lossCount)> ecoPlayedRollupBlack = new SortedList<string, (string, int,int,int,int)>();
             double totalSecondsPlayed = 0;
 
             stopwatch.Reset();
@@ -102,7 +102,7 @@ namespace ChessStats
                 }
 
                 ExtractRatings(chessdotcomUsername, game, out string side, out int playerRating, out int opponentRating, out bool? isWin);
-                CalculateOpening(ecoPlayedRollupWhite, ecoPlayedRollupBlack, game, side);
+                CalculateOpening(ecoPlayedRollupWhite, ecoPlayedRollupBlack, game, side, isWin);
                 CalculateGameTime(game, out DateTime parsedStartDate, out double seconds, out string gameTime);
                 totalSecondsPlayed += seconds;
                 UpdateGameTypeTimeTotals(secondsPlayedRollup, playerRating, opponentRating, isWin, parsedStartDate, seconds, gameTime);
@@ -125,16 +125,15 @@ namespace ChessStats
             (string totalSecondsPlayedtextOut, string totalSecondsPlayedhtmlOut) = DisplayTotalSecondsPlayed(totalSecondsPlayed);
 
             StringBuilder textReport = new StringBuilder();
-            textReport.Append(Helpers.GetDisplaySection($"Live Chess Report for {chessdotcomUsername} : {DateTime.UtcNow.ToShortDateString()}@{DateTime.UtcNow.ToShortTimeString()} UTC", true));
-            textReport.AppendLine();
-            textReport.Append(whiteOpeningstextOut);
-            textReport.Append(blackOpeningstextOut);
-            textReport.Append(playingStatstextOut);
-            textReport.Append(timePlayedByMonthtextOut);
-            textReport.Append(capsTabletextOut);
-            textReport.Append(capsRollingAverageTentextOut);
-            textReport.Append(totalSecondsPlayedtextOut);
-            textReport.Append(Helpers.GetDisplaySection("End of Report", true));
+            _ = textReport.AppendLine(Helpers.GetDisplaySection($"Live Chess Report for {chessdotcomUsername} : {DateTime.UtcNow.ToShortDateString()}@{DateTime.UtcNow.ToShortTimeString()} UTC", true))
+                          .Append(whiteOpeningstextOut)
+                          .Append(blackOpeningstextOut)
+                          .Append(playingStatstextOut)
+                          .Append(timePlayedByMonthtextOut)
+                          .Append(capsTabletextOut)
+                          .Append(capsRollingAverageTentextOut)
+                          .Append(totalSecondsPlayedtextOut)
+                          .Append(Helpers.GetDisplaySection("End of Report", true));
 
             //Build the HTML report
             using HttpClient httpClient = new HttpClient();
@@ -153,7 +152,7 @@ namespace ChessStats
                           .AppendLine("<meta charset='UTF-8'>")
                           .AppendLine("<meta name='generator' content='ChessStats'> ")
                           .AppendLine("<meta name='viewport' content='width=device-width, initial-scale=1.0'>");
-            
+
             _ = htmlReport.AppendLine("   <style>                                                                                                                                                                                  ")
                           .AppendLine("     *                                            {margin: 0;padding: 0;}                                                                                                                   ")
                           .AppendLine("     body                                         {background-color:#312e2b;width: 90%; margin: auto; font-family: -apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif;}   ")
@@ -167,7 +166,7 @@ namespace ChessStats
                           .AppendLine("     tbody                                        {text-align: center;font-size: 11px;}                                                                                                     ")
                           .AppendLine("     td                                           {padding-right: 0px;}                                                                                                                     ")
                           .AppendLine("     tbody td:nth-child(n+2)                      {font-family: Courier New;}                                                                                                               ")
-                          .AppendLine("     td:nth-child(1)                              {text-align: left; width:12%; font-weight: bold;}                                                                                         ")
+                          .AppendLine("     td:nth-child(1)                              {padding-left:10px; text-align: left; width:12%; font-weight: bold;}                                                                                         ")
                           .AppendLine("     tbody tr:nth-child(odd)                      {background-color: #F9F9FF;}                                                                                                              ")
                           .AppendLine("     tbody tr:nth-child(even)                     {background-color: #F4F4FF;}                                                                                                              ")
                           .AppendLine("     .yearSplit                                   {border-top: thin dotted; border-color: #1583b7;}                                                                                         ")
@@ -175,8 +174,8 @@ namespace ChessStats
                           .AppendLine("     .lower                                       {background-color: hsla(0, 100%, 70%, 0.2);}                                                                                              ")
                           .AppendLine("     .whiteOpeningsTable thead td:nth-child(1)    {font-weight: bold;}                                                                                                                      ")
                           .AppendLine("     .blackOpeningsTable thead td:nth-child(1)    {font-weight: bold;}                                                                                                                      ")
-                          .AppendLine("     .whiteOpeningsTable td:nth-child(1)          {text-align: left; width:90%; font-weight: normal;}                                                                                       ")
-                          .AppendLine("     .blackOpeningsTable td:nth-child(1)          {text-align: left; width:90%; font-weight: normal;}                                                                                       ")
+                          .AppendLine("     .whiteOpeningsTable td:nth-child(1)          {padding-left:10px; text-align: left; width:50%; font-weight: normal;}                                                                                       ")
+                          .AppendLine("     .blackOpeningsTable td:nth-child(1)          {padding-left:10px; text-align: left; width:50%; font-weight: normal;}                                                                                       ")
                           .AppendLine("     .capsRollingTable thead td:nth-child(2)      {text-align: left;}                                                                                                                       ")
                           .AppendLine("     .playingStatsTable tbody td:nth-child(6)     {border-left: thin solid; border-color: #1583b7;}                                                                                         ")
                           .AppendLine("     .playingStatsTable tbody td:nth-child(8)     {border-left: thin dotted; border-color: #1583b7;}                                                                                        ")
@@ -189,18 +188,17 @@ namespace ChessStats
                           .AppendLine("     .footer                                      {text-align: right;color: white; font-size: 11px}                                                                                         ")
                           .AppendLine("     .footer a                                    {color: #e58b09;}                                                                                                                         ")
                           .AppendLine("   </style>                                                                                                                                                                                 ");
-            
+
             _ = htmlReport.AppendLine("</head><body>").AppendLine($"<h1>");
 
             //userStats.ChessBullet.Last.Date
-            
+
             _ = htmlReport.AppendLine($"<a href='{userRecord.Url}'><img alt='logo' src='data:image/png;base64,{userLogoBase64}'/><a>")
                           .AppendLine($"Live Games Report <br/>for <a class='headerLink' href='{userRecord.Url}'>{chessdotcomUsername}</a><br/><small>({DateTime.UtcNow.ToShortDateString()}@{DateTime.UtcNow.ToShortTimeString()} UTC)</small></h1>")
-                          .AppendLine($"<h2>{pawnFragment}Openings Occurring More Than Once (Max 15)</h2>")
-                          .AppendLine($"<div class='tworow'>")
-                          .AppendLine($"<div class='twocolumn'>{whiteOpeningshtmlOut}</div>")
-                          .AppendLine($"<div class='twocolumn'>{blackOpeningshtmlOut}</div>")
-                          .AppendLine($"</div><br/><div class='onerow'><div class='onecolumn'>")
+                          .AppendLine($"<br/><h2>{pawnFragment}Openings Occurring More Than Once (Max 15)</h2>")
+                          .AppendLine($"<div class='onerow'><div class='onecolumn'>")
+                          .AppendLine($"{whiteOpeningshtmlOut}")
+                          .AppendLine($"{blackOpeningshtmlOut}")
                           .AppendLine($"<h2>{pawnFragment}CAPS Scoring (Rolling 5 Game Average)</h2>")
                           .AppendLine(capsRollingAverageFivehtmlOut)
                           .AppendLine($"<h2>{pawnFragment}CAPS Scoring (Rolling 10 Game Average)</h2>")
@@ -375,7 +373,7 @@ namespace ChessStats
                     List<double> latestCaps = capsScore.Value.Select(x => x.Caps).ToList<double>();
 
                     List<string> averages = Enumerable.Range(0, latestCaps.Count - averageOver - 1).
-                                      Select(i => Math.Round(latestCaps.Skip(i).Take(averageOver).Average(), 2).ToString().PadRight(5,'0')).
+                                      Select(i => Math.Round(latestCaps.Skip(i).Take(averageOver).Average(), 2).ToString().PadRight(5, '0')).
                                       ToList();
 
 
@@ -390,8 +388,6 @@ namespace ChessStats
         }
 
 
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Globalization", "CA1303:Do not pass literals as localized parameters", Justification = "<Pending>")]
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE0066:Convert switch statement to expression", Justification = "Does not handle => null")]
         private static void ExtractRatings(string chessdotcomUsername, ChessGame game, out string side, out int playerRating, out int opponentRating, out bool? isWin)
         {
             side = game.GameAttributes.Attributes["White"].ToUpperInvariant() == chessdotcomUsername.ToUpperInvariant() ? "White" : "Black";
@@ -480,7 +476,7 @@ namespace ChessStats
             gameTime = $"{game.TimeClass,-6}{((game.IsRatedGame) ? "   " : " NR")}";
         }
 
-        private static void CalculateOpening(SortedList<string, (string href, int total)> ecoPlayedRollupWhite, SortedList<string, (string href, int total)> ecoPlayedRollupBlack, ChessGame game, string side)
+        private static void CalculateOpening(SortedList<string, (string href, int total, int winCount, int drawCount, int lossCount)> ecoPlayedRollupWhite, SortedList<string, (string href, int total, int winCount, int drawCount, int lossCount)> ecoPlayedRollupBlack, ChessGame game, string side, bool? isWin)
         {
             try
             {
@@ -488,15 +484,23 @@ namespace ChessStats
                 string ecoName = game.GameAttributes.Attributes["ECOUrl"].Replace(@"https://www.chess.com/openings/", "", true, CultureInfo.InvariantCulture).Replace("-", " ", true, CultureInfo.InvariantCulture);
                 string ecoShortened = new Regex(@"^.*?(?=[0-9])").Match(ecoName).Value.Trim();
                 string ecoKey = $"{game.GameAttributes.Attributes["ECO"]}-{((string.IsNullOrEmpty(ecoShortened)) ? ecoName : ecoShortened)}";
-                SortedList<string, (string href, int total)> ecoPlayedRollup = (side == "White") ? ecoPlayedRollupWhite : ecoPlayedRollupBlack;
+                SortedList<string, (string href, int total, int winCount, int drawCount, int lossCount)> ecoPlayedRollup = (side == "White") ? ecoPlayedRollupWhite : ecoPlayedRollupBlack;
 
                 if (ecoPlayedRollup.ContainsKey(ecoKey))
                 {
-                    ecoPlayedRollup[ecoKey] = (ecoPlayedRollup[ecoKey].href, ecoPlayedRollup[ecoKey].total + 1);
+                    ecoPlayedRollup[ecoKey] = (ecoPlayedRollup[ecoKey].href, 
+                                               ecoPlayedRollup[ecoKey].total + 1,
+                                               ecoPlayedRollup[ecoKey].winCount  + ((isWin != null && isWin.Value) ? 1 : 0),
+                                               ecoPlayedRollup[ecoKey].drawCount + ((isWin == null) ? 1 : 0),
+                                               ecoPlayedRollup[ecoKey].lossCount + ((isWin != null && !isWin.Value) ? 1 : 0));
                 }
                 else
                 {
-                    ecoPlayedRollup.Add(ecoKey, (ecoHref, 1));
+                    ecoPlayedRollup.Add(ecoKey, (ecoHref,
+                                                 1,
+                                                 ((isWin != null && isWin.Value) ? 1 : 0),
+                                                 ((isWin == null) ? 1 : 0),
+                                                 ((isWin != null && !isWin.Value) ? 1 : 0)));
                 }
             }
 #pragma warning disable CA1031 // Do not catch general exception types
@@ -508,7 +512,7 @@ namespace ChessStats
         }
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Globalization", "CA1303:Do not pass literals as localized parameters", Justification = "<Pending>")]
-        private static (string textOut, string htmlOut) DisplayOpeningsAsWhite(SortedList<string, (string href, int total)> ecoPlayedRollupWhite)
+        private static (string textOut, string htmlOut) DisplayOpeningsAsWhite(SortedList<string, (string href, int total, int winCount, int drawCount, int lossCount)> ecoPlayedRollupWhite)
         {
             StringBuilder textOut = new StringBuilder();
             StringBuilder htmlOut = new StringBuilder();
@@ -518,13 +522,13 @@ namespace ChessStats
             textOut.AppendLine("Playing As White                                                        | Tot.");
             textOut.AppendLine("------------------------------------------------------------------------+------");
 
-            htmlOut.AppendLine("<table class='whiteOpeningsTable'><thead><tr><td>Playing As White</td><td>Total</td></tr></thead><tbody>");
+            htmlOut.AppendLine("<table class='whiteOpeningsTable'><thead><tr><td>Playing As White</td><td>Win</td><td>Draw</td><td>Loss</td><td>Total</td></tr></thead><tbody>");
 
-            foreach (KeyValuePair<string, (string href, int total)> ecoCount in ecoPlayedRollupWhite.OrderByDescending(uses => uses.Value.total).Take(15))
+            foreach (KeyValuePair<string, (string href, int total, int winCount, int drawCount, int lossCount)> ecoCount in ecoPlayedRollupWhite.OrderByDescending(uses => uses.Value.total).Take(15))
             {
                 if (ecoCount.Value.total < 2) { break; }
                 textOut.AppendLine($"{ecoCount.Key,-71} | {ecoCount.Value.total.ToString(CultureInfo.CurrentCulture),4}");
-                htmlOut.AppendLine($"<tr><td><a href='{ecoCount.Value.href}'>{ecoCount.Key}</a></td><td>{ecoCount.Value.total.ToString(CultureInfo.CurrentCulture),4}</td></tr>");
+                htmlOut.AppendLine($"<tr><td><a href='{ecoCount.Value.href}'>{ecoCount.Key}</a></td><td>{ecoCount.Value.winCount.ToString().PadLeft(5,'$').Replace("$","&nbsp;")}</td><td>{ecoCount.Value.drawCount.ToString().PadLeft(5, '$').Replace("$", "&nbsp;")}</td><td>{ecoCount.Value.lossCount.ToString().PadLeft(5, '$').Replace("$", "&nbsp;")}</td><td>{ecoCount.Value.total.ToString(CultureInfo.CurrentCulture).ToString().PadLeft(5, '$').Replace("$", "&nbsp;")}</td></tr>");
             }
 
             htmlOut.AppendLine("</tbody></table>");
@@ -533,7 +537,7 @@ namespace ChessStats
         }
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Globalization", "CA1303:Do not pass literals as localized parameters", Justification = "<Pending>")]
-        private static (string textOut, string htmlOut) DisplayOpeningsAsBlack(SortedList<string, (string href, int total)> ecoPlayedRollupBlack)
+        private static (string textOut, string htmlOut) DisplayOpeningsAsBlack(SortedList<string, (string href, int total, int winCount, int drawCount, int lossCount)> ecoPlayedRollupBlack)
         {
             StringBuilder textOut = new StringBuilder();
             StringBuilder htmlOut = new StringBuilder();
@@ -542,13 +546,13 @@ namespace ChessStats
             textOut.AppendLine("Playing As Black                                                        | Tot.");
             textOut.AppendLine("------------------------------------------------------------------------+------");
 
-            htmlOut.AppendLine("<table class='blackOpeningsTable'><thead><tr><td>Playing As Black</td><td>Total</td></tr></thead><tbody>");
+            htmlOut.AppendLine("<table class='blackOpeningsTable'><thead><tr><td>Playing As Black</td><td>Win</td><td>Draw</td><td>Loss</td><td>Total</td></tr></thead><tbody>");
 
-            foreach (KeyValuePair<string, (string href, int total)> ecoCount in ecoPlayedRollupBlack.OrderByDescending(uses => uses.Value.total).Take(15))
+            foreach (KeyValuePair<string, (string href, int total, int winCount, int drawCount, int lossCount)> ecoCount in ecoPlayedRollupBlack.OrderByDescending(uses => uses.Value.total).Take(15))
             {
                 if (ecoCount.Value.total < 2) { break; }
                 textOut.AppendLine($"{ecoCount.Key,-71} | {ecoCount.Value.total.ToString(CultureInfo.CurrentCulture),4}");
-                htmlOut.AppendLine($"<tr><td><a href='{ecoCount.Value.href}'>{ecoCount.Key}</a></td><td>{ecoCount.Value.total.ToString(CultureInfo.CurrentCulture),4}</td></tr>");
+                htmlOut.AppendLine($"<tr><td><a href='{ecoCount.Value.href}'>{ecoCount.Key}</a></td><td>{ecoCount.Value.winCount.ToString().PadLeft(5, '$').Replace("$", "&nbsp;")}</td><td>{ecoCount.Value.drawCount.ToString().PadLeft(5, '$').Replace("$", "&nbsp;")}</td><td>{ecoCount.Value.lossCount.ToString().PadLeft(5, '$').Replace("$", "&nbsp;")}</td><td>{ecoCount.Value.total.ToString().PadLeft(5, '$').Replace("$", "&nbsp;")}</td></tr>");
             }
 
             htmlOut.AppendLine("</tbody></table>");
@@ -557,7 +561,7 @@ namespace ChessStats
         }
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Globalization", "CA1303:Do not pass literals as localized parameters", Justification = "<Pending>")]
-        private static (string textOut, string htmlOut) DisplayPlayingStats(SortedList<string, (int SecondsPlayed, int GameCount, int Win, int Loss, int Draw, int MinRating, int MaxRating, int OpponentMinRating, int OpponentMaxRating,  int OpponentWorstLoss, int OpponentBestWin,  int TotalWin, int TotalDraw, int TotalLoss)> secondsPlayedRollup, int? bulletRating, int? blitzRating, int? rapidRating)
+        private static (string textOut, string htmlOut) DisplayPlayingStats(SortedList<string, (int SecondsPlayed, int GameCount, int Win, int Loss, int Draw, int MinRating, int MaxRating, int OpponentMinRating, int OpponentMaxRating, int OpponentWorstLoss, int OpponentBestWin, int TotalWin, int TotalDraw, int TotalLoss)> secondsPlayedRollup, int? bulletRating, int? blitzRating, int? rapidRating)
         {
             StringBuilder textOut = new StringBuilder();
             StringBuilder htmlOut = new StringBuilder();
@@ -601,21 +605,21 @@ namespace ChessStats
                                          );
 
                 htmlOut.AppendLine($"<tr><td>{rolledUp.Key}</td>" +
-                                        $"<td>{((int)timeMonth.TotalHours).ToString(CultureInfo.CurrentCulture).PadLeft(4,'$').Replace("$", "&nbsp;", true, CultureInfo.InvariantCulture)}:{ timeMonth.Minutes.ToString(CultureInfo.CurrentCulture).PadLeft(2, '0')}</td>" +
+                                        $"<td>{((int)timeMonth.TotalHours).ToString(CultureInfo.CurrentCulture).PadLeft(4, '$').Replace("$", "&nbsp;", true, CultureInfo.InvariantCulture)}:{ timeMonth.Minutes.ToString(CultureInfo.CurrentCulture).PadLeft(2, '0')}</td>" +
                                         $"<td{((ratingComparison == 0) ? "" : ((ratingComparison < rolledUp.Value.MinRating) ? " class='lower'" : " class='higher'"))}>{rolledUp.Value.MinRating.ToString(CultureInfo.CurrentCulture).PadLeft(4, '$').Replace("$$$0", "$$$-", true, CultureInfo.InvariantCulture).Replace("$", "&nbsp;", true, CultureInfo.InvariantCulture)}</td>" +
                                         $"<td{((ratingComparison == 0) ? "" : ((ratingComparison < rolledUp.Value.MaxRating) ? " class='lower'" : " class='higher'"))}>{rolledUp.Value.MaxRating.ToString(CultureInfo.CurrentCulture).PadLeft(4, '$').Replace("$$$0", "$$$-", true, CultureInfo.InvariantCulture).Replace("$", "&nbsp;", true, CultureInfo.InvariantCulture)}</td>" +
                                         $"<td>{(rolledUp.Value.MaxRating - rolledUp.Value.MinRating).ToString(CultureInfo.CurrentCulture).PadLeft(4, '$').Replace("$$$0", "$$$-", true, CultureInfo.InvariantCulture).Replace("$", "&nbsp;", true, CultureInfo.InvariantCulture)}</td>" +
                                         $"<td>{rolledUp.Value.OpponentMinRating.ToString(CultureInfo.CurrentCulture).PadLeft(4, '$').Replace("$$$0", "$$$-", true, CultureInfo.InvariantCulture).Replace("$", "&nbsp;", true, CultureInfo.InvariantCulture)}</td>" +
                                         $"<td>{rolledUp.Value.OpponentWorstLoss.ToString(CultureInfo.CurrentCulture).PadLeft(4, '$').Replace("9999", "   -", true, CultureInfo.InvariantCulture).Replace("$", "&nbsp;", true, CultureInfo.InvariantCulture)}</td>" +
-                                        $"<td>{$"{((rolledUp.Value.Loss==0)?0:rolledUp.Value.TotalLoss/rolledUp.Value.Loss).ToString(CultureInfo.CurrentCulture)}".PadLeft(4, '$').Replace("$$$0", "$$$-", true, CultureInfo.InvariantCulture).Replace("$", "&nbsp;", true, CultureInfo.InvariantCulture)}</td>" +
-                                        $"<td>{$"{((rolledUp.Value.Draw==0)?0:rolledUp.Value.TotalDraw/rolledUp.Value.Draw).ToString(CultureInfo.CurrentCulture)}".PadLeft(4, '$').Replace("$$$0", "$$$-", true, CultureInfo.InvariantCulture).Replace("$", "&nbsp;", true, CultureInfo.InvariantCulture)}</td>" +
-                                        $"<td>{$"{((rolledUp.Value.Win==0)?0: rolledUp.Value.TotalWin/rolledUp.Value.Win).ToString(CultureInfo.CurrentCulture)}".PadLeft(4, '$').Replace("$$$0", "$$$-", true, CultureInfo.InvariantCulture).Replace("$", "&nbsp;", true, CultureInfo.InvariantCulture)}</td>" +
+                                        $"<td>{$"{((rolledUp.Value.Loss == 0) ? 0 : rolledUp.Value.TotalLoss / rolledUp.Value.Loss).ToString(CultureInfo.CurrentCulture)}".PadLeft(4, '$').Replace("$$$0", "$$$-", true, CultureInfo.InvariantCulture).Replace("$", "&nbsp;", true, CultureInfo.InvariantCulture)}</td>" +
+                                        $"<td>{$"{((rolledUp.Value.Draw == 0) ? 0 : rolledUp.Value.TotalDraw / rolledUp.Value.Draw).ToString(CultureInfo.CurrentCulture)}".PadLeft(4, '$').Replace("$$$0", "$$$-", true, CultureInfo.InvariantCulture).Replace("$", "&nbsp;", true, CultureInfo.InvariantCulture)}</td>" +
+                                        $"<td>{$"{((rolledUp.Value.Win == 0) ? 0 : rolledUp.Value.TotalWin / rolledUp.Value.Win).ToString(CultureInfo.CurrentCulture)}".PadLeft(4, '$').Replace("$$$0", "$$$-", true, CultureInfo.InvariantCulture).Replace("$", "&nbsp;", true, CultureInfo.InvariantCulture)}</td>" +
                                         $"<td>{rolledUp.Value.OpponentBestWin.ToString(CultureInfo.CurrentCulture).PadLeft(4, '$').Replace("$$$0", "$$$-", true, CultureInfo.InvariantCulture).Replace("$", "&nbsp;", true, CultureInfo.InvariantCulture)}</td>" +
                                         $"<td>{rolledUp.Value.OpponentMaxRating.ToString(CultureInfo.CurrentCulture).PadLeft(4, '$').Replace("$$$0", "$$$-", true, CultureInfo.InvariantCulture).Replace("$", "&nbsp;", true, CultureInfo.InvariantCulture)}</td>" +
                                         $"<td>{rolledUp.Value.Win.ToString(CultureInfo.CurrentCulture).PadLeft(4, '$').Replace("$$$0", "$$$-", true, CultureInfo.InvariantCulture).Replace("$", "&nbsp;", true, CultureInfo.InvariantCulture)}</td>" +
                                         $"<td>{rolledUp.Value.Loss.ToString(CultureInfo.CurrentCulture).PadLeft(4, '$').Replace("$$$0", "$$$-", true, CultureInfo.InvariantCulture).Replace("$", "&nbsp;", true, CultureInfo.InvariantCulture)}</td>" +
                                         $"<td>{rolledUp.Value.Draw.ToString(CultureInfo.CurrentCulture).PadLeft(4, '$').Replace("$$$0", "$$$-", true, CultureInfo.InvariantCulture).Replace("$", "&nbsp;", true, CultureInfo.InvariantCulture)}</td>" +
-                                        $"<td>{rolledUp.Value.GameCount.ToString(CultureInfo.CurrentCulture).PadLeft(4,'$').Replace("$$$0", "$$$-", true, CultureInfo.InvariantCulture).Replace("$", "&nbsp;", true, CultureInfo.InvariantCulture)}</td>"
+                                        $"<td>{rolledUp.Value.GameCount.ToString(CultureInfo.CurrentCulture).PadLeft(4, '$').Replace("$$$0", "$$$-", true, CultureInfo.InvariantCulture).Replace("$", "&nbsp;", true, CultureInfo.InvariantCulture)}</td>"
                                         );
             }
 
@@ -646,9 +650,9 @@ namespace ChessStats
                 if (rolledUp.Key.Substring(0, 4) != currentYear)
                 {
                     textOut.AppendLine("------------------+-------------+-------------+-------------");
-                    
+
                     //Skip for 1st year (text div only)
-                    yearSplitClass = string.IsNullOrEmpty(currentYear)? "" : " class='yearSplit'";
+                    yearSplitClass = string.IsNullOrEmpty(currentYear) ? "" : " class='yearSplit'";
 
                     currentYear = rolledUp.Key.Substring(0, 4);
                     cumulativeTimeForYear = new TimeSpan(0);
@@ -665,7 +669,7 @@ namespace ChessStats
                                   );
 
                 _ = htmlOut.AppendLine($"<tr{yearSplitClass}><td>{rolledUp.Key}</td>" +
-                                   $"<td>{((int)timeMonth.TotalHours).ToString(CultureInfo.CurrentCulture).PadLeft(5,'$').Replace("$","&nbsp;")}:{ timeMonth.Minutes.ToString(CultureInfo.CurrentCulture).PadLeft(2, '0')}</td>" +
+                                   $"<td>{((int)timeMonth.TotalHours).ToString(CultureInfo.CurrentCulture).PadLeft(5, '$').Replace("$", "&nbsp;")}:{ timeMonth.Minutes.ToString(CultureInfo.CurrentCulture).PadLeft(2, '0')}</td>" +
                                    $"<td>{((int)cumulativeTimeForYear.TotalHours).ToString(CultureInfo.CurrentCulture).PadLeft(5, '$').Replace("$", "&nbsp;")}:{ cumulativeTimeForYear.Minutes.ToString(CultureInfo.CurrentCulture).PadLeft(2, '0')}</td>" +
                                    $"<td>{((int)cumulativeTime.TotalHours).ToString(CultureInfo.CurrentCulture).PadLeft(5, '$').Replace("$", "&nbsp;")}:{ cumulativeTime.Minutes.ToString(CultureInfo.CurrentCulture).PadLeft(2, '0')}</td></tr>"
                                   );
