@@ -26,6 +26,18 @@ namespace ChessStats
             }
         }
 
+        public static string ValueOrDash(int? valueIn)
+        {
+            if (!valueIn.HasValue || valueIn.Value == 0)
+            {
+                return "-";
+            }
+            else
+            {
+                return valueIn.ToString();
+            }
+        }
+
         public static string GetDisplaySection(string title, bool isHeader)
         {
             _ = title ?? throw new ArgumentNullException(nameof(title));
