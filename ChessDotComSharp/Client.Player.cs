@@ -101,7 +101,7 @@ namespace ChessDotComSharp
         /// <param name="year">The year, e.g. 2018</param>
         /// <param name="month">The month, e.g 1</param>
         /// <returns></returns>
-        public async Task<Stream> DownloadPlayerGameArchiveAsStreamAsync(string username, int year, int month)
+        public static async Task<Stream> DownloadPlayerGameArchiveAsStreamAsync(string username, int year, int month)
         {
             return await _client.GetStreamAsync(Endpoints.Player.GetPlayerGameArchivePGN(username, year, month)).ConfigureAwait(false);
         }
@@ -116,7 +116,7 @@ namespace ChessDotComSharp
         /// <param name="overwrite">Whethere to overwrite an exisiting file.</param>
         /// <exception cref="InvalidOperationException">Thrown when <paramref name="overwrite"/> is set to false and the <paramref name="filename"/> exists, override behaviour by setting <paramref name="throwIfExists"/> to false.</exception>
         /// <returns></returns>
-        public async Task DownloadPlayerGameArchiveToFileAsync(string username, int year, int month, string filename = null, bool overwrite = false, bool throwIfExists = true)
+        public static async Task DownloadPlayerGameArchiveToFileAsync(string username, int year, int month, string filename = null, bool overwrite = false, bool throwIfExists = true)
         {
             string path = Path.GetFullPath(filename ?? $"{username}_{year}_{month}.pgn");
 
@@ -132,13 +132,11 @@ namespace ChessDotComSharp
                 }
             }
 
-            using (Stream stream = await DownloadPlayerGameArchiveAsStreamAsync(username, year, month))
-            using (FileStream fs = new FileStream(path, FileMode.Create))
+            using Stream stream = await DownloadPlayerGameArchiveAsStreamAsync(username, year, month);
+            using FileStream fs = new FileStream(path, FileMode.Create);
+            if (stream.Length > 0)
             {
-                if (stream.Length > 0)
-                {
-                    await stream.CopyToAsync(fs);
-                }
+                await stream.CopyToAsync(fs);
             }
         }
 

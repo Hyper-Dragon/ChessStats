@@ -13,8 +13,9 @@ namespace ChessStats.Data
     {
         public static async Task<Dictionary<string, List<(double Caps, DateTime GameDate, string GameYearMonth)>>> GetCapsScores(DirectoryInfo cache, string chessdotcomUsername, int maxPages)
         {
-            Helpers.ResetDisplayCounter();
+            if (cache == null) { throw new ArgumentNullException(nameof(cache)); }
 
+            Helpers.ResetDisplayCounter();
             string cacheFileName = $"{Path.Combine(cache.FullName, $"{chessdotcomUsername}Caps")}";
             Dictionary<string, List<(double Caps, DateTime GameDate, string GameYearMonth)>> capsScores = new Dictionary<string, List<(double Caps, DateTime GameDate, string GameYearMonth)>>();
 

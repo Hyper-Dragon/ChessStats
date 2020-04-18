@@ -22,11 +22,12 @@ namespace ChessStats
         {
             const int MAX_CAPS_PAGES = 30;
             const string VERSION_NUMBER = "0.5";
+            const string CACHE_VERSION_NUMBER = "0.5";
 
             //Set up data directories
             DirectoryInfo applicationPath = new DirectoryInfo(Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName));
             DirectoryInfo resultsDir = applicationPath.CreateSubdirectory("ChessStatsResults");
-            DirectoryInfo cacheDir = applicationPath.CreateSubdirectory("ChessStatsCache-V0.5");
+            DirectoryInfo cacheDir = applicationPath.CreateSubdirectory($"ChessStatsCache-V{CACHE_VERSION_NUMBER}");
 
             Stopwatch stopwatch = new Stopwatch();
             Helpers.DisplayLogo(VERSION_NUMBER);
@@ -39,22 +40,17 @@ namespace ChessStats
                 Environment.Exit(-2);
             }
 
-            PlayerProfile userRecord = null;
-            PlayerStats userStats = null;
-            (userRecord, userStats) = await PgnFromChessDotCom.FetchUserData(args[0]).ConfigureAwait(false);
+            (PlayerProfile userRecord, PlayerStats userStats) = await PgnFromChessDotCom.FetchUserData(args[0]).ConfigureAwait(false);
 
             //Replace username with correct case - api returns ID in lower case so extract from URL property
-            string chessdotcomUsername = userRecord.Url.Replace("https://www.chess.com/member/", "");
+            string chessdotcomUsername = userRecord.Url.Replace("https://www.chess.com/member/", "", StringComparison.InvariantCultureIgnoreCase);
 
             stopwatch.Reset();
             stopwatch.Start();
 
             Helpers.DisplaySection($"Fetching Data for {chessdotcomUsername}", true);
-
             Console.WriteLine($">>Fetching and Processing Available CAPS Scores");
-
             Dictionary<string, List<(double Caps, DateTime GameDate, string GameYearMonth)>> capsScores = await CapsFromChessDotCom.GetCapsScores(cacheDir, chessdotcomUsername, MAX_CAPS_PAGES).ConfigureAwait(false);
-
             Console.WriteLine();
             Console.WriteLine($">>Finished Fetching and Processing Available CAPS Scores ({stopwatch.Elapsed.Hours}:{stopwatch.Elapsed.Minutes}:{stopwatch.Elapsed.Seconds}:{stopwatch.Elapsed.Milliseconds})");
 
@@ -68,7 +64,6 @@ namespace ChessStats
             {
                 gameList = await PgnFromChessDotCom.FetchGameRecordsForUser(chessdotcomUsername, cacheDir).ConfigureAwait(false);
             }
-#pragma warning disable CA1031 // Do not catch general exception types
             catch (Exception ex)
             {
                 Console.WriteLine($"  >>Fetching Games From Chess.Com Failed");
@@ -76,64 +71,40 @@ namespace ChessStats
                 Console.WriteLine();
                 Environment.Exit(-1);
             }
-#pragma warning restore CA1031 // Do not catch general exception types
 
-            stopwatch.Stop();
             Console.WriteLine($"");
             Console.WriteLine($">>Finished Fetching Games From Chess.Com ({stopwatch.Elapsed.Hours}:{stopwatch.Elapsed.Minutes}:{stopwatch.Elapsed.Seconds}:{stopwatch.Elapsed.Milliseconds})");
             Console.WriteLine($">>Processing Games");
 
-            //Initialise reporting lists
-            SortedList<string, (int SecondsPlayed, int GameCount, int Win, int Loss, int Draw, int MinRating, int MaxRating, int OpponentMinRating, int OpponentMaxRating, int OpponentWorstLoss, int OpponentBestWin, int TotalWin, int TotalDraw, int TotalLoss)> secondsPlayedRollup = new SortedList<string, (int, int, int, int, int, int, int, int, int, int, int, int, int, int)>();
-            SortedList<string, dynamic> secondsPlayedRollupMonthOnly = new SortedList<string, dynamic>();
-            SortedList<string, (string href, int total, int winCount, int drawCount, int lossCount)> ecoPlayedRollupWhite = new SortedList<string, (string, int, int, int, int)>();
-            SortedList<string, (string href, int total, int winCount, int drawCount, int lossCount)> ecoPlayedRollupBlack = new SortedList<string, (string, int, int, int, int)>();
-            double totalSecondsPlayed = 0;
-
             stopwatch.Reset();
             stopwatch.Start();
 
-            foreach (ChessGame game in gameList)
-            {
-                // Don't include daily games
-                if (game.GameAttributes.Attributes["Event"] != "Live Chess")
-                {
-                    continue;
-                }
-
-                ExtractRatings(chessdotcomUsername, game, out string side, out int playerRating, out int opponentRating, out bool? isWin);
-                CalculateOpening(ecoPlayedRollupWhite, ecoPlayedRollupBlack, game, side, isWin);
-                CalculateGameTime(game, out DateTime parsedStartDate, out double seconds, out string gameTime);
-                totalSecondsPlayed += seconds;
-                UpdateGameTypeTimeTotals(secondsPlayedRollup, playerRating, opponentRating, isWin, parsedStartDate, seconds, gameTime);
-                UpdateGameTimeTotals(secondsPlayedRollupMonthOnly, parsedStartDate, seconds);
-            }
+            ProcessGameData(chessdotcomUsername, gameList,
+                            out SortedList<string, (int SecondsPlayed, int GameCount, int Win, int Loss,
+                                                    int Draw, int MinRating, int MaxRating, int OpponentMinRating,
+                                                    int OpponentMaxRating, int OpponentWorstLoss, int OpponentBestWin,
+                                                    int TotalWin, int TotalDraw, int TotalLoss)> secondsPlayedRollup,
+                            out SortedList<string, dynamic> secondsPlayedRollupMonthOnly,
+                            out SortedList<string, (string href, int total, int winCount, int drawCount, int lossCount)> ecoPlayedRollupWhite,
+                            out SortedList<string, (string href, int total, int winCount, int drawCount, int lossCount)> ecoPlayedRollupBlack,
+                            out double totalSecondsPlayed);
 
             Console.WriteLine($">>Finished Processing Games ({stopwatch.Elapsed.Hours}:{stopwatch.Elapsed.Minutes}:{stopwatch.Elapsed.Seconds}:{stopwatch.Elapsed.Milliseconds})");
             stopwatch.Reset();
             stopwatch.Start();
 
             Console.WriteLine($">>Compiling Reports");
-
             (string whiteOpeningstextOut, string whiteOpeningshtmlOut) = DisplayOpeningsAsWhite(ecoPlayedRollupWhite);
             (string blackOpeningstextOut, string blackOpeningshtmlOut) = DisplayOpeningsAsBlack(ecoPlayedRollupBlack);
             (string playingStatstextOut, string playingStatshtmlOut) = DisplayPlayingStats(secondsPlayedRollup, userStats.ChessBullet?.Last.Rating, userStats.ChessBlitz?.Last.Rating, userStats.ChessRapid?.Last.Rating);
             (string timePlayedByMonthtextOut, string timePlayedByMonthhtmlOut) = DisplayTimePlayedByMonth(secondsPlayedRollupMonthOnly);
             (string capsTabletextOut, string capsTablehtmlOut) = DisplayCapsTable(capsScores);
-            (string capsRollingAverageFivetextOut, string capsRollingAverageFivehtmlOut) = DisplayCapsRollingAverage(5, capsScores);
+            (_, string capsRollingAverageFivehtmlOut) = DisplayCapsRollingAverage(5, capsScores);
             (string capsRollingAverageTentextOut, string capsRollingAverageTenhtmlOut) = DisplayCapsRollingAverage(10, capsScores);
-            (string totalSecondsPlayedtextOut, string totalSecondsPlayedhtmlOut) = DisplayTotalSecondsPlayed(totalSecondsPlayed);
+            (string totalSecondsPlayedtextOut, _) = DisplayTotalSecondsPlayed(totalSecondsPlayed);
 
-            StringBuilder textReport = new StringBuilder();
-            _ = textReport.AppendLine(Helpers.GetDisplaySection($"Live Chess Report for {chessdotcomUsername} : {DateTime.UtcNow.ToShortDateString()}@{DateTime.UtcNow.ToShortTimeString()} UTC", true))
-                          .Append(whiteOpeningstextOut)
-                          .Append(blackOpeningstextOut)
-                          .Append(playingStatstextOut)
-                          .Append(timePlayedByMonthtextOut)
-                          .Append(capsTabletextOut)
-                          .Append(capsRollingAverageTentextOut)
-                          .Append(totalSecondsPlayedtextOut)
-                          .Append(Helpers.GetDisplaySection("End of Report", true));
+            //Build the text report
+            string textReport = BuildTextReport(chessdotcomUsername, whiteOpeningstextOut, blackOpeningstextOut, playingStatstextOut, timePlayedByMonthtextOut, capsTabletextOut, capsRollingAverageTentextOut, totalSecondsPlayedtextOut);
 
             //Build the HTML report
             using HttpClient httpClient = new HttpClient();
@@ -145,6 +116,43 @@ namespace ChessStats
             string pawnFileBase64 = Convert.ToBase64String(await httpClient.GetByteArrayAsync(pawnUri).ConfigureAwait(false));
             string pawnFragment = $"<img src='data:image/png;base64,{pawnFileBase64}'/>";
 
+
+            string htmlReport = BuildHtmlReport(VERSION_NUMBER, userRecord, userStats, chessdotcomUsername, whiteOpeningshtmlOut, blackOpeningshtmlOut, playingStatshtmlOut, timePlayedByMonthhtmlOut, capsTablehtmlOut, capsRollingAverageFivehtmlOut, capsRollingAverageTenhtmlOut, userLogoBase64, pawnFragment);
+
+            Console.WriteLine($">>Finished Compiling Reports ({stopwatch.Elapsed.Hours}:{stopwatch.Elapsed.Minutes}:{stopwatch.Elapsed.Seconds}:{stopwatch.Elapsed.Milliseconds})");
+            stopwatch.Reset();
+            stopwatch.Start();
+
+            Console.WriteLine($">>Writing Results to {resultsDir.FullName}");
+            Console.WriteLine($"  >>Writing PGN's");
+            await WritePgnFilesToDisk(resultsDir, chessdotcomUsername, gameList).ConfigureAwait(false);
+
+            Console.WriteLine($"  >>Writing CAPS Data");
+            await WriteCapsTsvToDisk(resultsDir, chessdotcomUsername, capsScores).ConfigureAwait(false);
+
+            Console.WriteLine($"  >>Writing Text Report");
+            await WriteTextReportToDisk(VERSION_NUMBER, resultsDir, chessdotcomUsername, textReport).ConfigureAwait(false);
+
+            Console.WriteLine($"  >>Writing Html Report");
+            await WriteHtmlReportToDisk(resultsDir, chessdotcomUsername, htmlReport).ConfigureAwait(false);
+
+            Console.WriteLine($"  >>Writing Raw Game Data (TODO)");
+            Console.WriteLine($"  >>Writing Openings Data (TODO)");
+
+            Console.WriteLine($">>Finished Writing Results ({stopwatch.Elapsed.Hours}:{stopwatch.Elapsed.Minutes}:{stopwatch.Elapsed.Seconds}:{stopwatch.Elapsed.Milliseconds})");
+            Console.WriteLine("");
+
+            stopwatch.Stop();
+
+            Console.WriteLine(textReport.ToString());
+            Console.WriteLine("");
+
+            Helpers.PressToContinueIfDebug();
+            Environment.Exit(0);
+        }
+
+        private static string BuildHtmlReport(string VERSION_NUMBER, PlayerProfile userRecord, PlayerStats userStats, string chessdotcomUsername, string whiteOpeningshtmlOut, string blackOpeningshtmlOut, string playingStatshtmlOut, string timePlayedByMonthhtmlOut, string capsTablehtmlOut, string capsRollingAverageFivehtmlOut, string capsRollingAverageTenhtmlOut, string userLogoBase64, string pawnFragment)
+        {
             StringBuilder htmlReport = new StringBuilder();
             _ = htmlReport.AppendLine("<!DOCTYPE html>")
                           .AppendLine("<html lang='en'><head>")
@@ -231,33 +239,27 @@ namespace ChessStats
                           .AppendLine(timePlayedByMonthhtmlOut)
                           .AppendLine($"<div class='footer'><br/><hr/><i>Generated by ChessStats (for <a href='https://chess.com'>Chess.com</a>)&nbsp;ver. {VERSION_NUMBER}<br/><a href='https://github.com/Hyper-Dragon/ChessStats'>https://github.com/Hyper-Dragon/ChessStats</a></i><br/><br/><br/></div>")
                           .AppendLine("</div></div></body></html>");
+            return htmlReport.ToString();
+        }
 
-            Console.WriteLine($">>Finished Compiling Reports ({stopwatch.Elapsed.Hours}:{stopwatch.Elapsed.Minutes}:{stopwatch.Elapsed.Seconds}:{stopwatch.Elapsed.Milliseconds})");
-            stopwatch.Reset();
-            stopwatch.Start();
-
-            //Write PGN by Time Control to Disk
-            Console.WriteLine($">>Writing Results to {resultsDir.FullName}");
-            Console.WriteLine($"  >>Writing PGN's");
-            foreach (string timeClass in (from x in gameList
-                                          where x.IsRatedGame
-                                          select x.TimeClass).Distinct().ToArray())
+        private static async Task WritePgnFilesToDisk(DirectoryInfo resultsDir, string chessdotcomUsername, List<ChessGame> gameList)
+        {
+            foreach (string timeClass in (from x in gameList where x.IsRatedGame select x.TimeClass).Distinct().ToArray())
             {
                 using StreamWriter pgnFileOutStream = File.CreateText($"{Path.Combine(resultsDir.FullName, $"{chessdotcomUsername}-Pgn-{timeClass}.pgn")}");
 
-                foreach (ChessGame game in (from x in gameList
-                                            where x.TimeClass == timeClass && x.IsRatedGame
-                                            select x).
-                                      OrderBy(x => x.GameAttributes.GetAttributeAsNullOrDateTime(SupportedAttribute.Date, SupportedAttribute.StartTime)))
+                foreach (ChessGame game in (from x in gameList where x.TimeClass == timeClass && x.IsRatedGame select x)
+                                            .OrderBy(x => x.GameAttributes.GetAttributeAsNullOrDateTime(SupportedAttribute.Date, SupportedAttribute.StartTime)))
                 {
                     await pgnFileOutStream.WriteAsync(game.Text).ConfigureAwait(false);
                     await pgnFileOutStream.WriteLineAsync().ConfigureAwait(false);
                     await pgnFileOutStream.WriteLineAsync().ConfigureAwait(false);
                 }
             }
+        }
 
-            Console.WriteLine($"  >>Writing CAPS Data");
-
+        private static async Task WriteCapsTsvToDisk(DirectoryInfo resultsDir, string chessdotcomUsername, Dictionary<string, List<(double Caps, DateTime GameDate, string GameYearMonth)>> capsScores)
+        {
             using StreamWriter capsFileOutStream = File.CreateText($"{Path.Combine(resultsDir.FullName, $"{chessdotcomUsername}-Caps-All.tsv")}");
             await capsFileOutStream.WriteLineAsync($"CAPS Data for {chessdotcomUsername}").ConfigureAwait(false);
             await capsFileOutStream.WriteLineAsync().ConfigureAwait(false);
@@ -284,35 +286,64 @@ namespace ChessStats
 
             await capsFileOutStream.FlushAsync().ConfigureAwait(false);
             capsFileOutStream.Close();
+        }
 
-            Console.WriteLine($"  >>Writing Text Report");
-
+        private static async Task WriteTextReportToDisk(string VERSION_NUMBER, DirectoryInfo resultsDir, string chessdotcomUsername, string textReport)
+        {
             using StreamWriter textReportFileOutStream = File.CreateText($"{Path.Combine(resultsDir.FullName, $"{chessdotcomUsername}-Summary.txt")}");
             await textReportFileOutStream.WriteLineAsync($"{Helpers.GetDisplayLogo(VERSION_NUMBER)}").ConfigureAwait(false);
             await textReportFileOutStream.WriteLineAsync($"{textReport}").ConfigureAwait(false);
             await textReportFileOutStream.FlushAsync().ConfigureAwait(false);
             textReportFileOutStream.Close();
+        }
 
-            Console.WriteLine($"  >>Writing Html Report");
-
+        private static async Task WriteHtmlReportToDisk(DirectoryInfo resultsDir, string chessdotcomUsername, string htmlReport)
+        {
             using FileStream htmlReportFileOutStream = File.Create($"{Path.Combine(resultsDir.FullName, $"{chessdotcomUsername}-Summary.html")}");
-            await htmlReportFileOutStream.WriteAsync(Encoding.UTF8.GetBytes(htmlReport.ToString())).ConfigureAwait(false);
+            await htmlReportFileOutStream.WriteAsync(Encoding.UTF8.GetBytes(htmlReport)).ConfigureAwait(false);
             await htmlReportFileOutStream.FlushAsync().ConfigureAwait(false);
             htmlReportFileOutStream.Close();
+        }
 
-            Console.WriteLine($"  >>Writing Raw Game Data (TODO)");
-            Console.WriteLine($"  >>Writing Openings Data (TODO)");
+        private static string BuildTextReport(string chessdotcomUsername, string whiteOpeningstextOut, string blackOpeningstextOut, string playingStatstextOut, string timePlayedByMonthtextOut, string capsTabletextOut, string capsRollingAverageTentextOut, string totalSecondsPlayedtextOut)
+        {
+            StringBuilder textReport = new StringBuilder();
+            _ = textReport.AppendLine(Helpers.GetDisplaySection($"Live Chess Report for {chessdotcomUsername} : {DateTime.UtcNow.ToShortDateString()}@{DateTime.UtcNow.ToShortTimeString()} UTC", true))
+                          .Append(whiteOpeningstextOut)
+                          .Append(blackOpeningstextOut)
+                          .Append(playingStatstextOut)
+                          .Append(timePlayedByMonthtextOut)
+                          .Append(capsTabletextOut)
+                          .Append(capsRollingAverageTentextOut)
+                          .Append(totalSecondsPlayedtextOut)
+                          .Append(Helpers.GetDisplaySection("End of Report", true));
 
-            Console.WriteLine($">>Finished Writing Results ({stopwatch.Elapsed.Hours}:{stopwatch.Elapsed.Minutes}:{stopwatch.Elapsed.Seconds}:{stopwatch.Elapsed.Milliseconds})");
-            Console.WriteLine("");
+            return textReport.ToString();
+        }
 
-            stopwatch.Stop();
+        private static void ProcessGameData(string chessdotcomUsername, List<ChessGame> gameList, out SortedList<string, (int SecondsPlayed, int GameCount, int Win, int Loss, int Draw, int MinRating, int MaxRating, int OpponentMinRating, int OpponentMaxRating, int OpponentWorstLoss, int OpponentBestWin, int TotalWin, int TotalDraw, int TotalLoss)> secondsPlayedRollup, out SortedList<string, dynamic> secondsPlayedRollupMonthOnly, out SortedList<string, (string href, int total, int winCount, int drawCount, int lossCount)> ecoPlayedRollupWhite, out SortedList<string, (string href, int total, int winCount, int drawCount, int lossCount)> ecoPlayedRollupBlack, out double totalSecondsPlayed)
+        {
+            //Initialise reporting lists
+            secondsPlayedRollup = new SortedList<string, (int, int, int, int, int, int, int, int, int, int, int, int, int, int)>();
+            secondsPlayedRollupMonthOnly = new SortedList<string, dynamic>();
+            ecoPlayedRollupWhite = new SortedList<string, (string, int, int, int, int)>();
+            ecoPlayedRollupBlack = new SortedList<string, (string, int, int, int, int)>();
+            totalSecondsPlayed = 0;
+            foreach (ChessGame game in gameList)
+            {
+                // Don't include daily games
+                if (game.GameAttributes.Attributes["Event"] != "Live Chess")
+                {
+                    continue;
+                }
 
-            Console.WriteLine(textReport.ToString());
-            Console.WriteLine("");
-
-            Helpers.PressToContinueIfDebug();
-            Environment.Exit(0);
+                ExtractRatings(chessdotcomUsername, game, out string side, out int playerRating, out int opponentRating, out bool? isWin);
+                CalculateOpening(ecoPlayedRollupWhite, ecoPlayedRollupBlack, game, side, isWin);
+                CalculateGameTime(game, out DateTime parsedStartDate, out double seconds, out string gameTime);
+                totalSecondsPlayed += seconds;
+                UpdateGameTypeTimeTotals(secondsPlayedRollup, playerRating, opponentRating, isWin, parsedStartDate, seconds, gameTime);
+                UpdateGameTimeTotals(secondsPlayedRollupMonthOnly, parsedStartDate, seconds);
+            }
         }
 
         private static (string textOut, string htmlOut) DisplayCapsTable(Dictionary<string, List<(double Caps, DateTime GameDate, string GameYearMonth)>> capsScores)
@@ -411,20 +442,13 @@ namespace ChessStats
             side = game.GameAttributes.Attributes["White"].ToUpperInvariant() == chessdotcomUsername.ToUpperInvariant() ? "White" : "Black";
             playerRating = (game.IsRatedGame) ? ((side == "White") ? game.WhiteRating : game.BlackRating) : 0;
             opponentRating = (game.IsRatedGame) ? ((side == "White") ? game.BlackRating : game.WhiteRating) : 0;
-            switch (game.GameAttributes.Attributes[SupportedAttribute.Result.ToString()])
+            isWin = (game.GameAttributes.Attributes[SupportedAttribute.Result.ToString()]) switch
             {
-                case "1/2-1/2":
-                    isWin = null;
-                    break;
-                case "1-0":
-                    isWin = side == "White";
-                    break;
-                case "0-1":
-                    isWin = side != "White";
-                    break;
-                default:
-                    throw new Exception($"Unrecorded game result found");
-            }
+                "1/2-1/2" => null,
+                "1-0" => side == "White",
+                "0-1" => side != "White",
+                _ => throw new Exception($"Unrecorded game result found"),
+            };
         }
 
         private static void UpdateGameTimeTotals(SortedList<string, dynamic> secondsPlayedRollupMonthOnly, DateTime parsedStartDate, double seconds)
@@ -549,7 +573,7 @@ namespace ChessStats
                 //Calculate highlight class
                 int activeCell = (ecoCount.Value.winCount > ecoCount.Value.lossCount) ? 0 : ((ecoCount.Value.winCount < ecoCount.Value.lossCount) ? 2 : 1);
                 textOut.AppendLine($"{ecoCount.Key,-71} | {ecoCount.Value.total.ToString(CultureInfo.CurrentCulture),4}");
-                htmlOut.AppendLine($"<tr><td><a href='{ecoCount.Value.href}'>{ecoCount.Key}</a></td><td{((activeCell==0)?" class='higher'":"")}>{ecoCount.Value.winCount.ToString().PadLeft(5, '$').Replace("$", "&nbsp;")}</td><td{((activeCell == 1) ? " class='higher'" : "")}>{ecoCount.Value.drawCount.ToString().PadLeft(5, '$').Replace("$", "&nbsp;")}</td><td{((activeCell == 2) ? " class='lower'" : "")}>{ecoCount.Value.lossCount.ToString().PadLeft(5, '$').Replace("$", "&nbsp;")}</td><td>{ecoCount.Value.total.ToString(CultureInfo.CurrentCulture).ToString().PadLeft(5, '$').Replace("$", "&nbsp;")}</td></tr>");
+                htmlOut.AppendLine($"<tr><td><a href='{ecoCount.Value.href}'>{ecoCount.Key}</a></td><td{((activeCell == 0) ? " class='higher'" : "")}>{ecoCount.Value.winCount.ToString().PadLeft(5, '$').Replace("$", "&nbsp;")}</td><td{((activeCell == 1) ? " class='higher'" : "")}>{ecoCount.Value.drawCount.ToString().PadLeft(5, '$').Replace("$", "&nbsp;")}</td><td{((activeCell == 2) ? " class='lower'" : "")}>{ecoCount.Value.lossCount.ToString().PadLeft(5, '$').Replace("$", "&nbsp;")}</td><td>{ecoCount.Value.total.ToString(CultureInfo.CurrentCulture).ToString().PadLeft(5, '$').Replace("$", "&nbsp;")}</td></tr>");
             }
 
             htmlOut.AppendLine("</tbody></table>");
@@ -594,11 +618,10 @@ namespace ChessStats
             textOut.AppendLine(Helpers.GetDisplaySection("Time Played/Ratings by Time Control/Month", false));
             textOut.AppendLine("Time Control/Month| Play Time | Rating Min/Max/+-  | Vs Min/BestWin/Max | Win  | Draw | Loss | Tot. ");
             string lastLine = "";
-            int ratingComparison = 0;
 
             foreach (KeyValuePair<string, (int SecondsPlayed, int GameCount, int Win, int Loss, int Draw, int MinRating, int MaxRating, int OpponentMinRating, int OpponentMaxRating, int OpponentWorstLoss, int OpponentBestWin, int TotalWin, int TotalDraw, int TotalLoss)> rolledUp in secondsPlayedRollup)
             {
-                ratingComparison = rolledUp.Key.Substring(0, 2).ToUpperInvariant() switch
+                int ratingComparison = rolledUp.Key.Substring(0, 2).ToUpperInvariant() switch
                 {
                     "BU" => rolledUp.Key.Contains("NR") ? 0 : bulletRating.Value,
                     "BL" => rolledUp.Key.Contains("NR") ? 0 : blitzRating.Value,

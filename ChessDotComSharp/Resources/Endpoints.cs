@@ -4,7 +4,7 @@ namespace ChessDotComSharp.Resources
 {
     internal static class Endpoints
     {
-        private static readonly string apiBase = "https://api.chess.com/pub";
+        private const string apiBase = "https://api.chess.com/pub";
         public static class Player
         {
             public static string GetPlayerProfile(string username)
@@ -64,7 +64,7 @@ namespace ChessDotComSharp.Resources
 
             public static string GetTitledPlayers(PlayerTitle title)
             {
-                return $"{apiBase}/titled/{title.ToString()}";
+                return $"{apiBase}/titled/{title}";
             }
         }
 
