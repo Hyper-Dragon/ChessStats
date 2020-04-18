@@ -29,7 +29,6 @@ namespace ChessStats
             DirectoryInfo resultsDir = applicationPath.CreateSubdirectory("ChessStatsResults");
             DirectoryInfo cacheDir = applicationPath.CreateSubdirectory($"ChessStatsCache-V{CACHE_VERSION_NUMBER}");
 
-            Stopwatch stopwatch = new Stopwatch();
             Helpers.DisplayLogo(VERSION_NUMBER);
 
             if (args.Length != 1)
@@ -45,20 +44,14 @@ namespace ChessStats
             //Replace username with correct case - api returns ID in lower case so extract from URL property
             string chessdotcomUsername = userRecord.Url.Replace("https://www.chess.com/member/", "", StringComparison.InvariantCultureIgnoreCase);
 
-            stopwatch.Reset();
-            stopwatch.Start();
-
             Helpers.DisplaySection($"Fetching Data for {chessdotcomUsername}", true);
-            Console.WriteLine($">>Fetching and Processing Available CAPS Scores");
+            
+            Helpers.StartTimedSection($">>Fetching and Processing Available CAPS Scores");
             Dictionary<string, List<(double Caps, DateTime GameDate, string GameYearMonth)>> capsScores = await CapsFromChessDotCom.GetCapsScores(cacheDir, chessdotcomUsername, MAX_CAPS_PAGES).ConfigureAwait(false);
-            Console.WriteLine();
-            Console.WriteLine($">>Finished Fetching and Processing Available CAPS Scores ({stopwatch.Elapsed.Hours}:{stopwatch.Elapsed.Minutes}:{stopwatch.Elapsed.Seconds}:{stopwatch.Elapsed.Milliseconds})");
-
-            stopwatch.Reset();
-            stopwatch.Start();
+            Helpers.EndTimedSection(">>Finished Fetching and Processing Available CAPS Scores", true);
 
             List<ChessGame> gameList = new List<ChessGame>();
-            Console.WriteLine($">>Fetching Games From Chess.Com");
+            Helpers.StartTimedSection($">>Fetching Games From Chess.Com");
 
             try
             {
@@ -72,12 +65,8 @@ namespace ChessStats
                 Environment.Exit(-1);
             }
 
-            Console.WriteLine($"");
-            Console.WriteLine($">>Finished Fetching Games From Chess.Com ({stopwatch.Elapsed.Hours}:{stopwatch.Elapsed.Minutes}:{stopwatch.Elapsed.Seconds}:{stopwatch.Elapsed.Milliseconds})");
-            Console.WriteLine($">>Processing Games");
-
-            stopwatch.Reset();
-            stopwatch.Start();
+            Helpers.EndTimedSection($">>Finished Fetching Games From Chess.Com",true);
+            Helpers.StartTimedSection($">>Processing Games");
 
             ProcessGameData(chessdotcomUsername, gameList,
                             out SortedList<string, (int SecondsPlayed, int GameCount, int Win, int Loss,
@@ -89,11 +78,10 @@ namespace ChessStats
                             out SortedList<string, (string href, int total, int winCount, int drawCount, int lossCount)> ecoPlayedRollupBlack,
                             out double totalSecondsPlayed);
 
-            Console.WriteLine($">>Finished Processing Games ({stopwatch.Elapsed.Hours}:{stopwatch.Elapsed.Minutes}:{stopwatch.Elapsed.Seconds}:{stopwatch.Elapsed.Milliseconds})");
-            stopwatch.Reset();
-            stopwatch.Start();
+            Helpers.EndTimedSection($">>Finished Processing Games");
 
-            Console.WriteLine($">>Compiling Reports");
+            Helpers.StartTimedSection($">>Compiling Reports");
+            
             (string whiteOpeningstextOut, string whiteOpeningshtmlOut) = DisplayOpeningsAsWhite(ecoPlayedRollupWhite);
             (string blackOpeningstextOut, string blackOpeningshtmlOut) = DisplayOpeningsAsBlack(ecoPlayedRollupBlack);
             (string playingStatstextOut, string playingStatshtmlOut) = DisplayPlayingStats(secondsPlayedRollup, userStats.ChessBullet?.Last.Rating, userStats.ChessBlitz?.Last.Rating, userStats.ChessRapid?.Last.Rating);
@@ -106,7 +94,7 @@ namespace ChessStats
             //Build the text report
             string textReport = BuildTextReport(chessdotcomUsername, whiteOpeningstextOut, blackOpeningstextOut, playingStatstextOut, timePlayedByMonthtextOut, capsTabletextOut, capsRollingAverageTentextOut, totalSecondsPlayedtextOut);
 
-            //Build the HTML report
+            
             using HttpClient httpClient = new HttpClient();
 
             Uri userLogoUri = new Uri(string.IsNullOrEmpty(userRecord.Avatar) ? "https://images.chesscomfiles.com/uploads/v1/group/57796.67ee0038.160x160o.2dc0953ad64e.png" : userRecord.Avatar);
@@ -116,14 +104,12 @@ namespace ChessStats
             string pawnFileBase64 = Convert.ToBase64String(await httpClient.GetByteArrayAsync(pawnUri).ConfigureAwait(false));
             string pawnFragment = $"<img src='data:image/png;base64,{pawnFileBase64}'/>";
 
-
+            //Build the HTML report
             string htmlReport = BuildHtmlReport(VERSION_NUMBER, userRecord, userStats, chessdotcomUsername, whiteOpeningshtmlOut, blackOpeningshtmlOut, playingStatshtmlOut, timePlayedByMonthhtmlOut, capsTablehtmlOut, capsRollingAverageFivehtmlOut, capsRollingAverageTenhtmlOut, userLogoBase64, pawnFragment);
 
-            Console.WriteLine($">>Finished Compiling Reports ({stopwatch.Elapsed.Hours}:{stopwatch.Elapsed.Minutes}:{stopwatch.Elapsed.Seconds}:{stopwatch.Elapsed.Milliseconds})");
-            stopwatch.Reset();
-            stopwatch.Start();
+            Helpers.EndTimedSection($">>Finished Compiling Reports");
 
-            Console.WriteLine($">>Writing Results to {resultsDir.FullName}");
+            Helpers.StartTimedSection($">>Writing Results to {resultsDir.FullName}");
             Console.WriteLine($"  >>Writing PGN's");
             await WritePgnFilesToDisk(resultsDir, chessdotcomUsername, gameList).ConfigureAwait(false);
 
@@ -139,12 +125,9 @@ namespace ChessStats
             Console.WriteLine($"  >>Writing Raw Game Data (TODO)");
             Console.WriteLine($"  >>Writing Openings Data (TODO)");
 
-            Console.WriteLine($">>Finished Writing Results ({stopwatch.Elapsed.Hours}:{stopwatch.Elapsed.Minutes}:{stopwatch.Elapsed.Seconds}:{stopwatch.Elapsed.Milliseconds})");
-            Console.WriteLine("");
-
-            stopwatch.Stop();
-
-            Console.WriteLine(textReport.ToString());
+            Helpers.EndTimedSection($">>Finished Writing Results", newLineAfter:true);
+            
+            Console.WriteLine(textReport.ToString(CultureInfo.InvariantCulture));
             Console.WriteLine("");
 
             Helpers.PressToContinueIfDebug();

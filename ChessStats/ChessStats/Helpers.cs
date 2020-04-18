@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 
@@ -6,8 +7,27 @@ namespace ChessStats
 {
     public static class Helpers
     {
+        private static readonly Stopwatch stopwatch = new Stopwatch();
         private static int gameCount = 0;
         private static readonly object displayLock = new object();
+
+
+        public static void StartTimedSection(string msg)
+        {
+            stopwatch.Reset();
+            stopwatch.Start();
+
+            Console.WriteLine(msg);
+        }
+
+        public static void EndTimedSection(string msg, bool newLineFirst = false, bool newLineAfter = false)
+        {
+            stopwatch.Stop();
+
+            if (newLineFirst) { Console.WriteLine(); }
+            Console.WriteLine($"{msg} ({stopwatch.Elapsed.Hours}:{stopwatch.Elapsed.Minutes}:{stopwatch.Elapsed.Seconds}:{stopwatch.Elapsed.Milliseconds})");
+            if (newLineAfter) { Console.WriteLine(); }
+        }
 
         public static void ProcessedDisplay(string outChar)
         {
