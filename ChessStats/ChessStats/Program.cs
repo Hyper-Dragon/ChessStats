@@ -41,9 +41,8 @@ namespace ChessStats
 
             string[] chessdotcomUsers = args[0].ToUpperInvariant() switch
             {
-                "-REFRESH" => cacheDir.GetFiles()
-                                      .Where(x => x.Name.Contains("caps", StringComparison.OrdinalIgnoreCase))
-                                      .Select(x => x.Name.Substring(0,x.Name.LastIndexOf("Caps",StringComparison.InvariantCultureIgnoreCase)))
+                "-REFRESH" => resultsDir.GetFiles("*-Summary.html")
+                                      .Select(x => x.Name.Replace("-Summary.html", "", StringComparison.InvariantCultureIgnoreCase))
                                       .ToArray(),
                 _ => new string[] { args[0] }
             };
