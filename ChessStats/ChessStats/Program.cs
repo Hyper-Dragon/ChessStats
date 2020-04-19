@@ -34,104 +34,117 @@ namespace ChessStats
             if (args.Length != 1)
             {
                 Console.WriteLine($">>ChessDotCom Fetch Failed");
-                Console.WriteLine($"  You must specify a single valid chess.com username");
+                Console.WriteLine($"  You must specify a single valid chess.com username or -refresh");
                 Console.WriteLine();
                 Environment.Exit(-2);
             }
 
-            (PlayerProfile userRecord, PlayerStats userStats) = await PgnFromChessDotCom.FetchUserData(args[0]).ConfigureAwait(false);
-
-            //Replace username with correct case - api returns ID in lower case so extract from URL property
-            string chessdotcomUsername = userRecord.Url.Replace("https://www.chess.com/member/", "", StringComparison.InvariantCultureIgnoreCase);
-
-            Helpers.DisplaySection($"Fetching Data for {chessdotcomUsername}", true);
-
-            //Get reporting graphics
-            Helpers.StartTimedSection(">>Download report images");
-            using HttpClient httpClient = new HttpClient();
-
-            Uri userLogoUri = new Uri(string.IsNullOrEmpty(userRecord.Avatar) ? "https://images.chesscomfiles.com/uploads/v1/group/57796.67ee0038.160x160o.2dc0953ad64e.png" : userRecord.Avatar);
-            string userLogoBase64 = Convert.ToBase64String(await httpClient.GetByteArrayAsync(userLogoUri).ConfigureAwait(false));
-
-            Uri pawnUri = new Uri("https://www.chess.com/bundles/web/favicons/favicon-16x16.31f99381.png");
-            string pawnFileBase64 = Convert.ToBase64String(await httpClient.GetByteArrayAsync(pawnUri).ConfigureAwait(false));
-            string pawnFragment = $"<img src='data:image/png;base64,{pawnFileBase64}'/>";
-            Helpers.EndTimedSection(">>Download complete");
-
-            Helpers.StartTimedSection($">>Fetching and Processing Available CAPS Scores");
-            Dictionary<string, List<(double Caps, DateTime GameDate, string GameYearMonth)>> capsScores = await CapsFromChessDotCom.GetCapsScores(cacheDir, chessdotcomUsername, MAX_CAPS_PAGES).ConfigureAwait(false);
-            Helpers.EndTimedSection(">>Finished Fetching and Processing Available CAPS Scores", true);
-
-            List<ChessGame> gameList = new List<ChessGame>();
-            Helpers.StartTimedSection($">>Fetching Games From Chess.Com");
-
-            try
+            string[] chessdotcomUsers = args[0].ToUpperInvariant() switch
             {
-                gameList = await PgnFromChessDotCom.FetchGameRecordsForUser(chessdotcomUsername, cacheDir).ConfigureAwait(false);
-            }
-            catch (Exception ex)
+                "-REFRESH" => cacheDir.GetFiles()
+                                      .Where(x => x.Name.Contains("caps", StringComparison.OrdinalIgnoreCase))
+                                      .Select(x => x.Name.Substring(0,x.Name.LastIndexOf("Caps",StringComparison.InvariantCultureIgnoreCase)))
+                                      .ToArray(),
+                _ => new string[] { args[0] }
+            };
+
+
+            foreach (string user in chessdotcomUsers)
             {
-                Console.WriteLine($"  >>Fetching Games From Chess.Com Failed");
-                Console.WriteLine($"    {ex.Message}");
-                Console.WriteLine();
-                Environment.Exit(-1);
+                (PlayerProfile userRecord, PlayerStats userStats) = await PgnFromChessDotCom.FetchUserData(user).ConfigureAwait(false);
+
+                //Replace username with correct case - api returns ID in lower case so extract from URL property
+                string chessdotcomUsername = userRecord.Url.Replace("https://www.chess.com/member/", "", StringComparison.InvariantCultureIgnoreCase);
+
+                Helpers.DisplaySection($"Fetching Data for {chessdotcomUsername}", true);
+
+                //Get reporting graphics
+                Helpers.StartTimedSection(">>Download report images");
+                using HttpClient httpClient = new HttpClient();
+
+                Uri userLogoUri = new Uri(string.IsNullOrEmpty(userRecord.Avatar) ? "https://images.chesscomfiles.com/uploads/v1/group/57796.67ee0038.160x160o.2dc0953ad64e.png" : userRecord.Avatar);
+                string userLogoBase64 = Convert.ToBase64String(await httpClient.GetByteArrayAsync(userLogoUri).ConfigureAwait(false));
+
+                Uri pawnUri = new Uri("https://www.chess.com/bundles/web/favicons/favicon-16x16.31f99381.png");
+                string pawnFileBase64 = Convert.ToBase64String(await httpClient.GetByteArrayAsync(pawnUri).ConfigureAwait(false));
+                string pawnFragment = $"<img src='data:image/png;base64,{pawnFileBase64}'/>";
+                Helpers.EndTimedSection(">>Download complete");
+
+                Helpers.StartTimedSection($">>Fetching and Processing Available CAPS Scores");
+                Dictionary<string, List<(double Caps, DateTime GameDate, string GameYearMonth)>> capsScores = await CapsFromChessDotCom.GetCapsScores(cacheDir, chessdotcomUsername, MAX_CAPS_PAGES).ConfigureAwait(false);
+                Helpers.EndTimedSection(">>Finished Fetching and Processing Available CAPS Scores", true);
+
+                List<ChessGame> gameList = new List<ChessGame>();
+                Helpers.StartTimedSection($">>Fetching Games From Chess.Com");
+
+                try
+                {
+                    gameList = await PgnFromChessDotCom.FetchGameRecordsForUser(chessdotcomUsername, cacheDir).ConfigureAwait(false);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"  >>Fetching Games From Chess.Com Failed");
+                    Console.WriteLine($"    {ex.Message}");
+                    Console.WriteLine();
+                    Environment.Exit(-1);
+                }
+
+                Helpers.EndTimedSection($">>Finished Fetching Games From Chess.Com", true);
+                Helpers.StartTimedSection($">>Processing Games");
+
+                ProcessGameData(chessdotcomUsername, gameList,
+                                out SortedList<string, (int SecondsPlayed, int GameCount, int Win, int Loss,
+                                                        int Draw, int MinRating, int MaxRating, int OpponentMinRating,
+                                                        int OpponentMaxRating, int OpponentWorstLoss, int OpponentBestWin,
+                                                        int TotalWin, int TotalDraw, int TotalLoss)> secondsPlayedRollup,
+                                out SortedList<string, dynamic> secondsPlayedRollupMonthOnly,
+                                out SortedList<string, (string href, int total, int winCount, int drawCount, int lossCount)> ecoPlayedRollupWhite,
+                                out SortedList<string, (string href, int total, int winCount, int drawCount, int lossCount)> ecoPlayedRollupBlack,
+                                out double totalSecondsPlayed);
+
+                Helpers.EndTimedSection($">>Finished Processing Games");
+
+                Helpers.StartTimedSection($">>Compiling Reports");
+
+                //Extract reporting data
+                (string whiteOpeningstextOut, string whiteOpeningshtmlOut) = DisplayOpeningsAsWhite(ecoPlayedRollupWhite);
+                (string blackOpeningstextOut, string blackOpeningshtmlOut) = DisplayOpeningsAsBlack(ecoPlayedRollupBlack);
+                (string playingStatstextOut, string playingStatshtmlOut) = DisplayPlayingStats(secondsPlayedRollup, userStats.ChessBullet?.Last.Rating, userStats.ChessBlitz?.Last.Rating, userStats.ChessRapid?.Last.Rating);
+                (string timePlayedByMonthtextOut, string timePlayedByMonthhtmlOut) = DisplayTimePlayedByMonth(secondsPlayedRollupMonthOnly);
+                (string capsTabletextOut, string capsTablehtmlOut) = DisplayCapsTable(capsScores);
+                (_, string capsRollingAverageFivehtmlOut) = DisplayCapsRollingAverage(5, capsScores);
+                (string capsRollingAverageTentextOut, string capsRollingAverageTenhtmlOut) = DisplayCapsRollingAverage(10, capsScores);
+                (string totalSecondsPlayedtextOut, _) = DisplayTotalSecondsPlayed(totalSecondsPlayed);
+
+                //Build the text report
+                string textReport = BuildTextReport(chessdotcomUsername, whiteOpeningstextOut, blackOpeningstextOut, playingStatstextOut, timePlayedByMonthtextOut, capsTabletextOut, capsRollingAverageTentextOut, totalSecondsPlayedtextOut);
+
+                //Build the HTML report
+                string htmlReport = BuildHtmlReport(VERSION_NUMBER, userRecord, userStats, chessdotcomUsername, whiteOpeningshtmlOut, blackOpeningshtmlOut, playingStatshtmlOut, timePlayedByMonthhtmlOut, capsTablehtmlOut, capsRollingAverageFivehtmlOut, capsRollingAverageTenhtmlOut, userLogoBase64, pawnFragment);
+
+                Helpers.EndTimedSection($">>Finished Compiling Reports");
+
+                Helpers.StartTimedSection($">>Writing Results to {resultsDir.FullName}");
+                Console.WriteLine($"  >>Writing PGN's");
+                await WritePgnFilesToDisk(resultsDir, chessdotcomUsername, gameList).ConfigureAwait(false);
+
+                Console.WriteLine($"  >>Writing CAPS Data");
+                await WriteCapsTsvToDisk(resultsDir, chessdotcomUsername, capsScores).ConfigureAwait(false);
+
+                Console.WriteLine($"  >>Writing Text Report");
+                await WriteTextReportToDisk(VERSION_NUMBER, resultsDir, chessdotcomUsername, textReport).ConfigureAwait(false);
+
+                Console.WriteLine($"  >>Writing Html Report");
+                await WriteHtmlReportToDisk(resultsDir, chessdotcomUsername, htmlReport).ConfigureAwait(false);
+
+                Console.WriteLine($"  >>Writing Raw Game Data (TODO)");
+                Console.WriteLine($"  >>Writing Openings Data (TODO)");
+
+                Helpers.EndTimedSection($">>Finished Writing Results", newLineAfter: true);
+
+                Console.WriteLine(textReport.ToString(CultureInfo.InvariantCulture));
+                Console.WriteLine("");
             }
-
-            Helpers.EndTimedSection($">>Finished Fetching Games From Chess.Com",true);
-            Helpers.StartTimedSection($">>Processing Games");
-
-            ProcessGameData(chessdotcomUsername, gameList,
-                            out SortedList<string, (int SecondsPlayed, int GameCount, int Win, int Loss,
-                                                    int Draw, int MinRating, int MaxRating, int OpponentMinRating,
-                                                    int OpponentMaxRating, int OpponentWorstLoss, int OpponentBestWin,
-                                                    int TotalWin, int TotalDraw, int TotalLoss)> secondsPlayedRollup,
-                            out SortedList<string, dynamic> secondsPlayedRollupMonthOnly,
-                            out SortedList<string, (string href, int total, int winCount, int drawCount, int lossCount)> ecoPlayedRollupWhite,
-                            out SortedList<string, (string href, int total, int winCount, int drawCount, int lossCount)> ecoPlayedRollupBlack,
-                            out double totalSecondsPlayed);
-
-            Helpers.EndTimedSection($">>Finished Processing Games");
-
-            Helpers.StartTimedSection($">>Compiling Reports");
-            
-            //Extract reporting data
-            (string whiteOpeningstextOut, string whiteOpeningshtmlOut) = DisplayOpeningsAsWhite(ecoPlayedRollupWhite);
-            (string blackOpeningstextOut, string blackOpeningshtmlOut) = DisplayOpeningsAsBlack(ecoPlayedRollupBlack);
-            (string playingStatstextOut, string playingStatshtmlOut) = DisplayPlayingStats(secondsPlayedRollup, userStats.ChessBullet?.Last.Rating, userStats.ChessBlitz?.Last.Rating, userStats.ChessRapid?.Last.Rating);
-            (string timePlayedByMonthtextOut, string timePlayedByMonthhtmlOut) = DisplayTimePlayedByMonth(secondsPlayedRollupMonthOnly);
-            (string capsTabletextOut, string capsTablehtmlOut) = DisplayCapsTable(capsScores);
-            (_, string capsRollingAverageFivehtmlOut) = DisplayCapsRollingAverage(5, capsScores);
-            (string capsRollingAverageTentextOut, string capsRollingAverageTenhtmlOut) = DisplayCapsRollingAverage(10, capsScores);
-            (string totalSecondsPlayedtextOut, _) = DisplayTotalSecondsPlayed(totalSecondsPlayed);
-
-            //Build the text report
-            string textReport = BuildTextReport(chessdotcomUsername, whiteOpeningstextOut, blackOpeningstextOut, playingStatstextOut, timePlayedByMonthtextOut, capsTabletextOut, capsRollingAverageTentextOut, totalSecondsPlayedtextOut);
-
-            //Build the HTML report
-            string htmlReport = BuildHtmlReport(VERSION_NUMBER, userRecord, userStats, chessdotcomUsername, whiteOpeningshtmlOut, blackOpeningshtmlOut, playingStatshtmlOut, timePlayedByMonthhtmlOut, capsTablehtmlOut, capsRollingAverageFivehtmlOut, capsRollingAverageTenhtmlOut, userLogoBase64, pawnFragment);
-
-            Helpers.EndTimedSection($">>Finished Compiling Reports");
-
-            Helpers.StartTimedSection($">>Writing Results to {resultsDir.FullName}");
-            Console.WriteLine($"  >>Writing PGN's");
-            await WritePgnFilesToDisk(resultsDir, chessdotcomUsername, gameList).ConfigureAwait(false);
-
-            Console.WriteLine($"  >>Writing CAPS Data");
-            await WriteCapsTsvToDisk(resultsDir, chessdotcomUsername, capsScores).ConfigureAwait(false);
-
-            Console.WriteLine($"  >>Writing Text Report");
-            await WriteTextReportToDisk(VERSION_NUMBER, resultsDir, chessdotcomUsername, textReport).ConfigureAwait(false);
-
-            Console.WriteLine($"  >>Writing Html Report");
-            await WriteHtmlReportToDisk(resultsDir, chessdotcomUsername, htmlReport).ConfigureAwait(false);
-
-            Console.WriteLine($"  >>Writing Raw Game Data (TODO)");
-            Console.WriteLine($"  >>Writing Openings Data (TODO)");
-
-            Helpers.EndTimedSection($">>Finished Writing Results", newLineAfter:true);
-            
-            Console.WriteLine(textReport.ToString(CultureInfo.InvariantCulture));
-            Console.WriteLine("");
 
             Helpers.PressToContinueIfDebug();
             Environment.Exit(0);
