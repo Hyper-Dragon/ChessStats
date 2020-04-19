@@ -208,7 +208,7 @@ namespace ChessStats
                           .AppendLine($"<a href='{userRecord.Url}'><img alt='logo' src='data:image/png;base64,{userLogoBase64}'/></a>")
                           .AppendLine($"</div>")
                           .AppendLine($"<div class='headBox'>").AppendLine($"<h1>")
-                          .AppendLine($"Live Games Summary <br/>For <a class='headerLink' href='{userRecord.Url}'>{chessdotcomUsername}</a><br/>On {DateTime.UtcNow.ToShortDateString()}&nbsp;<small>({DateTime.UtcNow.ToShortTimeString()} UTC)</small></h1>")
+                          .AppendLine($"Live Games Summary <br/>For <a class='headerLink' href='{userRecord.Url}'>{chessdotcomUsername}</a><br/>On {DateTime.UtcNow.ToShortDateString()}&nbsp;<small class='priority-2'>({DateTime.UtcNow.ToShortTimeString()} UTC)</small></h1>")
                           .AppendLine($"</div>")
                           .AppendLine($"</div>")
                           .AppendLine($"<div class='ratingRow'>")
