@@ -20,7 +20,8 @@ namespace ChessStats
         private static async Task Main(string[] args)
 #pragma warning restore CS1998 // Async method lacks 'await' operators and will run synchronously
         {
-            const int MAX_CAPS_PAGES = 30;
+            const int MAX_CAPS_PAGES = 50;
+            const int MAX_CAPS_PAGES_WITH_CACHE = 3;
             const string VERSION_NUMBER = "0.5";
             const string CACHE_VERSION_NUMBER = "0.5";
 
@@ -60,17 +61,17 @@ namespace ChessStats
                 //Get reporting graphics
                 Helpers.StartTimedSection(">>Download report images");
                 using HttpClient httpClient = new HttpClient();
-                    Uri userLogoUri = new Uri(string.IsNullOrEmpty(userRecord.Avatar) ? "https://images.chesscomfiles.com/uploads/v1/group/57796.67ee0038.160x160o.2dc0953ad64e.png" : userRecord.Avatar);
-                    string userLogoBase64 = Convert.ToBase64String(await httpClient.GetByteArrayAsync(userLogoUri).ConfigureAwait(false));
+                Uri userLogoUri = new Uri(string.IsNullOrEmpty(userRecord.Avatar) ? "https://images.chesscomfiles.com/uploads/v1/group/57796.67ee0038.160x160o.2dc0953ad64e.png" : userRecord.Avatar);
+                string userLogoBase64 = Convert.ToBase64String(await httpClient.GetByteArrayAsync(userLogoUri).ConfigureAwait(false));
 
-                    Uri pawnUri = new Uri("https://www.chess.com/bundles/web/favicons/favicon-16x16.31f99381.png");
-                    string pawnFileBase64 = Convert.ToBase64String(await httpClient.GetByteArrayAsync(pawnUri).ConfigureAwait(false));
-                    string pawnFragment = $"<img src='data:image/png;base64,{pawnFileBase64}'/>";
-                    Helpers.EndTimedSection(">>Download complete");
-                
+                Uri pawnUri = new Uri("https://www.chess.com/bundles/web/favicons/favicon-16x16.31f99381.png");
+                string pawnFileBase64 = Convert.ToBase64String(await httpClient.GetByteArrayAsync(pawnUri).ConfigureAwait(false));
+                string pawnFragment = $"<img src='data:image/png;base64,{pawnFileBase64}'/>";
+                Helpers.EndTimedSection(">>Download complete");
+
 
                 Helpers.StartTimedSection($">>Fetching and Processing Available CAPS Scores");
-                Dictionary<string, List<(double Caps, DateTime GameDate, string GameYearMonth)>> capsScores = await CapsFromChessDotCom.GetCapsScores(cacheDir, chessdotcomUsername, MAX_CAPS_PAGES).ConfigureAwait(false);
+                Dictionary<string, List<CapsRecord>> capsScores = await CapsFromChessDotCom.GetCapsScores(cacheDir, chessdotcomUsername, MAX_CAPS_PAGES, MAX_CAPS_PAGES_WITH_CACHE).ConfigureAwait(false);
                 Helpers.EndTimedSection(">>Finished Fetching and Processing Available CAPS Scores", true);
 
                 List<ChessGame> gameList = new List<ChessGame>();
@@ -261,23 +262,23 @@ namespace ChessStats
             }
         }
 
-        private static async Task WriteCapsTsvToDisk(DirectoryInfo resultsDir, string chessdotcomUsername, Dictionary<string, List<(double Caps, DateTime GameDate, string GameYearMonth)>> capsScores)
+        private static async Task WriteCapsTsvToDisk(DirectoryInfo resultsDir, string chessdotcomUsername, Dictionary<string, List<CapsRecord>> capsScores)
         {
             using StreamWriter capsFileOutStream = File.CreateText($"{Path.Combine(resultsDir.FullName, $"{chessdotcomUsername}-Caps-All.tsv")}");
             await capsFileOutStream.WriteLineAsync($"CAPS Data for {chessdotcomUsername}").ConfigureAwait(false);
             await capsFileOutStream.WriteLineAsync().ConfigureAwait(false);
 
-            foreach (KeyValuePair<string, List<(double Caps, DateTime GameDate, string GameYearMonth)>> capsTimeControl in capsScores)
+            foreach (KeyValuePair<string, List<CapsRecord>> capsTimeControl in capsScores)
             {
                 StringBuilder dateLine = new StringBuilder();
                 StringBuilder monthLine = new StringBuilder();
                 StringBuilder capsLine = new StringBuilder();
 
-                foreach ((double Caps, DateTime GameDate, string GameYearMonth) in capsTimeControl.Value.OrderBy(x => x.GameDate))
+                foreach (CapsRecord capsRecord in capsTimeControl.Value.OrderBy(x => x.GameDate))
                 {
-                    dateLine.Append($"{GameDate.ToShortDateString()}\t")
-                            .Append($"{GameYearMonth}\t")
-                            .Append($"{Caps}\t");
+                    dateLine.Append($"{capsRecord.GameDate.ToShortDateString()}\t")
+                            .Append($"{capsRecord.GameYearMonth}\t")
+                            .Append($"{capsRecord.Caps}\t");
                 }
 
                 await capsFileOutStream.WriteLineAsync($"{CultureInfo.InvariantCulture.TextInfo.ToTitleCase(capsTimeControl.Key)}").ConfigureAwait(false);
@@ -349,7 +350,7 @@ namespace ChessStats
             }
         }
 
-        private static (string textOut, string htmlOut) DisplayCapsTable(Dictionary<string, List<(double Caps, DateTime GameDate, string GameYearMonth)>> capsScores)
+        private static (string textOut, string htmlOut) DisplayCapsTable(Dictionary<string, List<CapsRecord>> capsScores)
         {
             StringBuilder textOut = new StringBuilder();
             StringBuilder htmlOut = new StringBuilder();
@@ -360,7 +361,7 @@ namespace ChessStats
             SortedList<string, (double, double, double, double, double, double)> capsTable = new SortedList<string, (double, double, double, double, double, double)>();
             SortedList<string, string[]> capsTableReformat = new SortedList<string, string[]>();
 
-            foreach (KeyValuePair<string, List<(double Caps, DateTime GameDate, string GameYearMonth)>> capsScore in capsScores)
+            foreach (KeyValuePair<string, List<CapsRecord>> capsScore in capsScores)
             {
                 foreach (var extractedScore in capsScore.Value.GroupBy(t => new { Id = t.GameYearMonth })
                                                     .Where(i => i.Count() > 4)
@@ -405,7 +406,7 @@ namespace ChessStats
             return (textOut.ToString(), htmlOut.ToString());
         }
 
-        private static (string textOut, string htmlOut) DisplayCapsRollingAverage(int averageOver, Dictionary<string, List<(double Caps, DateTime GameDate, string GameYearMonth)>> capsScores)
+        private static (string textOut, string htmlOut) DisplayCapsRollingAverage(int averageOver, Dictionary<string, List<CapsRecord>> capsScores)
         {
             StringBuilder textOut = new StringBuilder();
             StringBuilder htmlOut = new StringBuilder();
@@ -418,7 +419,7 @@ namespace ChessStats
 
             htmlOut.AppendLine("<table class='capsRollingTable'><thead><tr><td>Control/Side</td><td colspan='9'>Newest</td><td>Oldest</td></thead><tbody>");
 
-            foreach (KeyValuePair<string, List<(double Caps, DateTime GameDate, string GameYearMonth)>> capsScore in capsScores)
+            foreach (KeyValuePair<string, List<CapsRecord>> capsScore in capsScores)
             {
                 if (capsScore.Value.Count > averageOver)
                 {
