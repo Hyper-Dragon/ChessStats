@@ -18,12 +18,18 @@ namespace ChessStats
     {
         const int MAX_CAPS_PAGES = 50;
         const int MAX_CAPS_PAGES_WITH_CACHE = 3;
+
         const string VERSION_NUMBER = "0.5";
+        const string RESULTS_DIR_NAME = "ChessStatsResults";
+        const string CACHE_DIR_NAME = "ChessStatsCache";
         const string CACHE_VERSION_NUMBER = "1";
-        const string DEFAULT_USER_IMAGE = "https://images.chesscomfiles.com/uploads/v1/group/57796.67ee0038.160x160o.2dc0953ad64e.png";
+        const string CHESSCOM_URL = "https://chess.com";
         const string MEMBER_URL = "https://www.chess.com/member/";
-        const string REPORT_HEADING_ICON = "https://www.chess.com/bundles/web/favicons/favicon-16x16.31f99381.png";
         const string OPENING_URL = "https://www.chess.com/openings/";
+        const string STATS_BASE_URL = "https://www.chess.com/stats";
+        const string PROJECT_LINK = "https://github.com/Hyper-Dragon/ChessStats";
+        const string DEFAULT_USER_IMAGE = "https://images.chesscomfiles.com/uploads/v1/group/57796.67ee0038.160x160o.2dc0953ad64e.png";
+        const string REPORT_HEADING_ICON = "https://www.chess.com/bundles/web/favicons/favicon-16x16.31f99381.png";
 
 #pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously
         private static async Task Main(string[] args)
@@ -33,8 +39,8 @@ namespace ChessStats
 
             //Set up data directories
             DirectoryInfo applicationPath = new DirectoryInfo(Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName));
-            DirectoryInfo baseResultsDir = applicationPath.CreateSubdirectory("ChessStatsResults");
-            DirectoryInfo baseCacheDir = applicationPath.CreateSubdirectory($"ChessStatsCache/CacheV{CACHE_VERSION_NUMBER}");
+            DirectoryInfo baseResultsDir = applicationPath.CreateSubdirectory(RESULTS_DIR_NAME);
+            DirectoryInfo baseCacheDir = applicationPath.CreateSubdirectory($"{CACHE_DIR_NAME}/CacheV{CACHE_VERSION_NUMBER}");
 
             if (args.Length != 1)
             {
@@ -168,49 +174,49 @@ namespace ChessStats
                           .AppendLine("<meta charset='UTF-8'>")
                           .AppendLine("<meta name='generator' content='ChessStats'> ")
                           .AppendLine("<meta name='viewport' content='width=device-width, initial-scale=1.0'>")
-                          .AppendLine("   <style>                                                                                                                                                                                  ")
-                          .AppendLine("     *                                            {margin: 0;padding: 0;}                                                                                                                   ")
-                          .AppendLine("     @media screen and (max-width: 1000px) and (min-width: 768px)  {.priority-4{display:none;}}                                                                                             ")
-                          .AppendLine("     @media screen and (max-width: 768px)  and (min-width: 600px)  {.priority-4{display:none;}.priority-3{display:none;}}                                                                   ")
-                          .AppendLine("     @media screen and (max-width: 600px)                          {.priority-4{display:none;}.priority-3{display:none;}.priority-2{display:none;}}                                         ")
-                          .AppendLine("     body                                         {background-color:#312e2b;width: 90%; margin: auto; font-family: -apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif;}   ")
-                          .AppendLine("     h1                                           {padding: 10px;text-align: left;font-size: 40px; color: hsla(0,0%,100%,.65);}                                                             ")
-                          .AppendLine("     h1 small                                     {font-size: 15px; vertical-align: bottom}                                                                                                 ")
-                          .AppendLine("     .headerLink                                  {color: #e58b09;}                                                                                                                         ")
-                          .AppendLine("     h2                                           {clear:left;padding: 5px;text-align: left;font-size: 16px;background-color: rgba(0,0,0,.13);color: hsla(0,0%,100%,.65);}                  ")
-                          .AppendLine("     table                                        {width: 100%;table-layout: fixed ;border-collapse: collapse; overflow-x:auto; }                                                           ")
-                          .AppendLine("     thead                                        {text-align: center;background: #1583b7;color: white;font-size: 14px; font-weight: bold;}                                                 ")
-                          .AppendLine("     tbody                                        {text-align: center;font-size: 11px;}                                                                                                     ")
-                          .AppendLine("     td                                           {padding-right: 0px;}                                                                                                                     ")
-                          .AppendLine("     tbody td:nth-child(n+2)                      {font-family: Courier New;}                                                                                                               ")
-                          .AppendLine("     td:nth-child(1)                              {padding-left:10px; text-align: left; width: 105px ; font-weight: bold;}                                                                  ")
-                          .AppendLine("     tbody tr:nth-child(odd)                      {background-color: #F9F9FF;}                                                                                                              ")
-                          .AppendLine("     tbody tr:nth-child(even)                     {background-color: #F4F4FF;}                                                                                                              ")
-                          .AppendLine("     .active {background-color: #769656}                                                                                                                                                    ")
-                          .AppendLine("     .inactive {background-color: #a7a6a2}                                                                                                                                                  ")
-                          .AppendLine("     .headRow {display: grid; grid-template-columns: 200px auto; grid-gap: 0px; border:0px; height: auto; padding: 0px; background-color: #2b2825; }                                        ")
-                          .AppendLine("     .headRow > div {padding: 0px; }                                                                                                                                                        ")
-                          .AppendLine("     .headBox img {vertical-align: middle}                                                                                                                                                  ")
-                          .AppendLine("     .ratingRow {display: grid;grid-template-columns: auto auto auto;grid-gap: 20px;padding: 10px;}                                                                                         ")
-                          .AppendLine("     .ratingRow > div {text-align: center;  padding: 0px;  color: whitesmoke;  font-size: 15px;  font-weight: bold;}                                                                        ")
-                          .AppendLine("     .ratingBox {cursor: pointer;}                                                                                                                                                          ")
-                          .AppendLine("     .yearSplit                                   {border-top: thin dotted; border-color: #1583b7;}                                                                                         ")
-                          .AppendLine("     .higher                                      {background-color: hsla(120, 100%, 50%, 0.2);}                                                                                            ")
-                          .AppendLine("     .lower                                       {background-color: hsla(0, 100%, 70%, 0.2);}                                                                                              ")
-                          .AppendLine("     .whiteOpeningsTable thead td:nth-child(1)    {font-weight: bold;}                                                                                                                      ")
-                          .AppendLine("     .blackOpeningsTable thead td:nth-child(1)    {font-weight: bold;}                                                                                                                      ")
-                          .AppendLine("     .whiteOpeningsTable td:nth-child(1)          {padding-left:10px; text-align: left; width:50%; font-weight: normal;}                                                                    ")
-                          .AppendLine("     .blackOpeningsTable td:nth-child(1)          {padding-left:10px; text-align: left; width:50%; font-weight: normal;}                                                                    ")
-                          .AppendLine("     .capsRollingTable thead td:nth-child(2)      {text-align: left;}                                                                                                                       ")
-                          .AppendLine("     .playingStatsTable tbody td:nth-child(5)     {border-right: thin solid; border-color: #1583b7;}                                                                                         ")
-                          .AppendLine("     .playingStatsTable tbody td:nth-child(8)     {border-left: thin dotted; border-color: #1583b7;}                                                                                        ")
-                          .AppendLine("     .playingStatsTable tbody td:nth-child(11)    {border-left: thin dotted; border-color: #1583b7;}                                                                                        ")
-                          .AppendLine("     .playingStatsTable tbody td:nth-child(13)    {border-left: thin solid; border-color: #1583b7;}                                                                                         ")
-                          .AppendLine("     .oneColumn                                   {float: left;width: 100%;}                                                                                                                ")
-                          .AppendLine("     .oneRow:after                                {content: ''; display: table; clear: both;}                                                                                               ")
-                          .AppendLine("     .footer                                      {text-align: right;color: white; font-size: 11px}                                                                                         ")
-                          .AppendLine("     .footer a                                    {color: #e58b09;}                                                                                                                         ")
-                          .AppendLine("   </style>                                                                                                                                                                                 ")
+                          .AppendLine("   <style>")
+                          .AppendLine("     *                                            {margin: 0;padding: 0;}")
+                          .AppendLine("     @media screen and (max-width: 1000px) and (min-width: 768px)  {.priority-4{display:none;}}")
+                          .AppendLine("     @media screen and (max-width: 768px)  and (min-width: 600px)  {.priority-4{display:none;}.priority-3{display:none;}}")
+                          .AppendLine("     @media screen and (max-width: 600px)                          {.priority-4{display:none;}.priority-3{display:none;}.priority-2{display:none;}}")
+                          .AppendLine("     body                                         {background-color:#312e2b;width: 90%; margin: auto; font-family: -apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif;}")
+                          .AppendLine("     h1                                           {padding: 10px;text-align: left;font-size: 40px; color: hsla(0,0%,100%,.65);}")
+                          .AppendLine("     h1 small                                     {font-size: 15px; vertical-align: bottom}")
+                          .AppendLine("     .headerLink                                  {color: #e58b09;}")
+                          .AppendLine("     h2                                           {clear:left;padding: 5px;text-align: left;font-size: 16px;background-color: rgba(0,0,0,.13);color: hsla(0,0%,100%,.65);}")
+                          .AppendLine("     table                                        {width: 100%;table-layout: fixed ;border-collapse: collapse; overflow-x:auto; }")
+                          .AppendLine("     thead                                        {text-align: center;background: #1583b7;color: white;font-size: 14px; font-weight: bold;}")
+                          .AppendLine("     tbody                                        {text-align: center;font-size: 11px;}")
+                          .AppendLine("     td                                           {padding-right: 0px;}")
+                          .AppendLine("     tbody td:nth-child(n+2)                      {font-family: Courier New;}")
+                          .AppendLine("     td:nth-child(1)                              {padding-left:10px; text-align: left; width: 105px ; font-weight: bold;}")
+                          .AppendLine("     tbody tr:nth-child(odd)                      {background-color: #F9F9FF;}")
+                          .AppendLine("     tbody tr:nth-child(even)                     {background-color: #F4F4FF;}")
+                          .AppendLine("     .active                                      {background-color: #769656}")
+                          .AppendLine("     .inactive                                    {background-color: #a7a6a2}")
+                          .AppendLine("     .headRow                                     {display: grid; grid-template-columns: 200px auto; grid-gap: 0px; border:0px; height: auto; padding: 0px; background-color: #2b2825; }")
+                          .AppendLine("     .headRow > div                               {padding: 0px; }")
+                          .AppendLine("     .headBox img                                 {vertical-align: middle}")
+                          .AppendLine("     .ratingRow                                   {display: grid;grid-template-columns: auto auto auto;grid-gap: 20px;padding: 10px;}")
+                          .AppendLine("     .ratingRow > div                             {text-align: center;  padding: 0px;  color: whitesmoke;  font-size: 15px;  font-weight: bold;}")
+                          .AppendLine("     .ratingBox                                   {cursor: pointer;}")
+                          .AppendLine("     .yearSplit                                   {border-top: thin dotted; border-color: #1583b7;}")
+                          .AppendLine("     .higher                                      {background-color: hsla(120, 100%, 50%, 0.2);}")
+                          .AppendLine("     .lower                                       {background-color: hsla(0, 100%, 70%, 0.2);}")
+                          .AppendLine("     .whiteOpeningsTable thead td:nth-child(1)    {font-weight: bold;}")
+                          .AppendLine("     .blackOpeningsTable thead td:nth-child(1)    {font-weight: bold;}")
+                          .AppendLine("     .whiteOpeningsTable td:nth-child(1)          {padding-left:10px; text-align: left; width:50%; font-weight: normal;}")
+                          .AppendLine("     .blackOpeningsTable td:nth-child(1)          {padding-left:10px; text-align: left; width:50%; font-weight: normal;}")
+                          .AppendLine("     .capsRollingTable thead td:nth-child(2)      {text-align: left;}")
+                          .AppendLine("     .playingStatsTable tbody td:nth-child(5)     {border-right: thin solid; border-color: #1583b7;}")
+                          .AppendLine("     .playingStatsTable tbody td:nth-child(8)     {border-left: thin dotted; border-color: #1583b7;}")
+                          .AppendLine("     .playingStatsTable tbody td:nth-child(11)    {border-left: thin dotted; border-color: #1583b7;}")
+                          .AppendLine("     .playingStatsTable tbody td:nth-child(13)    {border-left: thin solid; border-color: #1583b7;}")
+                          .AppendLine("     .oneColumn                                   {float: left;width: 100%;}")
+                          .AppendLine("     .oneRow:after                                {content: ''; display: table; clear: both;}")
+                          .AppendLine("     .footer                                      {text-align: right;color: white; font-size: 11px}")
+                          .AppendLine("     .footer a                                    {color: #e58b09;}")
+                          .AppendLine("   </style>")
                           .AppendLine("</head><body>")
                           .AppendLine($"<div class='headRow'>")
                           .AppendLine($"<div class='headBox priority-2'>")
@@ -222,15 +228,15 @@ namespace ChessStats
                           .AppendLine($"</div>")
                           .AppendLine($"<div class='ratingRow'>")
                           .AppendLine($"<div class='ratingBox'>")
-                          .AppendLine($"<div class='item1 {((userStats.ChessBullet != null) ? "active" : "inactive")}' onclick=\"window.location.href='https://www.chess.com/stats/live/bullet/{chessdotcomUsername}'\">")
+                          .AppendLine($"<div class='item1 {((userStats.ChessBullet != null) ? "active" : "inactive")}' onclick=\"window.location.href='{STATS_BASE_URL}/live/bullet/{chessdotcomUsername}'\">")
                           .AppendLine($"Bullet {Helpers.ValueOrDash(userStats.ChessBullet?.Last.Rating)}<br/><span class='priority-2'>(Gliko RD&nbsp;{Helpers.ValueOrDash(userStats.ChessBullet?.Last.GlickoRd)})<br/></span>{((userStats.ChessBullet == null) ? "-" : userStats.ChessBullet?.Last.Date.ToShortDateString())}")
                           .AppendLine($"</div></div>")
                           .AppendLine($"<div class='ratingBox'>")
-                          .AppendLine($"<div class='item2 {((userStats.ChessBlitz != null) ? "active" : "inactive")}' onclick=\"window.location.href='https://www.chess.com/stats/live/blitz/{chessdotcomUsername}'\">")
+                          .AppendLine($"<div class='item2 {((userStats.ChessBlitz != null) ? "active" : "inactive")}' onclick=\"window.location.href='{STATS_BASE_URL}/live/blitz/{chessdotcomUsername}'\">")
                           .AppendLine($"Blitz {Helpers.ValueOrDash(userStats.ChessBlitz?.Last.Rating)}<br/><span class='priority-2'>(Gliko RD&nbsp;{Helpers.ValueOrDash(userStats.ChessBlitz?.Last.GlickoRd)})<br/></span>{((userStats.ChessBlitz == null) ? "-" : userStats.ChessBlitz?.Last.Date.ToShortDateString())}")
                           .AppendLine($"</div></div>")
                           .AppendLine($"<div class='ratingBox'>")
-                          .AppendLine($"<div class='item3 {((userStats.ChessRapid != null) ? "active" : "inactive")}' onclick=\"window.location.href='https://www.chess.com/stats/live/rapid/{chessdotcomUsername}'\">")
+                          .AppendLine($"<div class='item3 {((userStats.ChessRapid != null) ? "active" : "inactive")}' onclick=\"window.location.href='{STATS_BASE_URL}/live/rapid/{chessdotcomUsername}'\">")
                           .AppendLine($"Rapid {Helpers.ValueOrDash(userStats.ChessRapid?.Last.Rating)}<br/><span class='priority-2'>(Gliko RD&nbsp;{Helpers.ValueOrDash(userStats.ChessRapid?.Last.GlickoRd)})<br/></span>{((userStats.ChessRapid == null) ? "-" : userStats.ChessRapid?.Last.Date.ToShortDateString())}")
                           .AppendLine($"</div></div>")
                           .AppendLine($"</div>")
@@ -250,7 +256,7 @@ namespace ChessStats
                           .AppendLine(playingStatshtmlOut)
                           .AppendLine($"<h2>{pawnFragment}Time Played by Month (All Time Controls)</h2>")
                           .AppendLine(timePlayedByMonthhtmlOut)
-                          .AppendLine($"<div class='footer'><br/><hr/><i>Generated by ChessStats (for <a href='https://chess.com'>Chess.com</a>)&nbsp;ver. {VERSION_NUMBER}<br/><a href='https://github.com/Hyper-Dragon/ChessStats'>https://github.com/Hyper-Dragon/ChessStats</a></i><br/><br/><br/></div>")
+                          .AppendLine($"<div class='footer'><br/><hr/><i>Generated by ChessStats (for <a href='{CHESSCOM_URL}'>Chess.com</a>)&nbsp;ver. {VERSION_NUMBER}<br/><a href='{PROJECT_LINK}'>{PROJECT_LINK}</a></i><br/><br/><br/></div>")
                           .AppendLine("</div></div></body></html>");
             return htmlReport.ToString();
         }
@@ -342,6 +348,7 @@ namespace ChessStats
             ecoPlayedRollupWhite = new SortedList<string, (string, int, int, int, int)>();
             ecoPlayedRollupBlack = new SortedList<string, (string, int, int, int, int)>();
             totalSecondsPlayed = 0;
+
             foreach (ChessGame game in gameList)
             {
                 // Don't include daily games
