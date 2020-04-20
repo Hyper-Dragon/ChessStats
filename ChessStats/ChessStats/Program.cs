@@ -36,7 +36,8 @@ namespace ChessStats
 #pragma warning restore CS1998 // Async method lacks 'await' operators and will run synchronously
         {
             Helpers.DisplayLogo(VERSION_NUMBER);
-
+            bool hasRunErrors = false;
+            
             //Set up data directories
             DirectoryInfo applicationPath = new DirectoryInfo(Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName));
             DirectoryInfo baseResultsDir = applicationPath.CreateSubdirectory(RESULTS_DIR_NAME);
@@ -65,7 +66,7 @@ namespace ChessStats
 
                 //Replace username with correct case - api returns ID in lower case so extract from URL property
                 string chessdotcomUsername = userRecord.Url.Replace(MEMBER_URL, "", StringComparison.InvariantCultureIgnoreCase);
-                
+
                 //Create output directory
                 DirectoryInfo resultsDir = baseResultsDir.CreateSubdirectory(chessdotcomUsername);
                 DirectoryInfo cacheDir = baseCacheDir.CreateSubdirectory(chessdotcomUsername);
@@ -143,17 +144,38 @@ namespace ChessStats
                 Helpers.EndTimedSection($">>Finished Compiling Reports");
 
                 Helpers.StartTimedSection($">>Writing Results to {resultsDir.FullName}");
-                Console.WriteLine($"  >>Writing PGN's");
-                await WritePgnFilesToDisk(resultsDir, chessdotcomUsername, gameList).ConfigureAwait(false);
 
-                Console.WriteLine($"  >>Writing CAPS Data");
-                await WriteCapsTsvToDisk(resultsDir, chessdotcomUsername, capsScores).ConfigureAwait(false);
-
-                Console.WriteLine($"  >>Writing Text Report");
-                await WriteTextReportToDisk(VERSION_NUMBER, resultsDir, chessdotcomUsername, textReport).ConfigureAwait(false);
-
-                Console.WriteLine($"  >>Writing Html Report");
-                await WriteHtmlReportToDisk(resultsDir, chessdotcomUsername, htmlReport).ConfigureAwait(false);
+                foreach (string report in new string[] { "PGN", "CAPS", "TXT", "HTML" })
+                {
+                    try
+                    {
+                        switch (report)
+                        {
+                            case "PGN":
+                                Console.WriteLine($"  >>Writing PGN's");
+                                await WritePgnFilesToDisk(resultsDir, chessdotcomUsername, gameList).ConfigureAwait(false);
+                                break;
+                            case "CAPS":
+                                Console.WriteLine($"  >>Writing CAPS Data");
+                                await WriteCapsTsvToDisk(resultsDir, chessdotcomUsername, capsScores).ConfigureAwait(false);
+                                break;
+                            case "TXT":
+                                Console.WriteLine($"  >>Writing Text Report");
+                                await WriteTextReportToDisk(VERSION_NUMBER, resultsDir, chessdotcomUsername, textReport).ConfigureAwait(false);
+                                break;
+                            case "HTML":
+                                Console.WriteLine($"  >>Writing Html Report");
+                                await WriteHtmlReportToDisk(resultsDir, chessdotcomUsername, htmlReport).ConfigureAwait(false);
+                                break;
+                            default: throw new NotImplementedException();
+                        }
+                    }
+                    catch (System.IO.IOException ex)
+                    {
+                        Console.WriteLine($"    >>ERROR: {ex.Message}");
+                        hasRunErrors = true;
+                    }
+                }
 
                 Helpers.EndTimedSection($">>Finished Writing Results", newLineAfter: true);
 
@@ -161,8 +183,19 @@ namespace ChessStats
                 Console.WriteLine("");
             }
 
-            Helpers.PressToContinueIfDebug();
-            Environment.Exit(0);
+            if (hasRunErrors)
+            {
+                Console.WriteLine("*** WARNING: Errors occurred during run - check output above ***");
+                Console.WriteLine("");
+
+                Helpers.PressToContinueIfDebug();
+                Environment.Exit(-1);
+            }
+            else
+            {
+                Helpers.PressToContinueIfDebug();
+                Environment.Exit(0);
+            }
         }
 
         private static string BuildHtmlReport(string VERSION_NUMBER, PlayerProfile userRecord, PlayerStats userStats, string chessdotcomUsername, string whiteOpeningshtmlOut, string blackOpeningshtmlOut, string playingStatshtmlOut, string timePlayedByMonthhtmlOut, string capsTablehtmlOut, string capsRollingAverageFivehtmlOut, string capsRollingAverageTenhtmlOut, string userLogoBase64, string pawnFragment)
@@ -440,13 +473,20 @@ namespace ChessStats
                 if (capsScore.Value.Count > averageOver)
                 {
                     List<double> latestCaps = capsScore.Value.Select(x => x.Caps).ToList<double>();
+                    List<string> averages = Enumerable.Range(0, (latestCaps.Count+1) - averageOver)
+                                                      .Select(i => Math.Round(latestCaps.Skip(i).Take(averageOver).Average(), 2).ToString(CultureInfo.InvariantCulture).PadRight(5, '0'))
+                                                      .ToList();
 
-                    List<string> averages = Enumerable.Range(0, latestCaps.Count - averageOver - 1).
-                                      Select(i => Math.Round(latestCaps.Skip(i).Take(averageOver).Average(), 2).ToString(CultureInfo.InvariantCulture).PadRight(5, '0')).
-                                      ToList();
+                    var avList = averages.Take(10).ToArray();
+                    _ = textOut.AppendLine($"{ CultureInfo.InvariantCulture.TextInfo.ToTitleCase(capsScore.Key.PadRight(17))} |   {string.Join(" | ", avList)}");
 
-                    textOut.AppendLine($"{ CultureInfo.CurrentCulture.TextInfo.ToTitleCase(capsScore.Key.PadRight(17))} |   {string.Join(" | ", averages.Take(10))}");
-                    htmlOut.AppendLine($"<tr><td>{ CultureInfo.CurrentCulture.TextInfo.ToTitleCase(capsScore.Key)}</td><td>{string.Join("</td><td>", averages.Take(10))}</td></tr>");
+
+                    htmlOut.Append($"<tr><td>{CultureInfo.InvariantCulture.TextInfo.ToTitleCase(capsScore.Key)}</td>");
+                    for (int loop = 0; loop < 10; loop++)
+                    {
+                        htmlOut.AppendLine($"<td>{((loop < avList.Length) ? avList[loop] : "&nbsp;")}</td>");
+                    }
+                    htmlOut.AppendLine($"</tr>");
                 }
             }
 
