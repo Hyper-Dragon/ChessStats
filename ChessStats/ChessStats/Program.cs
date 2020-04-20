@@ -64,10 +64,25 @@ namespace ChessStats
                 _ => new string[] { args[0] }
             };
 
-
             foreach (string user in chessdotcomUsers)
             {
-                (PlayerProfile userRecord, PlayerStats userStats) = await PgnFromChessDotCom.FetchUserData(user).ConfigureAwait(false);
+                PlayerProfile userRecord = null; 
+                PlayerStats userStats = null;
+
+                try {
+                    Helpers.StartTimedSection($">>Confirming user {user}",newLineFirst:true);
+                    (PlayerProfile userRecordIn, PlayerStats userStatsIn) = await PgnFromChessDotCom.FetchUserData(user).ConfigureAwait(false);
+                    userRecord = userRecordIn;
+                    userStats = userStatsIn;
+                    Helpers.EndTimedSection(">>User OK", newLineAfter:true);
+                }
+                catch(HttpRequestException ex)
+                {
+                    Console.WriteLine($"  >>ERROR: {ex.Message}");
+                    Helpers.EndTimedSection(">>Finished Downloading user record", newLineAfter: true);
+                    hasRunErrors = true;
+                    continue;
+                }
 
                 //Replace username with correct case - api returns ID in lower case so extract from URL property
                 string chessdotcomUsername = userRecord.Url.Replace(MEMBER_URL, "", StringComparison.InvariantCultureIgnoreCase);
@@ -582,6 +597,7 @@ namespace ChessStats
             gameTime = $"{game.TimeClass,-6}{((game.IsRatedGame) ? "   " : " NR")}";
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Not critical so just ignore any missing ECO data")]
         private static void CalculateOpening(SortedList<string, (string href, int total, int winCount, int drawCount, int lossCount)> ecoPlayedRollupWhite, SortedList<string, (string href, int total, int winCount, int drawCount, int lossCount)> ecoPlayedRollupBlack, ChessGame game, string side, bool? isWin)
         {
             try

@@ -19,6 +19,7 @@ namespace ChessStats.Data
 
     public static class CapsFromChessDotCom
     {
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "We are page scraping as CAPS Scores are unavailable via the API) - If error just show on the console")]
         public static async Task<Dictionary<string, List<CapsRecord>>> GetCapsScores(DirectoryInfo cache, string chessdotcomUsername, int maxPages, int maxPagesWithCache)
         {
             if (cache == null) { throw new ArgumentNullException(nameof(cache)); }
