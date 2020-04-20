@@ -36,6 +36,8 @@ namespace ChessStats
 #pragma warning restore CS1998 // Async method lacks 'await' operators and will run synchronously
         {
             Helpers.DisplayLogo(VERSION_NUMBER);
+            
+            bool hasCmdLineOptionSet = true;
             bool hasRunErrors = false;
             
             //Set up data directories
@@ -43,12 +45,15 @@ namespace ChessStats
             DirectoryInfo baseResultsDir = applicationPath.CreateSubdirectory(RESULTS_DIR_NAME);
             DirectoryInfo baseCacheDir = applicationPath.CreateSubdirectory($"{CACHE_DIR_NAME}/CacheV{CACHE_VERSION_NUMBER}");
 
-            if (args.Length != 1)
+            while (args.Length != 1 || string.IsNullOrWhiteSpace(args[0]))
             {
-                Console.WriteLine($">>ChessDotCom Fetch Failed");
-                Console.WriteLine($"  You must specify a single valid chess.com username or -refresh");
-                Console.WriteLine();
-                Environment.Exit(-2);
+                Console.WriteLine($"You must specify a single valid chess.com username or -refresh");
+                Console.Write("> ");
+                args = Console.ReadLine().Trim()
+                                         .Split()
+                                         .Where(x => !string.IsNullOrWhiteSpace(x))
+                                         .Select(x => x.Trim()).ToArray<string>();
+                hasCmdLineOptionSet = false;
             }
 
             string[] chessdotcomUsers = args[0].ToUpperInvariant() switch
@@ -188,12 +193,12 @@ namespace ChessStats
                 Console.WriteLine("*** WARNING: Errors occurred during run - check output above ***");
                 Console.WriteLine("");
 
-                Helpers.PressToContinueIfDebug();
+                if (!hasCmdLineOptionSet){ Helpers.PressToContinue();}
                 Environment.Exit(-1);
             }
             else
             {
-                Helpers.PressToContinueIfDebug();
+                if (!hasCmdLineOptionSet) { Helpers.PressToContinue(); }
                 Environment.Exit(0);
             }
         }

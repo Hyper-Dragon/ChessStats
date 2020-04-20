@@ -92,13 +92,11 @@ namespace ChessStats
             return new string(s.Take(width).ToArray()).PadRight(width);
         }
 
-        public static void PressToContinueIfDebug()
+        public static void PressToContinue()
         {
-#if DEBUG
             Console.Beep();
             Console.WriteLine("<Press a Key>");
             Console.ReadKey();
-#endif
         }
 
         public static void DisplayLogo(string versionNo)
