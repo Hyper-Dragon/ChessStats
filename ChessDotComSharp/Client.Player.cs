@@ -3,7 +3,6 @@
 using ChessDotComSharp.Resources;
 using System;
 using System.IO;
-using System.Net.Http;
 using System.Threading.Tasks;
 
 namespace ChessDotComSharp
@@ -27,7 +26,7 @@ namespace ChessDotComSharp
         /// <returns></returns>
         public async Task<bool> GetIsPlayerOnlineAsync(string username)
         {
-            var online = await GetAsync<PlayerOnlineStatus>(Endpoints.Player.GetIsPlayerOnline(username)).ConfigureAwait(false);
+            PlayerOnlineStatus online = await GetAsync<PlayerOnlineStatus>(Endpoints.Player.GetIsPlayerOnline(username)).ConfigureAwait(false);
             return online.Online;
         }
 
@@ -102,7 +101,7 @@ namespace ChessDotComSharp
         /// <param name="year">The year, e.g. 2018</param>
         /// <param name="month">The month, e.g 1</param>
         /// <returns></returns>
-        public async Task<Stream> DownloadPlayerGameArchiveAsStreamAsync(string username, int year, int month)
+        public static async Task<Stream> DownloadPlayerGameArchiveAsStreamAsync(string username, int year, int month)
         {
             return await _client.GetStreamAsync(Endpoints.Player.GetPlayerGameArchivePGN(username, year, month)).ConfigureAwait(false);
         }
@@ -117,19 +116,27 @@ namespace ChessDotComSharp
         /// <param name="overwrite">Whethere to overwrite an exisiting file.</param>
         /// <exception cref="InvalidOperationException">Thrown when <paramref name="overwrite"/> is set to false and the <paramref name="filename"/> exists, override behaviour by setting <paramref name="throwIfExists"/> to false.</exception>
         /// <returns></returns>
-        public async Task DownloadPlayerGameArchiveToFileAsync(string username, int year, int month, string filename = null, bool overwrite = false, bool throwIfExists = true)
+        public static async Task DownloadPlayerGameArchiveToFileAsync(string username, int year, int month, string filename = null, bool overwrite = false, bool throwIfExists = true)
         {
-            var path = Path.GetFullPath(filename ?? $"{username}_{year}_{month}.pgn");
+            string path = Path.GetFullPath(filename ?? $"{username}_{year}_{month}.pgn");
 
             if (!overwrite && File.Exists(path))
-                if (throwIfExists) throw new InvalidOperationException($"File {path} already exists.");
-                else return;
-
-            using (var stream = await DownloadPlayerGameArchiveAsStreamAsync(username, year, month))
-            using (var fs = new FileStream(path, FileMode.Create))
             {
-                if (stream.Length > 0)
-                    await stream.CopyToAsync(fs);
+                if (throwIfExists)
+                {
+                    throw new InvalidOperationException($"File {path} already exists.");
+                }
+                else
+                {
+                    return;
+                }
+            }
+
+            using Stream stream = await DownloadPlayerGameArchiveAsStreamAsync(username, year, month);
+            using FileStream fs = new FileStream(path, FileMode.Create);
+            if (stream.Length > 0)
+            {
+                await stream.CopyToAsync(fs);
             }
         }
 

@@ -1,25 +1,38 @@
 ﻿using ChessDotComSharp.Models;
+using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
+using System.Linq;
+using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace ChessStats.Data
 {
     public static class PgnFromChessDotCom
     {
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "<Pending>")]
-        public static List<ChessGame> FetchGameRecordsForUser(string username)
+        public static async Task<(PlayerProfile userRecord, PlayerStats userStats)> FetchUserData(string username)
+        {
+            using ChessDotComSharp.ChessDotComClient client = new ChessDotComSharp.ChessDotComClient();
+            PlayerProfile userRecord = await client.GetPlayerProfileAsync(username).ConfigureAwait(false);
+            PlayerStats userStats = await client.GetPlayerStatsAsync(username).ConfigureAwait(false);
+
+            return (userRecord, userStats);
+        }
+
+        public static async Task<List<ChessGame>> FetchGameRecordsForUser(string username, DirectoryInfo cacheDir)
         {
             Helpers.ResetDisplayCounter();
-            List<ChessGame> PgnList = new List<ChessGame>();
+            ConcurrentBag<ChessGame> PgnList = new ConcurrentBag<ChessGame>();
 
-            Task<ArchivedGamesList> t = GetPlayerMonthlyArchive(username);
-            t.Wait();
+            ArchivedGamesList monthlyArchive = await GetPlayerMonthlyArchive(username).ConfigureAwait(false);
 
-            Parallel.ForEach(t.Result.Archives, new ParallelOptions { MaxDegreeOfParallelism = 1 }, (dataForMonth) =>
+            Parallel.ForEach(monthlyArchive.Archives, new ParallelOptions { MaxDegreeOfParallelism = 4 }, (dataForMonth) =>
             {
                 string[] urlSplit = dataForMonth.Split('/');
-                Task<PlayerArchivedGames> t2 = GetAllPlayerMonthlyGames(username, int.Parse(urlSplit[7], CultureInfo.InvariantCulture), int.Parse(urlSplit[8], CultureInfo.InvariantCulture));
+                Task<PlayerArchivedGames> t2 = GetAllPlayerMonthlyGames(cacheDir, username, int.Parse(urlSplit[7], CultureInfo.InvariantCulture), int.Parse(urlSplit[8], CultureInfo.InvariantCulture));
                 t2.Wait();
 
                 try
@@ -56,7 +69,7 @@ namespace ChessStats.Data
                 }
             });
 
-            return PgnList;
+            return PgnList.ToList();
         }
 
         private static async System.Threading.Tasks.Task<ArchivedGamesList> GetPlayerMonthlyArchive(string username)
@@ -66,10 +79,41 @@ namespace ChessStats.Data
             return myGames;
         }
 
-        private static async System.Threading.Tasks.Task<PlayerArchivedGames> GetAllPlayerMonthlyGames(string username, int year, int month)
+        //Api lock
+        private static readonly SemaphoreSlim apiSemaphore = new SemaphoreSlim(1, 1);
+
+        private static async System.Threading.Tasks.Task<PlayerArchivedGames> GetAllPlayerMonthlyGames(DirectoryInfo cache, string username, int year, int month)
         {
-            using ChessDotComSharp.ChessDotComClient client = new ChessDotComSharp.ChessDotComClient();
-            PlayerArchivedGames myGames = await client.GetPlayerGameMonthlyArchiveAsync(username, year, month).ConfigureAwait(true);
+            PlayerArchivedGames myGames;
+            string cacheFileName = $"{Path.Combine(cache.FullName, $"{username}{year}{month.ToString(CultureInfo.InvariantCulture).PadLeft(2, '0')}")}";
+
+            if (File.Exists(cacheFileName))
+            {
+                using FileStream gameFileInStream = File.OpenRead(cacheFileName);
+                myGames = await JsonSerializer.DeserializeAsync<PlayerArchivedGames>(gameFileInStream);
+            }
+            else
+            {
+                //Prevent rate limit errors on the API
+                await apiSemaphore.WaitAsync().ConfigureAwait(false);
+                try
+                {
+                    using ChessDotComSharp.ChessDotComClient client = new ChessDotComSharp.ChessDotComClient();
+                    myGames = await client.GetPlayerGameMonthlyArchiveAsync(username, year, month).ConfigureAwait(true);
+
+                    // Never cache data for this month
+                    if (!(DateTime.UtcNow.Year == year && DateTime.UtcNow.Month == month))
+                    {
+                        using FileStream gameFileOutStream = File.Create(cacheFileName);
+                        await JsonSerializer.SerializeAsync(gameFileOutStream, myGames).ConfigureAwait(false);
+                    }
+                }
+                finally
+                {
+                    apiSemaphore.Release();
+                }
+            }
+
             return myGames;
         }
     }

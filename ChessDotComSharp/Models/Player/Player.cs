@@ -1,10 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
+using System;
+using System.Collections.Generic;
 using J = Newtonsoft.Json.JsonPropertyAttribute;
-using System.Globalization;
 
 namespace ChessDotComSharp.Models
 {
@@ -16,6 +14,7 @@ namespace ChessDotComSharp.Models
         [J("@id")] public string Id { get; set; }
         [J("name")] public string Name { get; set; }
         [J("username")] public string Username { get; set; }
+        [J("url")] public string Url { get; set; }
         [J("followers")] public int Followers { get; set; }
         [J("country")] public string Country { get; set; }
         [J("location")] public string Location { get; set; }

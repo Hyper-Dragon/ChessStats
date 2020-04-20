@@ -1,6 +1,4 @@
-﻿using Newtonsoft.Json;
-using System.ComponentModel.DataAnnotations;
-using System.Runtime.Serialization;
+﻿using System.Runtime.Serialization;
 
 namespace ChessDotComSharp.Models
 {
@@ -72,7 +70,7 @@ namespace ChessDotComSharp.Models
     public enum TeamMatchStatus
     {
         Finished,
-        Registration, 
+        Registration,
         [EnumMember(Value = "in_progress")]
         InProgress
     }

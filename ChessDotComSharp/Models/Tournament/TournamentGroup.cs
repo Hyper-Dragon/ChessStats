@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using J = Newtonsoft.Json.JsonPropertyAttribute;
 
 namespace ChessDotComSharp.Models
@@ -9,7 +8,7 @@ namespace ChessDotComSharp.Models
         [J("games")] public List<ArchiveGame> Games { get; set; }
         [J("players")] public List<TournamentRoundGroupPlayer> Players { get; set; }
     }
-    
+
 
     public partial class TournamentRoundGroupPlayer : TournamentRoundPlayer
     {
