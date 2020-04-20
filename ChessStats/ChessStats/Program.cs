@@ -416,7 +416,7 @@ namespace ChessStats
                                                     .Where(i => i.Count() > 4)
                                                     .Select(g => new
                                                     {
-                                                        Average = Math.Round(g.Average(p => p.Caps), 2).ToString(CultureInfo.InvariantCulture).PadRight(5, '0'),
+                                                        Average = $"{Math.Round(g.Average(p => p.Caps), 2):00.00}",
                                                         Month = g.Key.Id,
                                                         Control = capsScore.Key.Split()[0],
                                                         Side = capsScore.Key.Split()[1],
@@ -474,7 +474,7 @@ namespace ChessStats
                 {
                     List<double> latestCaps = capsScore.Value.Select(x => x.Caps).ToList<double>();
                     List<string> averages = Enumerable.Range(0, (latestCaps.Count+1) - averageOver)
-                                                      .Select(i => Math.Round(latestCaps.Skip(i).Take(averageOver).Average(), 2).ToString(CultureInfo.InvariantCulture).PadRight(5, '0'))
+                                                      .Select(i => Math.Round(latestCaps.Skip(i).Take(averageOver).Average(), 2).ToString("00.00"))
                                                       .ToList();
 
                     var avList = averages.Take(10).ToArray();
