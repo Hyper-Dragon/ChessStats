@@ -23,14 +23,14 @@ namespace ChessStats
             const int MAX_CAPS_PAGES = 50;
             const int MAX_CAPS_PAGES_WITH_CACHE = 3;
             const string VERSION_NUMBER = "0.5";
-            const string CACHE_VERSION_NUMBER = "0.5";
+            const string CACHE_VERSION_NUMBER = "1";
 
             Helpers.DisplayLogo(VERSION_NUMBER);
 
             //Set up data directories
             DirectoryInfo applicationPath = new DirectoryInfo(Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName));
-            DirectoryInfo resultsDir = applicationPath.CreateSubdirectory("ChessStatsResults");
-            DirectoryInfo cacheDir = applicationPath.CreateSubdirectory($"ChessStatsCache-V{CACHE_VERSION_NUMBER}");
+            DirectoryInfo baseResultsDir = applicationPath.CreateSubdirectory("ChessStatsResults");
+            DirectoryInfo baseCacheDir = applicationPath.CreateSubdirectory($"ChessStatsCache/CacheV{CACHE_VERSION_NUMBER}");
 
             if (args.Length != 1)
             {
@@ -42,9 +42,9 @@ namespace ChessStats
 
             string[] chessdotcomUsers = args[0].ToUpperInvariant() switch
             {
-                "-REFRESH" => resultsDir.GetFiles("*-Summary.html")
-                                      .Select(x => x.Name.Replace("-Summary.html", "", StringComparison.InvariantCultureIgnoreCase))
-                                      .ToArray(),
+                "-REFRESH" => baseResultsDir.GetDirectories()
+                                            .Select(x => x.Name)
+                                            .ToArray(),
                 _ => new string[] { args[0] }
             };
 
@@ -55,6 +55,10 @@ namespace ChessStats
 
                 //Replace username with correct case - api returns ID in lower case so extract from URL property
                 string chessdotcomUsername = userRecord.Url.Replace("https://www.chess.com/member/", "", StringComparison.InvariantCultureIgnoreCase);
+                
+                //Create output directory
+                DirectoryInfo resultsDir = baseResultsDir.CreateSubdirectory(chessdotcomUsername);
+                DirectoryInfo cacheDir = baseCacheDir.CreateSubdirectory(chessdotcomUsername);
 
                 Helpers.DisplaySection($"Fetching Data for {chessdotcomUsername}", true);
 
@@ -140,9 +144,6 @@ namespace ChessStats
 
                 Console.WriteLine($"  >>Writing Html Report");
                 await WriteHtmlReportToDisk(resultsDir, chessdotcomUsername, htmlReport).ConfigureAwait(false);
-
-                Console.WriteLine($"  >>Writing Raw Game Data (TODO)");
-                Console.WriteLine($"  >>Writing Openings Data (TODO)");
 
                 Helpers.EndTimedSection($">>Finished Writing Results", newLineAfter: true);
 
@@ -278,7 +279,7 @@ namespace ChessStats
                 StringBuilder monthLine = new StringBuilder();
                 StringBuilder capsLine = new StringBuilder();
 
-                foreach (CapsRecord capsRecord in capsTimeControl.Value.OrderBy(x => x.GameDate))
+                foreach (CapsRecord capsRecord in capsTimeControl.Value)
                 {
                     dateLine.Append($"{capsRecord.GameDate.ToShortDateString()}\t")
                             .Append($"{capsRecord.GameYearMonth}\t")
@@ -579,7 +580,7 @@ namespace ChessStats
                 //Calculate highlight class
                 int activeCell = (ecoCount.Value.winCount > ecoCount.Value.lossCount) ? 0 : ((ecoCount.Value.winCount < ecoCount.Value.lossCount) ? 2 : 1);
                 textOut.AppendLine($"{ecoCount.Key,-71} | {ecoCount.Value.total.ToString(CultureInfo.CurrentCulture),4}");
-                htmlOut.AppendLine($"<tr><td><a href='{ecoCount.Value.href}'>{ecoCount.Key}</a></td><td{((activeCell == 0) ? " class='higher priority-2'" : " class='priority-2'")}>{ecoCount.Value.winCount.ToString(CultureInfo.InvariantCulture).PadLeft(5, '$').Replace("$", "&nbsp;",StringComparison.InvariantCultureIgnoreCase)}</td><td{((activeCell == 1) ? " class='higher priority-2'" : " class='priority-2'")}>{ecoCount.Value.drawCount.ToString(CultureInfo.InvariantCulture).PadLeft(5, '$').Replace("$", "&nbsp;", StringComparison.InvariantCultureIgnoreCase)}</td><td{((activeCell == 2) ? " class='lower priority-2'" : " class='priority-2'")}>{ecoCount.Value.lossCount.ToString(CultureInfo.InvariantCulture).PadLeft(5, '$').Replace("$", "&nbsp;", StringComparison.InvariantCultureIgnoreCase)}</td><td>{ecoCount.Value.total.ToString(CultureInfo.CurrentCulture).PadLeft(5, '$').Replace("$", "&nbsp;", StringComparison.InvariantCultureIgnoreCase)}</td></tr>");
+                htmlOut.AppendLine($"<tr><td><a href='{ecoCount.Value.href}'>{ecoCount.Key}</a></td><td{((activeCell == 0) ? " class='higher priority-2'" : " class='priority-2'")}>{ecoCount.Value.winCount.ToString(CultureInfo.InvariantCulture).PadLeft(5, '$').Replace("$", "&nbsp;", StringComparison.InvariantCultureIgnoreCase)}</td><td{((activeCell == 1) ? " class='higher priority-2'" : " class='priority-2'")}>{ecoCount.Value.drawCount.ToString(CultureInfo.InvariantCulture).PadLeft(5, '$').Replace("$", "&nbsp;", StringComparison.InvariantCultureIgnoreCase)}</td><td{((activeCell == 2) ? " class='lower priority-2'" : " class='priority-2'")}>{ecoCount.Value.lossCount.ToString(CultureInfo.InvariantCulture).PadLeft(5, '$').Replace("$", "&nbsp;", StringComparison.InvariantCultureIgnoreCase)}</td><td>{ecoCount.Value.total.ToString(CultureInfo.CurrentCulture).PadLeft(5, '$').Replace("$", "&nbsp;", StringComparison.InvariantCultureIgnoreCase)}</td></tr>");
             }
 
             htmlOut.AppendLine("</tbody></table>");
@@ -723,7 +724,7 @@ namespace ChessStats
                 _ = htmlOut.AppendLine($"<tr{yearSplitClass}><td>{rolledUp.Key}</td>" +
                                        $"<td>{((int)timeMonth.TotalHours).ToString(CultureInfo.CurrentCulture).PadLeft(5, '$').Replace("$", "&nbsp;", StringComparison.InvariantCulture)}:{ timeMonth.Minutes.ToString(CultureInfo.CurrentCulture).PadLeft(2, '0')}</td>" +
                                        $"<td  class='priority-2'>{((int)cumulativeTimeForYear.TotalHours).ToString(CultureInfo.CurrentCulture).PadLeft(5, '$').Replace("$", "&nbsp;", StringComparison.InvariantCulture)}:{ cumulativeTimeForYear.Minutes.ToString(CultureInfo.CurrentCulture).PadLeft(2, '0')}</td>" +
-                                       $"<td>{((int)cumulativeTime.TotalHours).ToString(CultureInfo.CurrentCulture).PadLeft(5, '$').Replace("$", "&nbsp;",StringComparison.InvariantCulture)}:{ cumulativeTime.Minutes.ToString(CultureInfo.CurrentCulture).PadLeft(2, '0')}</td></tr>"
+                                       $"<td>{((int)cumulativeTime.TotalHours).ToString(CultureInfo.CurrentCulture).PadLeft(5, '$').Replace("$", "&nbsp;", StringComparison.InvariantCulture)}:{ cumulativeTime.Minutes.ToString(CultureInfo.CurrentCulture).PadLeft(2, '0')}</td></tr>"
                                       );
 
                 //Reset until next year detected
