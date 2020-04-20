@@ -60,15 +60,19 @@ namespace ChessStats
 
                 //Get reporting graphics
                 Helpers.StartTimedSection(">>Download report images");
-                using HttpClient httpClient = new HttpClient();
-                Uri userLogoUri = new Uri(string.IsNullOrEmpty(userRecord.Avatar) ? "https://images.chesscomfiles.com/uploads/v1/group/57796.67ee0038.160x160o.2dc0953ad64e.png" : userRecord.Avatar);
-                string userLogoBase64 = Convert.ToBase64String(await httpClient.GetByteArrayAsync(userLogoUri).ConfigureAwait(false));
+                string userLogoBase64 = "";
+                string pawnFragment = "";
+                using (HttpClient httpClient = new HttpClient())
+                {
+                    Uri userLogoUri = new Uri(string.IsNullOrEmpty(userRecord.Avatar) ? "https://images.chesscomfiles.com/uploads/v1/group/57796.67ee0038.160x160o.2dc0953ad64e.png" : userRecord.Avatar);
+                    userLogoBase64 = Convert.ToBase64String(await httpClient.GetByteArrayAsync(userLogoUri).ConfigureAwait(false));
 
-                Uri pawnUri = new Uri("https://www.chess.com/bundles/web/favicons/favicon-16x16.31f99381.png");
-                string pawnFileBase64 = Convert.ToBase64String(await httpClient.GetByteArrayAsync(pawnUri).ConfigureAwait(false));
-                string pawnFragment = $"<img src='data:image/png;base64,{pawnFileBase64}'/>";
+                    Uri pawnUri = new Uri("https://www.chess.com/bundles/web/favicons/favicon-16x16.31f99381.png");
+                    string pawnFileBase64 = Convert.ToBase64String(await httpClient.GetByteArrayAsync(pawnUri).ConfigureAwait(false));
+                    pawnFragment = $"<img src='data:image/png;base64,{pawnFileBase64}'/>";
+                }
+
                 Helpers.EndTimedSection(">>Download complete");
-
 
                 Helpers.StartTimedSection($">>Fetching and Processing Available CAPS Scores");
                 Dictionary<string, List<CapsRecord>> capsScores = await CapsFromChessDotCom.GetCapsScores(cacheDir, chessdotcomUsername, MAX_CAPS_PAGES, MAX_CAPS_PAGES_WITH_CACHE).ConfigureAwait(false);
@@ -367,7 +371,7 @@ namespace ChessStats
                                                     .Where(i => i.Count() > 4)
                                                     .Select(g => new
                                                     {
-                                                        Average = Math.Round(g.Average(p => p.Caps), 2).ToString().PadRight(5, '0'),
+                                                        Average = Math.Round(g.Average(p => p.Caps), 2).ToString(CultureInfo.InvariantCulture).PadRight(5, '0'),
                                                         Month = g.Key.Id,
                                                         Control = capsScore.Key.Split()[0],
                                                         Side = capsScore.Key.Split()[1],
@@ -426,7 +430,7 @@ namespace ChessStats
                     List<double> latestCaps = capsScore.Value.Select(x => x.Caps).ToList<double>();
 
                     List<string> averages = Enumerable.Range(0, latestCaps.Count - averageOver - 1).
-                                      Select(i => Math.Round(latestCaps.Skip(i).Take(averageOver).Average(), 2).ToString().PadRight(5, '0')).
+                                      Select(i => Math.Round(latestCaps.Skip(i).Take(averageOver).Average(), 2).ToString(CultureInfo.InvariantCulture).PadRight(5, '0')).
                                       ToList();
 
 
@@ -549,9 +553,7 @@ namespace ChessStats
                                                  ((isWin != null && !isWin.Value) ? 1 : 0)));
                 }
             }
-#pragma warning disable CA1031 // Do not catch general exception types
             catch
-#pragma warning restore CA1031 // Do not catch general exception types
             {
                 //ECO missing from Pgn so just ignore
             }
@@ -577,7 +579,7 @@ namespace ChessStats
                 //Calculate highlight class
                 int activeCell = (ecoCount.Value.winCount > ecoCount.Value.lossCount) ? 0 : ((ecoCount.Value.winCount < ecoCount.Value.lossCount) ? 2 : 1);
                 textOut.AppendLine($"{ecoCount.Key,-71} | {ecoCount.Value.total.ToString(CultureInfo.CurrentCulture),4}");
-                htmlOut.AppendLine($"<tr><td><a href='{ecoCount.Value.href}'>{ecoCount.Key}</a></td><td{((activeCell == 0) ? " class='higher priority-2'" : " class='priority-2'")}>{ecoCount.Value.winCount.ToString().PadLeft(5, '$').Replace("$", "&nbsp;")}</td><td{((activeCell == 1) ? " class='higher priority-2'" : " class='priority-2'")}>{ecoCount.Value.drawCount.ToString().PadLeft(5, '$').Replace("$", "&nbsp;")}</td><td{((activeCell == 2) ? " class='lower priority-2'" : " class='priority-2'")}>{ecoCount.Value.lossCount.ToString().PadLeft(5, '$').Replace("$", "&nbsp;")}</td><td>{ecoCount.Value.total.ToString(CultureInfo.CurrentCulture).ToString().PadLeft(5, '$').Replace("$", "&nbsp;")}</td></tr>");
+                htmlOut.AppendLine($"<tr><td><a href='{ecoCount.Value.href}'>{ecoCount.Key}</a></td><td{((activeCell == 0) ? " class='higher priority-2'" : " class='priority-2'")}>{ecoCount.Value.winCount.ToString(CultureInfo.InvariantCulture).PadLeft(5, '$').Replace("$", "&nbsp;",StringComparison.InvariantCultureIgnoreCase)}</td><td{((activeCell == 1) ? " class='higher priority-2'" : " class='priority-2'")}>{ecoCount.Value.drawCount.ToString(CultureInfo.InvariantCulture).PadLeft(5, '$').Replace("$", "&nbsp;", StringComparison.InvariantCultureIgnoreCase)}</td><td{((activeCell == 2) ? " class='lower priority-2'" : " class='priority-2'")}>{ecoCount.Value.lossCount.ToString(CultureInfo.InvariantCulture).PadLeft(5, '$').Replace("$", "&nbsp;", StringComparison.InvariantCultureIgnoreCase)}</td><td>{ecoCount.Value.total.ToString(CultureInfo.CurrentCulture).PadLeft(5, '$').Replace("$", "&nbsp;", StringComparison.InvariantCultureIgnoreCase)}</td></tr>");
             }
 
             htmlOut.AppendLine("</tbody></table>");
@@ -585,7 +587,6 @@ namespace ChessStats
             return (textOut.ToString(), htmlOut.ToString());
         }
 
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Globalization", "CA1303:Do not pass literals as localized parameters", Justification = "<Pending>")]
         private static (string textOut, string htmlOut) DisplayOpeningsAsBlack(SortedList<string, (string href, int total, int winCount, int drawCount, int lossCount)> ecoPlayedRollupBlack)
         {
             StringBuilder textOut = new StringBuilder();
@@ -604,7 +605,7 @@ namespace ChessStats
                 //Calculate highlight class
                 int activeCell = (ecoCount.Value.winCount > ecoCount.Value.lossCount) ? 0 : ((ecoCount.Value.winCount < ecoCount.Value.lossCount) ? 2 : 1);
                 textOut.AppendLine($"{ecoCount.Key,-71} | {ecoCount.Value.total.ToString(CultureInfo.CurrentCulture),4}");
-                htmlOut.AppendLine($"<tr><td><a href='{ecoCount.Value.href}'>{ecoCount.Key}</a></td><td{((activeCell == 0) ? " class='higher priority-2'" : " class='priority-2'")}>{ecoCount.Value.winCount.ToString().PadLeft(5, '$').Replace("$", "&nbsp;")}</td><td{((activeCell == 1) ? " class='higher priority-2'" : " class='priority-2'")}>{ecoCount.Value.drawCount.ToString().PadLeft(5, '$').Replace("$", "&nbsp;")}</td><td{((activeCell == 2) ? " class='lower priority-2'" : " class='priority-2'")}>{ecoCount.Value.lossCount.ToString().PadLeft(5, '$').Replace("$", "&nbsp;")}</td><td>{ecoCount.Value.total.ToString().PadLeft(5, '$').Replace("$", "&nbsp;")}</td></tr>");
+                htmlOut.AppendLine($"<tr><td><a href='{ecoCount.Value.href}'>{ecoCount.Key}</a></td><td{((activeCell == 0) ? " class='higher priority-2'" : " class='priority-2'")}>{ecoCount.Value.winCount.ToString(CultureInfo.InvariantCulture).PadLeft(5, '$').Replace("$", "&nbsp;", StringComparison.InvariantCulture)}</td><td{((activeCell == 1) ? " class='higher priority-2'" : " class='priority-2'")}>{ecoCount.Value.drawCount.ToString(CultureInfo.InvariantCulture).PadLeft(5, '$').Replace("$", "&nbsp;", StringComparison.InvariantCulture)}</td><td{((activeCell == 2) ? " class='lower priority-2'" : " class='priority-2'")}>{ecoCount.Value.lossCount.ToString(CultureInfo.InvariantCulture).PadLeft(5, '$').Replace("$", "&nbsp;", StringComparison.InvariantCulture)}</td><td>{ecoCount.Value.total.ToString(CultureInfo.InvariantCulture).PadLeft(5, '$').Replace("$", "&nbsp;", StringComparison.InvariantCulture)}</td></tr>");
             }
 
             htmlOut.AppendLine("</tbody></table>");
@@ -627,9 +628,9 @@ namespace ChessStats
             {
                 int ratingComparison = rolledUp.Key.Substring(0, 2).ToUpperInvariant() switch
                 {
-                    "BU" => rolledUp.Key.Contains("NR") ? 0 : bulletRating.Value,
-                    "BL" => rolledUp.Key.Contains("NR") ? 0 : blitzRating.Value,
-                    "RA" => rolledUp.Key.Contains("NR") ? 0 : rapidRating.Value,
+                    "BU" => rolledUp.Key.Contains("NR", StringComparison.InvariantCulture) ? 0 : bulletRating.Value,
+                    "BL" => rolledUp.Key.Contains("NR", StringComparison.InvariantCulture) ? 0 : blitzRating.Value,
+                    "RA" => rolledUp.Key.Contains("NR", StringComparison.InvariantCulture) ? 0 : rapidRating.Value,
                     _ => 0,
                 };
 
@@ -720,9 +721,9 @@ namespace ChessStats
                                   );
 
                 _ = htmlOut.AppendLine($"<tr{yearSplitClass}><td>{rolledUp.Key}</td>" +
-                                   $"<td>{((int)timeMonth.TotalHours).ToString(CultureInfo.CurrentCulture).PadLeft(5, '$').Replace("$", "&nbsp;")}:{ timeMonth.Minutes.ToString(CultureInfo.CurrentCulture).PadLeft(2, '0')}</td>" +
-                                   $"<td  class='priority-2'>{((int)cumulativeTimeForYear.TotalHours).ToString(CultureInfo.CurrentCulture).PadLeft(5, '$').Replace("$", "&nbsp;")}:{ cumulativeTimeForYear.Minutes.ToString(CultureInfo.CurrentCulture).PadLeft(2, '0')}</td>" +
-                                   $"<td>{((int)cumulativeTime.TotalHours).ToString(CultureInfo.CurrentCulture).PadLeft(5, '$').Replace("$", "&nbsp;")}:{ cumulativeTime.Minutes.ToString(CultureInfo.CurrentCulture).PadLeft(2, '0')}</td></tr>"
+                                   $"<td>{((int)timeMonth.TotalHours).ToString(CultureInfo.CurrentCulture).PadLeft(5, '$').Replace("$", "&nbsp;", StringComparison.InvariantCulture)}:{ timeMonth.Minutes.ToString(CultureInfo.CurrentCulture).PadLeft(2, '0')}</td>" +
+                                   $"<td  class='priority-2'>{((int)cumulativeTimeForYear.TotalHours).ToString(CultureInfo.CurrentCulture).PadLeft(5, '$').Replace("$", "&nbsp;", StringComparison.InvariantCulture)}:{ cumulativeTimeForYear.Minutes.ToString(CultureInfo.CurrentCulture).PadLeft(2, '0')}</td>" +
+                                   $"<td>{((int)cumulativeTime.TotalHours).ToString(CultureInfo.CurrentCulture).PadLeft(5, '$').Replace("$", "&nbsp;",StringComparison.InvariantCulture)}:{ cumulativeTime.Minutes.ToString(CultureInfo.CurrentCulture).PadLeft(2, '0')}</td></tr>"
                                   );
 
                 //Reset until next year detected

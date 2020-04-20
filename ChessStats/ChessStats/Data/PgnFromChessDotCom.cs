@@ -22,7 +22,6 @@ namespace ChessStats.Data
             return (userRecord, userStats);
         }
 
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "<Pending>")]
         public static async Task<List<ChessGame>> FetchGameRecordsForUser(string username, DirectoryInfo cacheDir)
         {
             Helpers.ResetDisplayCounter();
@@ -86,7 +85,7 @@ namespace ChessStats.Data
         private static async System.Threading.Tasks.Task<PlayerArchivedGames> GetAllPlayerMonthlyGames(DirectoryInfo cache, string username, int year, int month)
         {
             PlayerArchivedGames myGames;
-            string cacheFileName = $"{Path.Combine(cache.FullName, $"{username}{year}{month.ToString().PadLeft(2, '0')}")}";
+            string cacheFileName = $"{Path.Combine(cache.FullName, $"{username}{year}{month.ToString(CultureInfo.InvariantCulture).PadLeft(2, '0')}")}";
 
             if (File.Exists(cacheFileName))
             {

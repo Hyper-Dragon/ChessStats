@@ -57,7 +57,7 @@ namespace ChessStats.Data
 
                         HtmlNodeCollection nodeCollection = pageDocument.DocumentNode.SelectNodes("//*[contains(@class,'archive-games-table')]");
 
-                        if (nodeCollection == null || nodeCollection[0].InnerText.Contains("No results found"))
+                        if (nodeCollection == null || nodeCollection[0].InnerText.Contains("No results found",StringComparison.InvariantCultureIgnoreCase))
                         {
                             Helpers.ProcessedDisplay("X");
                             break;
@@ -70,8 +70,12 @@ namespace ChessStats.Data
                                 {
                                     CapsRecord capsRecord = new CapsRecord()
                                     {
-                                        Caps = double.Parse(row.SelectNodes("td[contains(@class,'archive-games-analyze-cell')]/div")[(colour == "white") ? 0 : 1].InnerText),
-                                        GameDate = DateTime.Parse(row.SelectNodes("td[contains(@class,'archive-games-date-cell')]")[0].InnerText.Trim(new char[] { ' ', '\n', '\r' }).Replace(",", "")),
+                                        Caps = double.Parse(row.SelectNodes("td[contains(@class,'archive-games-analyze-cell')]/div")[(colour == "white") ? 0 : 1]
+                                                               .InnerText, CultureInfo.InvariantCulture),
+                                        GameDate = DateTime.Parse(row.SelectNodes("td[contains(@class,'archive-games-date-cell')]")[0]
+                                                                     .InnerText
+                                                                     .Trim(new char[] { ' ', '\n', '\r' })
+                                                                     .Replace(",", "", StringComparison.InvariantCultureIgnoreCase), CultureInfo.InvariantCulture),
                                     };
 
                                     Helpers.ProcessedDisplay(".");
@@ -79,6 +83,7 @@ namespace ChessStats.Data
                                 }
                                 catch (System.NullReferenceException)
                                 {
+                                    //Value missing
                                     Helpers.ProcessedDisplay("-");
                                 }
                                 catch
