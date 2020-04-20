@@ -16,15 +16,19 @@ namespace ChessStats
 {
     internal class Program
     {
+        const int MAX_CAPS_PAGES = 50;
+        const int MAX_CAPS_PAGES_WITH_CACHE = 3;
+        const string VERSION_NUMBER = "0.5";
+        const string CACHE_VERSION_NUMBER = "1";
+        const string DEFAULT_USER_IMAGE = "https://images.chesscomfiles.com/uploads/v1/group/57796.67ee0038.160x160o.2dc0953ad64e.png";
+        const string MEMBER_URL = "https://www.chess.com/member/";
+        const string REPORT_HEADING_ICON = "https://www.chess.com/bundles/web/favicons/favicon-16x16.31f99381.png";
+        const string OPENING_URL = "https://www.chess.com/openings/";
+
 #pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously
         private static async Task Main(string[] args)
 #pragma warning restore CS1998 // Async method lacks 'await' operators and will run synchronously
         {
-            const int MAX_CAPS_PAGES = 50;
-            const int MAX_CAPS_PAGES_WITH_CACHE = 3;
-            const string VERSION_NUMBER = "0.5";
-            const string CACHE_VERSION_NUMBER = "1";
-
             Helpers.DisplayLogo(VERSION_NUMBER);
 
             //Set up data directories
@@ -54,7 +58,7 @@ namespace ChessStats
                 (PlayerProfile userRecord, PlayerStats userStats) = await PgnFromChessDotCom.FetchUserData(user).ConfigureAwait(false);
 
                 //Replace username with correct case - api returns ID in lower case so extract from URL property
-                string chessdotcomUsername = userRecord.Url.Replace("https://www.chess.com/member/", "", StringComparison.InvariantCultureIgnoreCase);
+                string chessdotcomUsername = userRecord.Url.Replace(MEMBER_URL, "", StringComparison.InvariantCultureIgnoreCase);
                 
                 //Create output directory
                 DirectoryInfo resultsDir = baseResultsDir.CreateSubdirectory(chessdotcomUsername);
@@ -68,10 +72,10 @@ namespace ChessStats
                 string pawnFragment = "";
                 using (HttpClient httpClient = new HttpClient())
                 {
-                    Uri userLogoUri = new Uri(string.IsNullOrEmpty(userRecord.Avatar) ? "https://images.chesscomfiles.com/uploads/v1/group/57796.67ee0038.160x160o.2dc0953ad64e.png" : userRecord.Avatar);
+                    Uri userLogoUri = new Uri(string.IsNullOrEmpty(userRecord.Avatar) ? DEFAULT_USER_IMAGE : userRecord.Avatar);
                     userLogoBase64 = Convert.ToBase64String(await httpClient.GetByteArrayAsync(userLogoUri).ConfigureAwait(false));
 
-                    Uri pawnUri = new Uri("https://www.chess.com/bundles/web/favicons/favicon-16x16.31f99381.png");
+                    Uri pawnUri = new Uri(REPORT_HEADING_ICON);
                     string pawnFileBase64 = Convert.ToBase64String(await httpClient.GetByteArrayAsync(pawnUri).ConfigureAwait(false));
                     pawnFragment = $"<img src='data:image/png;base64,{pawnFileBase64}'/>";
                 }
@@ -434,7 +438,6 @@ namespace ChessStats
                                       Select(i => Math.Round(latestCaps.Skip(i).Take(averageOver).Average(), 2).ToString(CultureInfo.InvariantCulture).PadRight(5, '0')).
                                       ToList();
 
-
                     textOut.AppendLine($"{ CultureInfo.CurrentCulture.TextInfo.ToTitleCase(capsScore.Key.PadRight(17))} |   {string.Join(" | ", averages.Take(10))}");
                     htmlOut.AppendLine($"<tr><td>{ CultureInfo.CurrentCulture.TextInfo.ToTitleCase(capsScore.Key)}</td><td>{string.Join("</td><td>", averages.Take(10))}</td></tr>");
                 }
@@ -532,7 +535,7 @@ namespace ChessStats
             try
             {
                 string ecoHref = game.GameAttributes.Attributes["ECOUrl"];
-                string ecoName = game.GameAttributes.Attributes["ECOUrl"].Replace(@"https://www.chess.com/openings/", "", true, CultureInfo.InvariantCulture).Replace("-", " ", true, CultureInfo.InvariantCulture);
+                string ecoName = game.GameAttributes.Attributes["ECOUrl"].Replace(OPENING_URL, "", true, CultureInfo.InvariantCulture).Replace("-", " ", true, CultureInfo.InvariantCulture);
                 string ecoShortened = new Regex(@"^.*?(?=[0-9])").Match(ecoName).Value.Trim();
                 string ecoKey = $"{game.GameAttributes.Attributes["ECO"]}-{((string.IsNullOrEmpty(ecoShortened)) ? ecoName : ecoShortened)}";
                 SortedList<string, (string href, int total, int winCount, int drawCount, int lossCount)> ecoPlayedRollup = (side == "White") ? ecoPlayedRollupWhite : ecoPlayedRollupBlack;
@@ -681,7 +684,6 @@ namespace ChessStats
             return (textOut.ToString(), htmlOut.ToString());
         }
 
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Globalization", "CA1303:Do not pass literals as localized parameters", Justification = "<Pending>")]
         private static (string textOut, string htmlOut) DisplayTimePlayedByMonth(SortedList<string, dynamic> secondsPlayedRollupMonthOnly)
         {
             StringBuilder textOut = new StringBuilder();
