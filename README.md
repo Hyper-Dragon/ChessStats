@@ -135,7 +135,7 @@ Time Played (hh:mm:ss): 149:50:52
 
 ## Acknowledgements
 
-- [ChessDotCom](https://github.com/ChessCom) @ChessCom
+- [Chess.Com](https://github.com/ChessCom) @ChessCom
 - Covid-19 & Social Isolation
 - Thanks to chess.com user _maxmlynek2_ for bug spotting
 
