@@ -8,7 +8,7 @@ The __version 0.4__ update included CAPS averages broken down by time control.  
 __Version 0.5__ is a major release with numerous improvements over v0.4 including:
 
 * Output files written to a reporting directory _([location of executable]/ChessStatsReporting/[Username])_ containing:
-  * Full (self-contained) HTML Report
+  * A full (self-contained) HTML Report
   * The original text report
   * Full PGN files (all games) for each time control
   * CAPs Data in TSV format for easy spreadsheet import
