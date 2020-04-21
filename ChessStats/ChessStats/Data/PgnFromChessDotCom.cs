@@ -1,4 +1,4 @@
-﻿using ChessDotComSharp.Models;
+using ChessDotComSharp.Models;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;

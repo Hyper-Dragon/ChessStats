@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
@@ -10,7 +10,6 @@ namespace ChessStats
         private static readonly Stopwatch stopwatch = new Stopwatch();
         private static int gameCount = 0;
         private static readonly object displayLock = new object();
-
 
         public static void StartTimedSection(string msg, bool newLineFirst = false, bool newLineAfter = false)
         {

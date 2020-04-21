@@ -1,4 +1,4 @@
-﻿using ChessDotComSharp.Models;
+using ChessDotComSharp.Models;
 using ChessStats.Data;
 using System;
 using System.Collections.Generic;
@@ -154,6 +154,7 @@ namespace ChessStats
                 }
                 catch (Exception ex)
                 {
+
                     Console.WriteLine("");
                     Console.WriteLine($"  >>Fetching Games From Chess.Com Failed");
                     Console.WriteLine($"    {ex.Message}");
