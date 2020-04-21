@@ -17,6 +17,9 @@ __Version 0.5__ is a major release with numerous improvements over v0.4 includin
 * Error handling improvements
 * Several minor display fixes
 
+## Installation
+Download the laatest version from the [Releases](https://github.com/Hyper-Dragon/ChessStats/releases) page, extract _ChessStats.exe_ and put it where you want it to go.  Note that the cache and reporting directories are created relative to the executables location. 
+
 ## Saying Thank You
 If you find this useful and want to say thanks just send me a fun trophy over on chess.com :smiley:
 
@@ -28,6 +31,7 @@ or
 ```
 chessstats -refresh
 ```
+or just double click the icon and you will be prompted for a chess.com username.
 
 ## Example Output (HTML)
 
@@ -132,5 +136,5 @@ Time Played (hh:mm:ss): 149:50:52
 
 - [ChessDotCom](https://github.com/ChessCom) @ChessCom
 - Covid-19 & Social Isolation
-- Thanks to chess.com user maxmlynek2 for bug spotting
+- Thanks to chess.com user _maxmlynek2_ for bug spotting
 
