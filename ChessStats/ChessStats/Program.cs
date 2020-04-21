@@ -1,4 +1,4 @@
-﻿using ChessDotComSharp.Models;
+using ChessDotComSharp.Models;
 using ChessStats.Data;
 using System;
 using System.Collections.Generic;
@@ -16,39 +16,75 @@ namespace ChessStats
 {
     internal class Program
     {
-        const int MAX_CAPS_PAGES = 50;
-        const int MAX_CAPS_PAGES_WITH_CACHE = 3;
+        private const int MAX_CAPS_PAGES = 50;
+        private const int MAX_CAPS_PAGES_WITH_CACHE = 3;
+        private const string VERSION_NUMBER = "0.5";
+        private const string RESULTS_DIR_NAME = "ChessStatsResults";
+        private const string CACHE_DIR_NAME = "ChessStatsCache";
+        private const string CACHE_VERSION_NUMBER = "1";
+        private const string CHESSCOM_URL = "https://chess.com";
+        private const string MEMBER_URL = "https://www.chess.com/member/";
+        private const string OPENING_URL = "https://www.chess.com/openings/";
+        private const string STATS_BASE_URL = "https://www.chess.com/stats";
+        private const string PROJECT_LINK = "https://github.com/Hyper-Dragon/ChessStats";
+        private const string DEFAULT_USER_IMAGE = "https://images.chesscomfiles.com/uploads/v1/group/57796.67ee0038.160x160o.2dc0953ad64e.png";
+        private const string REPORT_HEADING_ICON = "https://www.chess.com/bundles/web/favicons/favicon-16x16.31f99381.png";
 
-        const string VERSION_NUMBER = "0.5";
-        const string RESULTS_DIR_NAME = "ChessStatsResults";
-        const string CACHE_DIR_NAME = "ChessStatsCache";
-        const string CACHE_VERSION_NUMBER = "1";
-        const string CHESSCOM_URL = "https://chess.com";
-        const string MEMBER_URL = "https://www.chess.com/member/";
-        const string OPENING_URL = "https://www.chess.com/openings/";
-        const string STATS_BASE_URL = "https://www.chess.com/stats";
-        const string PROJECT_LINK = "https://github.com/Hyper-Dragon/ChessStats";
-        const string DEFAULT_USER_IMAGE = "https://images.chesscomfiles.com/uploads/v1/group/57796.67ee0038.160x160o.2dc0953ad64e.png";
-        const string REPORT_HEADING_ICON = "https://www.chess.com/bundles/web/favicons/favicon-16x16.31f99381.png";
-
-#pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Exit gracefully")]
         private static async Task Main(string[] args)
-#pragma warning restore CS1998 // Async method lacks 'await' operators and will run synchronously
         {
             Helpers.DisplayLogo(VERSION_NUMBER);
+
+            try
+            {
+                (bool hasRunErrors, bool hasCmdLineOptionSet) = await RunChessStats(args).ConfigureAwait(false);
+
+                if (hasRunErrors)
+                {
+                    Console.WriteLine("*** WARNING: Errors occurred during run - check output above ***");
+                    Console.WriteLine("");
+
+                    if (!hasCmdLineOptionSet) { Helpers.PressToContinue(); }
+                    Environment.Exit(-1);
+                }
+                else
+                {
+                    if (!hasCmdLineOptionSet) { Helpers.PressToContinue(); }
+                    Environment.Exit(0);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("");
+                Console.WriteLine("*** Fatal Error - Unable to Continue ***");
+                Console.WriteLine($"{ex.Message}");
+                Console.WriteLine("");
+
+                if (args.Length != 1) { Helpers.PressToContinue(); }
+
+                Environment.Exit(-2);
+            }
+        }
+
+        private static async Task<(bool hasRunErrors, bool hasCmdLineOptionSet)> RunChessStats(string[] args)
+        {
             bool hasRunErrors = false;
-            
+            bool hasCmdLineOptionSet = true;
+
             //Set up data directories
             DirectoryInfo applicationPath = new DirectoryInfo(Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName));
             DirectoryInfo baseResultsDir = applicationPath.CreateSubdirectory(RESULTS_DIR_NAME);
             DirectoryInfo baseCacheDir = applicationPath.CreateSubdirectory($"{CACHE_DIR_NAME}/CacheV{CACHE_VERSION_NUMBER}");
 
-            if (args.Length != 1)
+            while (args.Length != 1 || string.IsNullOrWhiteSpace(args[0]))
             {
-                Console.WriteLine($">>ChessDotCom Fetch Failed");
-                Console.WriteLine($"  You must specify a single valid chess.com username or -refresh");
-                Console.WriteLine();
-                Environment.Exit(-2);
+                Console.WriteLine($"You must specify a single valid chess.com username or -refresh");
+                Console.Write("> ");
+                args = Console.ReadLine().Trim()
+                                         .Split()
+                                         .Where(x => !string.IsNullOrWhiteSpace(x))
+                                         .Select(x => x.Trim()).ToArray<string>();
+                hasCmdLineOptionSet = false;
             }
 
             string[] chessdotcomUsers = args[0].ToUpperInvariant() switch
@@ -59,10 +95,26 @@ namespace ChessStats
                 _ => new string[] { args[0] }
             };
 
-
             foreach (string user in chessdotcomUsers)
             {
-                (PlayerProfile userRecord, PlayerStats userStats) = await PgnFromChessDotCom.FetchUserData(user).ConfigureAwait(false);
+                PlayerProfile userRecord = null;
+                PlayerStats userStats = null;
+
+                try
+                {
+                    Helpers.StartTimedSection($">>Confirming user {user}", newLineFirst: true);
+                    (PlayerProfile userRecordIn, PlayerStats userStatsIn) = await PgnFromChessDotCom.FetchUserData(user).ConfigureAwait(false);
+                    userRecord = userRecordIn;
+                    userStats = userStatsIn;
+                    Helpers.EndTimedSection(">>User OK", newLineAfter: true);
+                }
+                catch (HttpRequestException ex)
+                {
+                    Console.WriteLine($"  >>ERROR: {ex.Message}");
+                    Helpers.EndTimedSection(">>Finished Downloading user record", newLineAfter: true);
+                    hasRunErrors = true;
+                    continue;
+                }
 
                 //Replace username with correct case - api returns ID in lower case so extract from URL property
                 string chessdotcomUsername = userRecord.Url.Replace(MEMBER_URL, "", StringComparison.InvariantCultureIgnoreCase);
@@ -102,10 +154,11 @@ namespace ChessStats
                 }
                 catch (Exception ex)
                 {
+
+                    Console.WriteLine("");
                     Console.WriteLine($"  >>Fetching Games From Chess.Com Failed");
                     Console.WriteLine($"    {ex.Message}");
-                    Console.WriteLine();
-                    Environment.Exit(-1);
+                    throw;
                 }
 
                 Helpers.EndTimedSection($">>Finished Fetching Games From Chess.Com", true);
@@ -183,19 +236,7 @@ namespace ChessStats
                 Console.WriteLine("");
             }
 
-            if (hasRunErrors)
-            {
-                Console.WriteLine("*** WARNING: Errors occurred during run - check output above ***");
-                Console.WriteLine("");
-
-                Helpers.PressToContinueIfDebug();
-                Environment.Exit(-1);
-            }
-            else
-            {
-                Helpers.PressToContinueIfDebug();
-                Environment.Exit(0);
-            }
+            return (hasRunErrors, hasCmdLineOptionSet);
         }
 
         private static string BuildHtmlReport(string VERSION_NUMBER, PlayerProfile userRecord, PlayerStats userStats, string chessdotcomUsername, string whiteOpeningshtmlOut, string blackOpeningshtmlOut, string playingStatshtmlOut, string timePlayedByMonthhtmlOut, string capsTablehtmlOut, string capsRollingAverageFivehtmlOut, string capsRollingAverageTenhtmlOut, string userLogoBase64, string pawnFragment)
@@ -473,11 +514,11 @@ namespace ChessStats
                 if (capsScore.Value.Count > averageOver)
                 {
                     List<double> latestCaps = capsScore.Value.Select(x => x.Caps).ToList<double>();
-                    List<string> averages = Enumerable.Range(0, (latestCaps.Count+1) - averageOver)
-                                                      .Select(i => Math.Round(latestCaps.Skip(i).Take(averageOver).Average(), 2).ToString("00.00"))
+                    List<string> averages = Enumerable.Range(0, (latestCaps.Count + 1) - averageOver)
+                                                      .Select(i => Math.Round(latestCaps.Skip(i).Take(averageOver).Average(), 2).ToString("00.00", CultureInfo.InvariantCulture))
                                                       .ToList();
 
-                    var avList = averages.Take(10).ToArray();
+                    string[] avList = averages.Take(10).ToArray();
                     _ = textOut.AppendLine($"{ CultureInfo.InvariantCulture.TextInfo.ToTitleCase(capsScore.Key.PadRight(17))} |   {string.Join(" | ", avList)}");
 
 
@@ -577,6 +618,7 @@ namespace ChessStats
             gameTime = $"{game.TimeClass,-6}{((game.IsRatedGame) ? "   " : " NR")}";
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Not critical so just ignore any missing ECO data")]
         private static void CalculateOpening(SortedList<string, (string href, int total, int winCount, int drawCount, int lossCount)> ecoPlayedRollupWhite, SortedList<string, (string href, int total, int winCount, int drawCount, int lossCount)> ecoPlayedRollupBlack, ChessGame game, string side, bool? isWin)
         {
             try

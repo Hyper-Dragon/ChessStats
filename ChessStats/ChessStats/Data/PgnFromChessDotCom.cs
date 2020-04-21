@@ -1,4 +1,4 @@
-﻿using ChessDotComSharp.Models;
+using ChessDotComSharp.Models;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -22,6 +22,7 @@ namespace ChessStats.Data
             return (userRecord, userStats);
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Ignore (and show in the console) any corrupt records from chess.com")]
         public static async Task<List<ChessGame>> FetchGameRecordsForUser(string username, DirectoryInfo cacheDir)
         {
             Helpers.ResetDisplayCounter();
@@ -39,7 +40,6 @@ namespace ChessStats.Data
                 {
                     foreach (ArchiveGame game in t2.Result.Games)
                     {
-
                         if (game.Rules == GameVariant.Chess)
                         {
                             Helpers.ProcessedDisplay(".");
@@ -90,7 +90,7 @@ namespace ChessStats.Data
             if (File.Exists(cacheFileName))
             {
                 using FileStream gameFileInStream = File.OpenRead(cacheFileName);
-                myGames = await JsonSerializer.DeserializeAsync<PlayerArchivedGames>(gameFileInStream);
+                myGames = await JsonSerializer.DeserializeAsync<PlayerArchivedGames>(gameFileInStream).ConfigureAwait(false);
             }
             else
             {

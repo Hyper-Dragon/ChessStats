@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
@@ -11,13 +11,14 @@ namespace ChessStats
         private static int gameCount = 0;
         private static readonly object displayLock = new object();
 
-
-        public static void StartTimedSection(string msg)
+        public static void StartTimedSection(string msg, bool newLineFirst = false, bool newLineAfter = false)
         {
             stopwatch.Reset();
             stopwatch.Start();
 
+            if (newLineFirst) { Console.WriteLine(); }
             Console.WriteLine(msg);
+            if (newLineAfter) { Console.WriteLine(); }
         }
 
         public static void EndTimedSection(string msg, bool newLineFirst = false, bool newLineAfter = false)
@@ -92,13 +93,11 @@ namespace ChessStats
             return new string(s.Take(width).ToArray()).PadRight(width);
         }
 
-        public static void PressToContinueIfDebug()
+        public static void PressToContinue()
         {
-#if DEBUG
             Console.Beep();
             Console.WriteLine("<Press a Key>");
             Console.ReadKey();
-#endif
         }
 
         public static void DisplayLogo(string versionNo)

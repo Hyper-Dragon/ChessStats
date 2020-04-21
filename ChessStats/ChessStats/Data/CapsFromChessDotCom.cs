@@ -1,4 +1,4 @@
-﻿using HtmlAgilityPack;
+using HtmlAgilityPack;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -19,6 +19,7 @@ namespace ChessStats.Data
 
     public static class CapsFromChessDotCom
     {
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "We are page scraping as CAPS Scores are unavailable via the API) - If error just show on the console")]
         public static async Task<Dictionary<string, List<CapsRecord>>> GetCapsScores(DirectoryInfo cache, string chessdotcomUsername, int maxPages, int maxPagesWithCache)
         {
             if (cache == null) { throw new ArgumentNullException(nameof(cache)); }
@@ -31,7 +32,7 @@ namespace ChessStats.Data
             if (File.Exists(cacheFileName))
             {
                 using FileStream capsFileInStream = File.OpenRead(cacheFileName);
-                capsScoresCached = await JsonSerializer.DeserializeAsync<Dictionary<string, List<CapsRecord>>>(capsFileInStream);
+                capsScoresCached = await JsonSerializer.DeserializeAsync<Dictionary<string, List<CapsRecord>>>(capsFileInStream).ConfigureAwait(false);
 
                 //If we have cached records only pull back the first few pages
                 maxPages = maxPagesWithCache;
