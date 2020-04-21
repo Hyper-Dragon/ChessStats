@@ -13,7 +13,7 @@ __Version 0.5__ is a major release with numerous improvements over v0.4 includin
   * Full PGN files (all games) for each time control
   * CAPs Data in TSV format for easy spreadsheet import
 * A refresh data option (for each user in the reporting directory)
-* Caching for previously retrieved game and CAPs Data at _([location of executable]/ChessStatsCache/CacheV1/[Username])_
+* Caching for previously retrieved game and CAPs data at _([location of executable]/ChessStatsCache/CacheV1/[Username])_
 * Error handling improvements
 * Several minor display fixes
 
