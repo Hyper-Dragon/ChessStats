@@ -32,6 +32,7 @@ namespace ChessStats
         const string REPORT_HEADING_ICON = "https://www.chess.com/bundles/web/favicons/favicon-16x16.31f99381.png";
 
 #pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Exit gracefully")]
         private static async Task Main(string[] args)
 #pragma warning restore CS1998 // Async method lacks 'await' operators and will run synchronously
         {
@@ -61,7 +62,7 @@ namespace ChessStats
                 Console.WriteLine("*** Fatal Error - Unable to Continue ***");
                 Console.WriteLine($"{ex.Message}");
                 Console.WriteLine("");
-                throw;
+                Environment.Exit(-2);
             }
         }
 
@@ -153,6 +154,7 @@ namespace ChessStats
                 }
                 catch (Exception ex)
                 {
+                    Console.WriteLine("");
                     Console.WriteLine($"  >>Fetching Games From Chess.Com Failed");
                     Console.WriteLine($"    {ex.Message}");
                     throw;
