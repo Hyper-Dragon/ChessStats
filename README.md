@@ -35,7 +35,7 @@ or
 just double click the _exe_ and you will be prompted for a chess.com username.
 
 ## Example Output (HTML)
-![Sample Report](https://raw.githubusercontent.com/Hyper-Dragon/ChessStats/dev/ExampleReportV0.5.png)
+![Sample Report](./ExampleReportV0.5.png)
 
 ## Example Output Fragments (Text)
 
