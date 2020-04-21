@@ -31,7 +31,8 @@ or
 ```
 chessstats -refresh
 ```
-or just double click the icon and you will be prompted for a chess.com username.
+or 
+just double click the _exe_ and you will be prompted for a chess.com username.
 
 ## Example Output (HTML)
 
