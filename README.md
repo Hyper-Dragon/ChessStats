@@ -17,6 +17,7 @@ __Version 0.5__ is a major release with numerous improvements over v0.4 includin
 * Error handling improvements
 * Several minor display fixes
 
+## Saying Thank You
 If you find this useful and want to say thanks just send me a fun trophy over on chess.com :smiley:
 
 ```
