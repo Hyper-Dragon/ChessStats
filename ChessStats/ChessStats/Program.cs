@@ -37,8 +37,38 @@ namespace ChessStats
         {
             Helpers.DisplayLogo(VERSION_NUMBER);
             
-            bool hasCmdLineOptionSet = true;
+            try
+            {
+                (bool hasRunErrors, bool hasCmdLineOptionSet) = await RunChessStats(args);
+
+                if (hasRunErrors)
+                {
+                    Console.WriteLine("*** WARNING: Errors occurred during run - check output above ***");
+                    Console.WriteLine("");
+
+                    if (!hasCmdLineOptionSet) { Helpers.PressToContinue(); }
+                    Environment.Exit(-1);
+                }
+                else
+                {
+                    if (!hasCmdLineOptionSet) { Helpers.PressToContinue(); }
+                    Environment.Exit(0);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("");
+                Console.WriteLine("*** Fatal Error - Unable to Continue ***");
+                Console.WriteLine($"{ex.Message}");
+                Console.WriteLine("");
+                throw;
+            }
+        }
+
+        private static async Task<(bool hasRunErrors, bool hasCmdLineOptionSet)> RunChessStats(string[] args) 
+        {
             bool hasRunErrors = false;
+            bool hasCmdLineOptionSet = true;
             
             //Set up data directories
             DirectoryInfo applicationPath = new DirectoryInfo(Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName));
@@ -66,17 +96,18 @@ namespace ChessStats
 
             foreach (string user in chessdotcomUsers)
             {
-                PlayerProfile userRecord = null; 
+                PlayerProfile userRecord = null;
                 PlayerStats userStats = null;
 
-                try {
-                    Helpers.StartTimedSection($">>Confirming user {user}",newLineFirst:true);
+                try
+                {
+                    Helpers.StartTimedSection($">>Confirming user {user}", newLineFirst: true);
                     (PlayerProfile userRecordIn, PlayerStats userStatsIn) = await PgnFromChessDotCom.FetchUserData(user).ConfigureAwait(false);
                     userRecord = userRecordIn;
                     userStats = userStatsIn;
-                    Helpers.EndTimedSection(">>User OK", newLineAfter:true);
+                    Helpers.EndTimedSection(">>User OK", newLineAfter: true);
                 }
-                catch(HttpRequestException ex)
+                catch (HttpRequestException ex)
                 {
                     Console.WriteLine($"  >>ERROR: {ex.Message}");
                     Helpers.EndTimedSection(">>Finished Downloading user record", newLineAfter: true);
@@ -124,8 +155,7 @@ namespace ChessStats
                 {
                     Console.WriteLine($"  >>Fetching Games From Chess.Com Failed");
                     Console.WriteLine($"    {ex.Message}");
-                    Console.WriteLine();
-                    Environment.Exit(-1);
+                    throw;
                 }
 
                 Helpers.EndTimedSection($">>Finished Fetching Games From Chess.Com", true);
@@ -203,19 +233,7 @@ namespace ChessStats
                 Console.WriteLine("");
             }
 
-            if (hasRunErrors)
-            {
-                Console.WriteLine("*** WARNING: Errors occurred during run - check output above ***");
-                Console.WriteLine("");
-
-                if (!hasCmdLineOptionSet){ Helpers.PressToContinue();}
-                Environment.Exit(-1);
-            }
-            else
-            {
-                if (!hasCmdLineOptionSet) { Helpers.PressToContinue(); }
-                Environment.Exit(0);
-            }
+            return (hasRunErrors,hasCmdLineOptionSet);
         }
 
         private static string BuildHtmlReport(string VERSION_NUMBER, PlayerProfile userRecord, PlayerStats userStats, string chessdotcomUsername, string whiteOpeningshtmlOut, string blackOpeningshtmlOut, string playingStatshtmlOut, string timePlayedByMonthhtmlOut, string capsTablehtmlOut, string capsRollingAverageFivehtmlOut, string capsRollingAverageTenhtmlOut, string userLogoBase64, string pawnFragment)
