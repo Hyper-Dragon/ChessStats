@@ -16,26 +16,25 @@ namespace ChessStats
 {
     internal class Program
     {
-        const int MAX_CAPS_PAGES = 50;
-        const int MAX_CAPS_PAGES_WITH_CACHE = 3;
-
-        const string VERSION_NUMBER = "0.5";
-        const string RESULTS_DIR_NAME = "ChessStatsResults";
-        const string CACHE_DIR_NAME = "ChessStatsCache";
-        const string CACHE_VERSION_NUMBER = "1";
-        const string CHESSCOM_URL = "https://chess.com";
-        const string MEMBER_URL = "https://www.chess.com/member/";
-        const string OPENING_URL = "https://www.chess.com/openings/";
-        const string STATS_BASE_URL = "https://www.chess.com/stats";
-        const string PROJECT_LINK = "https://github.com/Hyper-Dragon/ChessStats";
-        const string DEFAULT_USER_IMAGE = "https://images.chesscomfiles.com/uploads/v1/group/57796.67ee0038.160x160o.2dc0953ad64e.png";
-        const string REPORT_HEADING_ICON = "https://www.chess.com/bundles/web/favicons/favicon-16x16.31f99381.png";
+        private const int MAX_CAPS_PAGES = 50;
+        private const int MAX_CAPS_PAGES_WITH_CACHE = 3;
+        private const string VERSION_NUMBER = "0.5";
+        private const string RESULTS_DIR_NAME = "ChessStatsResults";
+        private const string CACHE_DIR_NAME = "ChessStatsCache";
+        private const string CACHE_VERSION_NUMBER = "1";
+        private const string CHESSCOM_URL = "https://chess.com";
+        private const string MEMBER_URL = "https://www.chess.com/member/";
+        private const string OPENING_URL = "https://www.chess.com/openings/";
+        private const string STATS_BASE_URL = "https://www.chess.com/stats";
+        private const string PROJECT_LINK = "https://github.com/Hyper-Dragon/ChessStats";
+        private const string DEFAULT_USER_IMAGE = "https://images.chesscomfiles.com/uploads/v1/group/57796.67ee0038.160x160o.2dc0953ad64e.png";
+        private const string REPORT_HEADING_ICON = "https://www.chess.com/bundles/web/favicons/favicon-16x16.31f99381.png";
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Exit gracefully")]
         private static async Task Main(string[] args)
         {
             Helpers.DisplayLogo(VERSION_NUMBER);
-            
+
             try
             {
                 (bool hasRunErrors, bool hasCmdLineOptionSet) = await RunChessStats(args).ConfigureAwait(false);
@@ -64,11 +63,11 @@ namespace ChessStats
             }
         }
 
-        private static async Task<(bool hasRunErrors, bool hasCmdLineOptionSet)> RunChessStats(string[] args) 
+        private static async Task<(bool hasRunErrors, bool hasCmdLineOptionSet)> RunChessStats(string[] args)
         {
             bool hasRunErrors = false;
             bool hasCmdLineOptionSet = true;
-            
+
             //Set up data directories
             DirectoryInfo applicationPath = new DirectoryInfo(Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName));
             DirectoryInfo baseResultsDir = applicationPath.CreateSubdirectory(RESULTS_DIR_NAME);
@@ -233,7 +232,7 @@ namespace ChessStats
                 Console.WriteLine("");
             }
 
-            return (hasRunErrors,hasCmdLineOptionSet);
+            return (hasRunErrors, hasCmdLineOptionSet);
         }
 
         private static string BuildHtmlReport(string VERSION_NUMBER, PlayerProfile userRecord, PlayerStats userStats, string chessdotcomUsername, string whiteOpeningshtmlOut, string blackOpeningshtmlOut, string playingStatshtmlOut, string timePlayedByMonthhtmlOut, string capsTablehtmlOut, string capsRollingAverageFivehtmlOut, string capsRollingAverageTenhtmlOut, string userLogoBase64, string pawnFragment)
@@ -511,11 +510,11 @@ namespace ChessStats
                 if (capsScore.Value.Count > averageOver)
                 {
                     List<double> latestCaps = capsScore.Value.Select(x => x.Caps).ToList<double>();
-                    List<string> averages = Enumerable.Range(0, (latestCaps.Count+1) - averageOver)
-                                                      .Select(i => Math.Round(latestCaps.Skip(i).Take(averageOver).Average(), 2).ToString("00.00",CultureInfo.InvariantCulture))
+                    List<string> averages = Enumerable.Range(0, (latestCaps.Count + 1) - averageOver)
+                                                      .Select(i => Math.Round(latestCaps.Skip(i).Take(averageOver).Average(), 2).ToString("00.00", CultureInfo.InvariantCulture))
                                                       .ToList();
 
-                    var avList = averages.Take(10).ToArray();
+                    string[] avList = averages.Take(10).ToArray();
                     _ = textOut.AppendLine($"{ CultureInfo.InvariantCulture.TextInfo.ToTitleCase(capsScore.Key.PadRight(17))} |   {string.Join(" | ", avList)}");
 
 
