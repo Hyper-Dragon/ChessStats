@@ -18,7 +18,7 @@ namespace ChessStats
     {
         private const int MAX_CAPS_PAGES = 50;
         private const int MAX_CAPS_PAGES_WITH_CACHE = 3;
-        private const string VERSION_NUMBER = "0.5";
+        private const string VERSION_NUMBER = "0.6";
         private const string RESULTS_DIR_NAME = "ChessStatsResults";
         private const string CACHE_DIR_NAME = "ChessStatsCache";
         private const string CACHE_VERSION_NUMBER = "1";
