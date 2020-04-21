@@ -59,6 +59,9 @@ namespace ChessStats
                 Console.WriteLine("*** Fatal Error - Unable to Continue ***");
                 Console.WriteLine($"{ex.Message}");
                 Console.WriteLine("");
+
+                if (args.Length != 1) { Helpers.PressToContinue(); }
+
                 Environment.Exit(-2);
             }
         }
