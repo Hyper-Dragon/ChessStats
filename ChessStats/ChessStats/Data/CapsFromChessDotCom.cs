@@ -32,7 +32,7 @@ namespace ChessStats.Data
             if (File.Exists(cacheFileName))
             {
                 using FileStream capsFileInStream = File.OpenRead(cacheFileName);
-                capsScoresCached = await JsonSerializer.DeserializeAsync<Dictionary<string, List<CapsRecord>>>(capsFileInStream);
+                capsScoresCached = await JsonSerializer.DeserializeAsync<Dictionary<string, List<CapsRecord>>>(capsFileInStream).ConfigureAwait(false);
 
                 //If we have cached records only pull back the first few pages
                 maxPages = maxPagesWithCache;

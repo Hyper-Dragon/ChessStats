@@ -90,7 +90,7 @@ namespace ChessStats.Data
             if (File.Exists(cacheFileName))
             {
                 using FileStream gameFileInStream = File.OpenRead(cacheFileName);
-                myGames = await JsonSerializer.DeserializeAsync<PlayerArchivedGames>(gameFileInStream);
+                myGames = await JsonSerializer.DeserializeAsync<PlayerArchivedGames>(gameFileInStream).ConfigureAwait(false);
             }
             else
             {

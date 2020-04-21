@@ -39,7 +39,7 @@ namespace ChessStats
             
             try
             {
-                (bool hasRunErrors, bool hasCmdLineOptionSet) = await RunChessStats(args);
+                (bool hasRunErrors, bool hasCmdLineOptionSet) = await RunChessStats(args).ConfigureAwait(false);
 
                 if (hasRunErrors)
                 {
@@ -512,7 +512,7 @@ namespace ChessStats
                 {
                     List<double> latestCaps = capsScore.Value.Select(x => x.Caps).ToList<double>();
                     List<string> averages = Enumerable.Range(0, (latestCaps.Count+1) - averageOver)
-                                                      .Select(i => Math.Round(latestCaps.Skip(i).Take(averageOver).Average(), 2).ToString("00.00"))
+                                                      .Select(i => Math.Round(latestCaps.Skip(i).Take(averageOver).Average(), 2).ToString("00.00",CultureInfo.InvariantCulture))
                                                       .ToList();
 
                     var avList = averages.Take(10).ToArray();
