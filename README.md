@@ -1,7 +1,7 @@
 # ChessStats for [Chess.com](https://chess.com)
 
 ## About
-ChessStats is a console app used to retrieve monthly play time, ratings and top openings for any chessdotcom user. Note that variant game types are not included in the stats (displayed as 'X' during game retrieval) and unrated game ('NR') information is time only. 
+ChessStats is a console app used to retrieve monthly play time, ratings and top openings for any chess.com user. Note that variant game types are not included in the stats (displayed as 'X' during game retrieval) and unrated game ('NR') information is time only. 
 
 The __version 0.4__ update included CAPS averages broken down by time control.  These are available for games that have been analysed on the chess.com website (games with no analysis are marked with '-' on ingest).  
 
