@@ -7,7 +7,7 @@ The _version 0.4_ update included CAPS averages broken down by time control.  Th
 
 _Version 0.5_ is a major release with numerous improvements over v0.4 including:
 
-  * Output files written to a reporting directory per-user containing
+* Output files written to a reporting directory per-user containing
   * Full (self-contained) HTML Report
   * The original text report
   * Full PGN files (all games) for each time control
@@ -26,6 +26,9 @@ or
 ```
 chessstats -refresh
 ```
+
+## Example Output (HTML)
+
 
 ## Example Output Fragments (Text)
 
@@ -120,10 +123,12 @@ Time Played (hh:mm:ss): 149:50:52
 ## Dependencies
 
 - [ChessDotComSharp](https://github.com/nullablebool/ChessDotComSharp) @nullablebool
+- Chess.com Api
+- Chess.com website HTML for CAPs extraction
 
 ## Acknowledgements
 
 - [ChessDotCom](https://github.com/ChessCom) @ChessCom
 - Covid-19 & Social Isolation
-- Thanks to maxmlynek2 for bug spotting
+- Thanks to chess.com user maxmlynek2 for bug spotting
 
