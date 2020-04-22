@@ -5,7 +5,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Drawing2D;
-using System.Drawing.Imaging;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -180,7 +179,7 @@ namespace ChessStats
 
                 Helpers.EndTimedSection($">>Finished Processing Games");
 
-                Helpers.StartTimedSection($">>Compiling Reports");
+                Helpers.StartTimedSection($">>Compiling Report Data");
 
                 //Extract reporting data
                 (string whiteOpeningstextOut, string whiteOpeningshtmlOut) = DisplayOpeningsAsWhite(ecoPlayedRollupWhite);
@@ -192,22 +191,27 @@ namespace ChessStats
                 (string capsRollingAverageTentextOut, string capsRollingAverageTenhtmlOut) = DisplayCapsRollingAverage(10, capsScores);
                 (string totalSecondsPlayedtextOut, _) = DisplayTotalSecondsPlayed(totalSecondsPlayed);
 
-                string bulletGraphHtmlFragment = RenderRatingGraph(ratingsPostGame);
-                string blitzGraphHtmlFragment = RenderRatingGraph(ratingsPostGame);
-                string rapidGraphHtmlFragment = RenderRatingGraph(ratingsPostGame);
+                Helpers.EndTimedSection($">>Finished Compiling Report Data");
 
+                Helpers.StartTimedSection($">>Rendering Graphs");
+                string bulletGraphHtmlFragment = RenderRatingGraph(ratingsPostGame.Where(x => x.gameType == "Bullet").ToList());
+                string blitzGraphHtmlFragment = RenderRatingGraph(ratingsPostGame.Where(x => x.gameType == "Blitz").ToList());
+                string rapidGraphHtmlFragment = RenderRatingGraph(ratingsPostGame.Where(x => x.gameType == "Rapid").ToList());
+                Helpers.EndTimedSection($">>Finished Rendering Graphs");
+
+                Helpers.StartTimedSection($">>Building Reports");
                 //Build the text report
-                string textReport = BuildTextReport(chessdotcomUsername, whiteOpeningstextOut, blackOpeningstextOut, playingStatstextOut, 
-                                                    timePlayedByMonthtextOut, capsTabletextOut, capsRollingAverageTentextOut, 
+                string textReport = BuildTextReport(chessdotcomUsername, whiteOpeningstextOut, blackOpeningstextOut, playingStatstextOut,
+                                                    timePlayedByMonthtextOut, capsTabletextOut, capsRollingAverageTentextOut,
                                                     totalSecondsPlayedtextOut);
 
                 //Build the HTML report
-                string htmlReport = BuildHtmlReport(VERSION_NUMBER, userRecord, userStats, chessdotcomUsername, whiteOpeningshtmlOut, blackOpeningshtmlOut, 
-                                                    playingStatshtmlOut, timePlayedByMonthhtmlOut, capsTablehtmlOut, capsRollingAverageFivehtmlOut, 
+                string htmlReport = BuildHtmlReport(VERSION_NUMBER, userRecord, userStats, chessdotcomUsername, whiteOpeningshtmlOut, blackOpeningshtmlOut,
+                                                    playingStatshtmlOut, timePlayedByMonthhtmlOut, capsTablehtmlOut, capsRollingAverageFivehtmlOut,
                                                     capsRollingAverageTenhtmlOut, userLogoBase64, pawnFragment, bulletGraphHtmlFragment,
                                                     blitzGraphHtmlFragment, rapidGraphHtmlFragment);
 
-                Helpers.EndTimedSection($">>Finished Compiling Reports");
+                Helpers.EndTimedSection($">>Finished Building Reports");
 
                 Helpers.StartTimedSection($">>Writing Results to {resultsDir.FullName}");
 
@@ -252,10 +256,10 @@ namespace ChessStats
             return (hasRunErrors, hasCmdLineOptionSet);
         }
 
-        private static string BuildHtmlReport(string VERSION_NUMBER, PlayerProfile userRecord, PlayerStats userStats, 
-                                              string chessdotcomUsername, string whiteOpeningshtmlOut, string blackOpeningshtmlOut, 
-                                              string playingStatshtmlOut, string timePlayedByMonthhtmlOut, string capsTablehtmlOut, 
-                                              string capsRollingAverageFivehtmlOut, string capsRollingAverageTenhtmlOut, 
+        private static string BuildHtmlReport(string VERSION_NUMBER, PlayerProfile userRecord, PlayerStats userStats,
+                                              string chessdotcomUsername, string whiteOpeningshtmlOut, string blackOpeningshtmlOut,
+                                              string playingStatshtmlOut, string timePlayedByMonthhtmlOut, string capsTablehtmlOut,
+                                              string capsRollingAverageFivehtmlOut, string capsRollingAverageTenhtmlOut,
                                               string userLogoBase64, string pawnFragment, string bulletGraphHtmlFragment,
                                               string blitzGraphHtmlFragment, string rapidGraphHtmlFragment)
         {
@@ -444,41 +448,48 @@ namespace ChessStats
 
         private static string RenderRatingGraph(List<(DateTime gameDate, int rating, string gameType)> ratingsPostGame)
         {
+            int highVal = 300;
+            int lowVal = 100;
+            int width = 100;
+            int[] postGameRatings = Array.Empty<int>();
 
-            int highVal = ratingsPostGame.Select(x => x.rating).Max();
-            int lowVal = ratingsPostGame.Select(x => x.rating).Min();
-            int[] postGameRatings = ratingsPostGame.OrderBy(x => x.gameDate).Select(x => x.rating).ToArray();
+            if (ratingsPostGame.Count > 0)
+            {
+                highVal = ratingsPostGame.Select(x => x.rating).Max();
+                lowVal = ratingsPostGame.Select(x => x.rating).Min();
+                postGameRatings = ratingsPostGame.OrderBy(x => x.gameDate).Select(x => x.rating).ToArray();
+                width = postGameRatings.Length;
+            }
 
-            using System.Drawing.Bitmap graphSurface = new System.Drawing.Bitmap(postGameRatings.Length, highVal - lowVal);
+            using System.Drawing.Bitmap graphSurface = new System.Drawing.Bitmap(width, highVal - lowVal);
             using LinearGradientBrush linGrBrush = new LinearGradientBrush(
                                                             new Point(0, 0),
-                                                            new Point(postGameRatings.Length, highVal - lowVal),
-                                                            Color.FromArgb(255, 43, 40, 37),   
-                                                            Color.FromArgb(255, 181, 180, 179));  // Opaque blue
+                                                            new Point(width, highVal - lowVal),
+                                                            Color.FromArgb(255, 43, 40, 37),
+                                                            Color.FromArgb(255, 181, 180, 179));
+
             using Pen pen = new Pen(linGrBrush);
-            using Pen blackPen = new Pen(Color.FromArgb(255,229,139,9), 1);
-            using Pen redPen = new Pen(Color.Red, 1);
+            using Pen orangePen = new Pen(Color.FromArgb(255, 229, 139, 9), 1);
+
 
             Graphics drawingSurface = Graphics.FromImage(graphSurface);
             drawingSurface.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
             drawingSurface.CompositingQuality = System.Drawing.Drawing2D.CompositingQuality.HighQuality;
             drawingSurface.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
 
-            drawingSurface.FillRectangle(linGrBrush, 0, 0, postGameRatings.Length, highVal - lowVal);
+            drawingSurface.FillRectangle(linGrBrush, 0, 0, width, highVal - lowVal);
 
             for (int loop = 0; loop < postGameRatings.Length; loop++)
             {
-                drawingSurface.DrawLine(blackPen, loop, (highVal - lowVal) - (postGameRatings[loop] - lowVal), loop, graphSurface.Height);
+                drawingSurface.DrawLine(orangePen, loop, (highVal - lowVal) - (postGameRatings[loop] - lowVal), loop, graphSurface.Height);
             }
 
             using Bitmap bitmapOut = Helpers.ResizeImage(graphSurface, 640, 200);
-
-//            bitmapOut.Save("test.png", ImageFormat.Png);
-
-            using var stream = new MemoryStream();
+            
+            using MemoryStream stream = new MemoryStream();
             bitmapOut.Save(stream, System.Drawing.Imaging.ImageFormat.Png);
             string base64Img = Convert.ToBase64String(stream.ToArray());
-  
+
             return $"<img src='data:image/png;base64,{base64Img}'/>";
         }
 

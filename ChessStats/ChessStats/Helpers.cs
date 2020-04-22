@@ -43,7 +43,7 @@ namespace ChessStats
         }
         public static Bitmap ResizeImage(Image image, int width, int height)
         {
-            if(image == null) { throw new ArgumentNullException(nameof(image)); }
+            if (image == null) { throw new ArgumentNullException(nameof(image)); }
 
             Rectangle destRect = new Rectangle(0, 0, width, height);
             Bitmap destImage = new Bitmap(width, height);
