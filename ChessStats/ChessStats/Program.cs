@@ -292,6 +292,9 @@ namespace ChessStats
                           .AppendLine("     .ratingRow                                   {display: grid;grid-template-columns: auto auto auto;grid-gap: 20px;padding: 10px;}")
                           .AppendLine("     .ratingRow > div                             {text-align: center;  padding: 0px;  color: whitesmoke;  font-size: 15px;  font-weight: bold;}")
                           .AppendLine("     .ratingBox                                   {cursor: pointer;}")
+                          .AppendLine("     .graphRow                                    {display: grid;grid-template-columns: auto auto auto;grid-gap: 20px;padding: 10px;}")
+                          .AppendLine("     .graphRow > div                              {text-align: center;  padding: 0px;  color: whitesmoke;  font-size: 15px;  font-weight: bold;}")
+                          .AppendLine("     .graphBox img                                { max-width:100%; height:auto; }")
                           .AppendLine("     .yearSplit                                   {border-top: thin dotted; border-color: #1583b7;}")
                           .AppendLine("     .higher                                      {background-color: hsla(120, 100%, 50%, 0.2);}")
                           .AppendLine("     .lower                                       {background-color: hsla(0, 100%, 70%, 0.2);}")
@@ -345,7 +348,13 @@ namespace ChessStats
                           .AppendLine(capsTablehtmlOut)
                           .AppendLine($"</div>")
                           .AppendLine($"<br/><h2>{pawnFragment}Time Played by Time Control/Month</h2>")
-                          .AppendLine($"{rapidGraphHtmlFragment}")
+                          .AppendLine($"<div class='priority-2'>")
+                          .AppendLine($"<div class='graphRow'>")
+                          .AppendLine($"<div class='graphBox'>{bulletGraphHtmlFragment}</div>")
+                          .AppendLine($"<div class='graphBox'>{blitzGraphHtmlFragment}</div>")
+                          .AppendLine($"<div class='graphBox'>{rapidGraphHtmlFragment}</div>")
+                          .AppendLine($"</div>")
+                          .AppendLine($"</div>")
                           .AppendLine(playingStatshtmlOut)
                           .AppendLine($"<h2>{pawnFragment}Time Played by Month (All Time Controls)</h2>")
                           .AppendLine(timePlayedByMonthhtmlOut)
@@ -442,12 +451,12 @@ namespace ChessStats
 
             using System.Drawing.Bitmap graphSurface = new System.Drawing.Bitmap(postGameRatings.Length, highVal - lowVal);
             using LinearGradientBrush linGrBrush = new LinearGradientBrush(
-                                                            new Point(0, 10),
+                                                            new Point(0, 0),
                                                             new Point(postGameRatings.Length, highVal - lowVal),
-                                                            Color.FromArgb(255, 255, 0, 0),   // Opaque red
-                                                            Color.FromArgb(255, 0, 0, 255));  // Opaque blue
+                                                            Color.FromArgb(255, 43, 40, 37),   
+                                                            Color.FromArgb(255, 181, 180, 179));  // Opaque blue
             using Pen pen = new Pen(linGrBrush);
-            using Pen blackPen = new Pen(Color.White, 1);
+            using Pen blackPen = new Pen(Color.FromArgb(255,229,139,9), 1);
             using Pen redPen = new Pen(Color.Red, 1);
 
             Graphics drawingSurface = Graphics.FromImage(graphSurface);
@@ -462,7 +471,7 @@ namespace ChessStats
                 drawingSurface.DrawLine(blackPen, loop, (highVal - lowVal) - (postGameRatings[loop] - lowVal), loop, graphSurface.Height);
             }
 
-            using Bitmap bitmapOut = Helpers.ResizeImage(graphSurface, 300, 200);
+            using Bitmap bitmapOut = Helpers.ResizeImage(graphSurface, 640, 200);
 
 //            bitmapOut.Save("test.png", ImageFormat.Png);
 
