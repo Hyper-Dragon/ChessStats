@@ -194,22 +194,33 @@ namespace ChessStats
                 Helpers.EndTimedSection($">>Finished Compiling Report Data");
 
                 Helpers.StartTimedSection($">>Rendering Graphs");
-                string bulletGraphHtmlFragment = RenderRatingGraph(ratingsPostGame.Where(x => x.gameType == "Bullet").ToList());
-                string blitzGraphHtmlFragment = RenderRatingGraph(ratingsPostGame.Where(x => x.gameType == "Blitz").ToList());
-                string rapidGraphHtmlFragment = RenderRatingGraph(ratingsPostGame.Where(x => x.gameType == "Rapid").ToList());
+                var graphT1 = RenderRatingGraph(ratingsPostGame.Where(x => x.gameType == "Bullet").ToList());
+                var graphT2 = RenderRatingGraph(ratingsPostGame.Where(x => x.gameType == "Blitz").ToList());
+                var graphT3 = RenderRatingGraph(ratingsPostGame.Where(x => x.gameType == "Rapid").ToList());
+
+                _ = await Task.WhenAll(graphT1, graphT2, graphT3).ConfigureAwait(false);
+                string bulletGraphHtmlFragment = graphT1.Result;
+                string blitzGraphHtmlFragment = graphT2.Result;
+                string rapidGraphHtmlFragment = graphT3.Result;
+
                 Helpers.EndTimedSection($">>Finished Rendering Graphs");
 
                 Helpers.StartTimedSection($">>Building Reports");
                 //Build the text report
-                string textReport = BuildTextReport(chessdotcomUsername, whiteOpeningstextOut, blackOpeningstextOut, playingStatstextOut,
-                                                    timePlayedByMonthtextOut, capsTabletextOut, capsRollingAverageTentextOut,
-                                                    totalSecondsPlayedtextOut);
+                var reportT1 = BuildTextReport(chessdotcomUsername, whiteOpeningstextOut, blackOpeningstextOut, playingStatstextOut,
+                                                          timePlayedByMonthtextOut, capsTabletextOut, capsRollingAverageTentextOut,
+                                                          totalSecondsPlayedtextOut);
 
                 //Build the HTML report
-                string htmlReport = BuildHtmlReport(VERSION_NUMBER, userRecord, userStats, chessdotcomUsername, whiteOpeningshtmlOut, blackOpeningshtmlOut,
-                                                    playingStatshtmlOut, timePlayedByMonthhtmlOut, capsTablehtmlOut, capsRollingAverageFivehtmlOut,
-                                                    capsRollingAverageTenhtmlOut, userLogoBase64, pawnFragment, bulletGraphHtmlFragment,
-                                                    blitzGraphHtmlFragment, rapidGraphHtmlFragment);
+                var reportT2 = BuildHtmlReport(VERSION_NUMBER, userRecord, userStats, chessdotcomUsername, whiteOpeningshtmlOut, blackOpeningshtmlOut,
+                                                          playingStatshtmlOut, timePlayedByMonthhtmlOut, capsTablehtmlOut, capsRollingAverageFivehtmlOut,
+                                                          capsRollingAverageTenhtmlOut, userLogoBase64, pawnFragment, bulletGraphHtmlFragment,
+                                                          blitzGraphHtmlFragment, rapidGraphHtmlFragment);
+
+                _ = await Task.WhenAll(reportT1, reportT2).ConfigureAwait(false);
+                string textReport = reportT1.Result;
+                string htmlReport = reportT2.Result;
+
 
                 Helpers.EndTimedSection($">>Finished Building Reports");
 
@@ -256,115 +267,118 @@ namespace ChessStats
             return (hasRunErrors, hasCmdLineOptionSet);
         }
 
-        private static string BuildHtmlReport(string VERSION_NUMBER, PlayerProfile userRecord, PlayerStats userStats,
-                                              string chessdotcomUsername, string whiteOpeningshtmlOut, string blackOpeningshtmlOut,
-                                              string playingStatshtmlOut, string timePlayedByMonthhtmlOut, string capsTablehtmlOut,
-                                              string capsRollingAverageFivehtmlOut, string capsRollingAverageTenhtmlOut,
-                                              string userLogoBase64, string pawnFragment, string bulletGraphHtmlFragment,
-                                              string blitzGraphHtmlFragment, string rapidGraphHtmlFragment)
+        private static async Task<string> BuildHtmlReport(string VERSION_NUMBER, PlayerProfile userRecord, PlayerStats userStats,
+                                                          string chessdotcomUsername, string whiteOpeningshtmlOut, string blackOpeningshtmlOut,
+                                                          string playingStatshtmlOut, string timePlayedByMonthhtmlOut, string capsTablehtmlOut,
+                                                          string capsRollingAverageFivehtmlOut, string capsRollingAverageTenhtmlOut,
+                                                          string userLogoBase64, string pawnFragment, string bulletGraphHtmlFragment,
+                                                          string blitzGraphHtmlFragment, string rapidGraphHtmlFragment)
         {
-            StringBuilder htmlReport = new StringBuilder();
-            _ = htmlReport.AppendLine("<!DOCTYPE html>")
-                          .AppendLine("<html lang='en'><head>")
-                          .AppendLine($"<title>ChessStats for {chessdotcomUsername}</title>")
-                          .AppendLine("<meta charset='UTF-8'>")
-                          .AppendLine("<meta name='generator' content='ChessStats'> ")
-                          .AppendLine("<meta name='viewport' content='width=device-width, initial-scale=1.0'>")
-                          .AppendLine("   <style>")
-                          .AppendLine("     *                                            {margin: 0;padding: 0;}")
-                          .AppendLine("     @media screen and (max-width: 1000px) and (min-width: 768px)  {.priority-4{display:none;}}")
-                          .AppendLine("     @media screen and (max-width: 768px)  and (min-width: 600px)  {.priority-4{display:none;}.priority-3{display:none;}}")
-                          .AppendLine("     @media screen and (max-width: 600px)                          {.priority-4{display:none;}.priority-3{display:none;}.priority-2{display:none;}}")
-                          .AppendLine("     body                                         {background-color:#312e2b;width: 90%; margin: auto; font-family: -apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif;}")
-                          .AppendLine("     h1                                           {padding: 10px;text-align: left;font-size: 40px; color: hsla(0,0%,100%,.65);}")
-                          .AppendLine("     h1 small                                     {font-size: 15px; vertical-align: bottom}")
-                          .AppendLine("     .headerLink                                  {color: #e58b09;}")
-                          .AppendLine("     h2                                           {clear:left;padding: 5px;text-align: left;font-size: 16px;background-color: rgba(0,0,0,.13);color: hsla(0,0%,100%,.65);}")
-                          .AppendLine("     table                                        {width: 100%;table-layout: fixed ;border-collapse: collapse; overflow-x:auto; }")
-                          .AppendLine("     thead                                        {text-align: center;background: #1583b7;color: white;font-size: 14px; font-weight: bold;}")
-                          .AppendLine("     tbody                                        {text-align: center;font-size: 11px;}")
-                          .AppendLine("     td                                           {padding-right: 0px;}")
-                          .AppendLine("     tbody td:nth-child(n+2)                      {font-family: Courier New;}")
-                          .AppendLine("     td:nth-child(1)                              {padding-left:10px; text-align: left; width: 105px ; font-weight: bold;}")
-                          .AppendLine("     tbody tr:nth-child(odd)                      {background-color: #F9F9FF;}")
-                          .AppendLine("     tbody tr:nth-child(even)                     {background-color: #F4F4FF;}")
-                          .AppendLine("     .active                                      {background-color: #769656}")
-                          .AppendLine("     .inactive                                    {background-color: #a7a6a2}")
-                          .AppendLine("     .headRow                                     {display: grid; grid-template-columns: 200px auto; grid-gap: 0px; border:0px; height: auto; padding: 0px; background-color: #2b2825; }")
-                          .AppendLine("     .headRow > div                               {padding: 0px; }")
-                          .AppendLine("     .headBox img                                 {vertical-align: middle}")
-                          .AppendLine("     .ratingRow                                   {display: grid;grid-template-columns: auto auto auto;grid-gap: 20px;padding: 10px;}")
-                          .AppendLine("     .ratingRow > div                             {text-align: center;  padding: 0px;  color: whitesmoke;  font-size: 15px;  font-weight: bold;}")
-                          .AppendLine("     .ratingBox                                   {cursor: pointer;}")
-                          .AppendLine("     .graphRow                                    {display: grid;grid-template-columns: auto auto auto;grid-gap: 20px;padding: 10px;}")
-                          .AppendLine("     .graphRow > div                              {text-align: center;  padding: 0px;  color: whitesmoke;  font-size: 15px;  font-weight: bold;}")
-                          .AppendLine("     .graphBox img                                { max-width:100%; height:auto; }")
-                          .AppendLine("     .yearSplit                                   {border-top: thin dotted; border-color: #1583b7;}")
-                          .AppendLine("     .higher                                      {background-color: hsla(120, 100%, 50%, 0.2);}")
-                          .AppendLine("     .lower                                       {background-color: hsla(0, 100%, 70%, 0.2);}")
-                          .AppendLine("     .whiteOpeningsTable thead td:nth-child(1)    {font-weight: bold;}")
-                          .AppendLine("     .blackOpeningsTable thead td:nth-child(1)    {font-weight: bold;}")
-                          .AppendLine("     .whiteOpeningsTable td:nth-child(1)          {padding-left:10px; text-align: left; width:50%; font-weight: normal;}")
-                          .AppendLine("     .blackOpeningsTable td:nth-child(1)          {padding-left:10px; text-align: left; width:50%; font-weight: normal;}")
-                          .AppendLine("     .capsRollingTable thead td:nth-child(2)      {text-align: left;}")
-                          .AppendLine("     .playingStatsTable tbody td:nth-child(5)     {border-right: thin solid; border-color: #1583b7;}")
-                          .AppendLine("     .playingStatsTable tbody td:nth-child(8)     {border-left: thin dotted; border-color: #1583b7;}")
-                          .AppendLine("     .playingStatsTable tbody td:nth-child(11)    {border-left: thin dotted; border-color: #1583b7;}")
-                          .AppendLine("     .playingStatsTable tbody td:nth-child(13)    {border-left: thin solid; border-color: #1583b7;}")
-                          .AppendLine("     .oneColumn                                   {float: left;width: 100%;}")
-                          .AppendLine("     .oneRow:after                                {content: ''; display: table; clear: both;}")
-                          .AppendLine("     .footer                                      {text-align: right;color: white; font-size: 11px}")
-                          .AppendLine("     .footer a                                    {color: #e58b09;}")
-                          .AppendLine("   </style>")
-                          .AppendLine("</head><body>")
-                          .AppendLine($"<div class='headRow'>")
-                          .AppendLine($"<div class='headBox priority-2'>")
-                          .AppendLine($"<a href='{userRecord.Url}'><img alt='logo' src='data:image/png;base64,{userLogoBase64}'/></a>")
-                          .AppendLine($"</div>")
-                          .AppendLine($"<div class='headBox'>").AppendLine($"<h1>")
-                          .AppendLine($"Live Games Summary <br/>For <a class='headerLink' href='{userRecord.Url}'>{chessdotcomUsername}</a><br/>On {DateTime.UtcNow.ToShortDateString()}&nbsp;<small class='priority-2'>({DateTime.UtcNow.ToShortTimeString()} UTC)</small></h1>")
-                          .AppendLine($"</div>")
-                          .AppendLine($"</div>")
-                          .AppendLine($"<div class='ratingRow'>")
-                          .AppendLine($"<div class='ratingBox'>")
-                          .AppendLine($"<div class='item1 {((userStats.ChessBullet != null) ? "active" : "inactive")}' onclick=\"window.location.href='{STATS_BASE_URL}/live/bullet/{chessdotcomUsername}'\">")
-                          .AppendLine($"Bullet {Helpers.ValueOrDash(userStats.ChessBullet?.Last.Rating)}<br/><span class='priority-2'>(Gliko RD&nbsp;{Helpers.ValueOrDash(userStats.ChessBullet?.Last.GlickoRd)})<br/></span>{((userStats.ChessBullet == null) ? "-" : userStats.ChessBullet?.Last.Date.ToShortDateString())}")
-                          .AppendLine($"</div></div>")
-                          .AppendLine($"<div class='ratingBox'>")
-                          .AppendLine($"<div class='item2 {((userStats.ChessBlitz != null) ? "active" : "inactive")}' onclick=\"window.location.href='{STATS_BASE_URL}/live/blitz/{chessdotcomUsername}'\">")
-                          .AppendLine($"Blitz {Helpers.ValueOrDash(userStats.ChessBlitz?.Last.Rating)}<br/><span class='priority-2'>(Gliko RD&nbsp;{Helpers.ValueOrDash(userStats.ChessBlitz?.Last.GlickoRd)})<br/></span>{((userStats.ChessBlitz == null) ? "-" : userStats.ChessBlitz?.Last.Date.ToShortDateString())}")
-                          .AppendLine($"</div></div>")
-                          .AppendLine($"<div class='ratingBox'>")
-                          .AppendLine($"<div class='item3 {((userStats.ChessRapid != null) ? "active" : "inactive")}' onclick=\"window.location.href='{STATS_BASE_URL}/live/rapid/{chessdotcomUsername}'\">")
-                          .AppendLine($"Rapid {Helpers.ValueOrDash(userStats.ChessRapid?.Last.Rating)}<br/><span class='priority-2'>(Gliko RD&nbsp;{Helpers.ValueOrDash(userStats.ChessRapid?.Last.GlickoRd)})<br/></span>{((userStats.ChessRapid == null) ? "-" : userStats.ChessRapid?.Last.Date.ToShortDateString())}")
-                          .AppendLine($"</div></div>")
-                          .AppendLine($"</div>")
-                          .AppendLine($"<div class='onerow'><div class='onecolumn'>")
-                          .AppendLine($"<h2>{pawnFragment}Openings Occurring More Than Once (Max 15)</h2>")
-                          .AppendLine($"{whiteOpeningshtmlOut}")
-                          .AppendLine($"{blackOpeningshtmlOut}")
-                          .AppendLine($"<div class='priority-2'>")
-                          .AppendLine($"<br/><h2>{pawnFragment}CAPS Scoring (Rolling 5 Game Average)</h2>")
-                          .AppendLine(capsRollingAverageFivehtmlOut)
-                          .AppendLine($"<h2>{pawnFragment}CAPS Scoring (Rolling 10 Game Average)</h2>")
-                          .AppendLine(capsRollingAverageTenhtmlOut)
-                          .AppendLine($"<h2>{pawnFragment}CAPS Scoring (Month Average > 4 Games)</h2>")
-                          .AppendLine(capsTablehtmlOut)
-                          .AppendLine($"</div>")
-                          .AppendLine($"<br/><h2>{pawnFragment}Time Played by Time Control/Month</h2>")
-                          .AppendLine($"<div class='priority-2'>")
-                          .AppendLine($"<div class='graphRow'>")
-                          .AppendLine($"<div class='graphBox'>{bulletGraphHtmlFragment}</div>")
-                          .AppendLine($"<div class='graphBox'>{blitzGraphHtmlFragment}</div>")
-                          .AppendLine($"<div class='graphBox'>{rapidGraphHtmlFragment}</div>")
-                          .AppendLine($"</div>")
-                          .AppendLine($"</div>")
-                          .AppendLine(playingStatshtmlOut)
-                          .AppendLine($"<h2>{pawnFragment}Time Played by Month (All Time Controls)</h2>")
-                          .AppendLine(timePlayedByMonthhtmlOut)
-                          .AppendLine($"<div class='footer'><br/><hr/><i>Generated by ChessStats (for <a href='{CHESSCOM_URL}'>Chess.com</a>)&nbsp;ver. {VERSION_NUMBER}<br/><a href='{PROJECT_LINK}'>{PROJECT_LINK}</a></i><br/><br/><br/></div>")
-                          .AppendLine("</div></div></body></html>");
-            return htmlReport.ToString();
+            return await Task<string>.Run(() =>
+            {
+                StringBuilder htmlReport = new StringBuilder();
+                _ = htmlReport.AppendLine("<!DOCTYPE html>")
+                              .AppendLine("<html lang='en'><head>")
+                              .AppendLine($"<title>ChessStats for {chessdotcomUsername}</title>")
+                              .AppendLine("<meta charset='UTF-8'>")
+                              .AppendLine("<meta name='generator' content='ChessStats'> ")
+                              .AppendLine("<meta name='viewport' content='width=device-width, initial-scale=1.0'>")
+                              .AppendLine("   <style>")
+                              .AppendLine("     *                                            {margin: 0;padding: 0;}")
+                              .AppendLine("     @media screen and (max-width: 1000px) and (min-width: 768px)  {.priority-4{display:none;}}")
+                              .AppendLine("     @media screen and (max-width: 768px)  and (min-width: 600px)  {.priority-4{display:none;}.priority-3{display:none;}}")
+                              .AppendLine("     @media screen and (max-width: 600px)                          {.priority-4{display:none;}.priority-3{display:none;}.priority-2{display:none;}}")
+                              .AppendLine("     body                                         {background-color:#312e2b;width: 90%; margin: auto; font-family: -apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif;}")
+                              .AppendLine("     h1                                           {padding: 10px;text-align: left;font-size: 40px; color: hsla(0,0%,100%,.65);}")
+                              .AppendLine("     h1 small                                     {font-size: 15px; vertical-align: bottom}")
+                              .AppendLine("     .headerLink                                  {color: #e58b09;}")
+                              .AppendLine("     h2                                           {clear:left;padding: 5px;text-align: left;font-size: 16px;background-color: rgba(0,0,0,.13);color: hsla(0,0%,100%,.65);}")
+                              .AppendLine("     table                                        {width: 100%;table-layout: fixed ;border-collapse: collapse; overflow-x:auto; }")
+                              .AppendLine("     thead                                        {text-align: center;background: #1583b7;color: white;font-size: 14px; font-weight: bold;}")
+                              .AppendLine("     tbody                                        {text-align: center;font-size: 11px;}")
+                              .AppendLine("     td                                           {padding-right: 0px;}")
+                              .AppendLine("     tbody td:nth-child(n+2)                      {font-family: Courier New;}")
+                              .AppendLine("     td:nth-child(1)                              {padding-left:10px; text-align: left; width: 105px ; font-weight: bold;}")
+                              .AppendLine("     tbody tr:nth-child(odd)                      {background-color: #F9F9FF;}")
+                              .AppendLine("     tbody tr:nth-child(even)                     {background-color: #F4F4FF;}")
+                              .AppendLine("     .active                                      {background-color: #769656}")
+                              .AppendLine("     .inactive                                    {background-color: #a7a6a2}")
+                              .AppendLine("     .headRow                                     {display: grid; grid-template-columns: 200px auto; grid-gap: 0px; border:0px; height: auto; padding: 0px; background-color: #2b2825; }")
+                              .AppendLine("     .headRow > div                               {padding: 0px; }")
+                              .AppendLine("     .headBox img                                 {vertical-align: middle}")
+                              .AppendLine("     .ratingRow                                   {display: grid;grid-template-columns: auto auto auto;grid-gap: 20px;padding: 10px;}")
+                              .AppendLine("     .ratingRow > div                             {text-align: center;  padding: 0px;  color: whitesmoke;  font-size: 15px;  font-weight: bold;}")
+                              .AppendLine("     .ratingBox                                   {cursor: pointer;}")
+                              .AppendLine("     .graphRow                                    {display: grid;grid-template-columns: auto auto auto;grid-gap: 20px;padding: 10px;}")
+                              .AppendLine("     .graphRow > div                              {text-align: center;  padding: 0px;  color: whitesmoke;  font-size: 15px;  font-weight: bold;}")
+                              .AppendLine("     .graphBox img                                { max-width:100%; height:auto; }")
+                              .AppendLine("     .yearSplit                                   {border-top: thin dotted; border-color: #1583b7;}")
+                              .AppendLine("     .higher                                      {background-color: hsla(120, 100%, 50%, 0.2);}")
+                              .AppendLine("     .lower                                       {background-color: hsla(0, 100%, 70%, 0.2);}")
+                              .AppendLine("     .whiteOpeningsTable thead td:nth-child(1)    {font-weight: bold;}")
+                              .AppendLine("     .blackOpeningsTable thead td:nth-child(1)    {font-weight: bold;}")
+                              .AppendLine("     .whiteOpeningsTable td:nth-child(1)          {padding-left:10px; text-align: left; width:50%; font-weight: normal;}")
+                              .AppendLine("     .blackOpeningsTable td:nth-child(1)          {padding-left:10px; text-align: left; width:50%; font-weight: normal;}")
+                              .AppendLine("     .capsRollingTable thead td:nth-child(2)      {text-align: left;}")
+                              .AppendLine("     .playingStatsTable tbody td:nth-child(5)     {border-right: thin solid; border-color: #1583b7;}")
+                              .AppendLine("     .playingStatsTable tbody td:nth-child(8)     {border-left: thin dotted; border-color: #1583b7;}")
+                              .AppendLine("     .playingStatsTable tbody td:nth-child(11)    {border-left: thin dotted; border-color: #1583b7;}")
+                              .AppendLine("     .playingStatsTable tbody td:nth-child(13)    {border-left: thin solid; border-color: #1583b7;}")
+                              .AppendLine("     .oneColumn                                   {float: left;width: 100%;}")
+                              .AppendLine("     .oneRow:after                                {content: ''; display: table; clear: both;}")
+                              .AppendLine("     .footer                                      {text-align: right;color: white; font-size: 11px}")
+                              .AppendLine("     .footer a                                    {color: #e58b09;}")
+                              .AppendLine("   </style>")
+                              .AppendLine("</head><body>")
+                              .AppendLine($"<div class='headRow'>")
+                              .AppendLine($"<div class='headBox priority-2'>")
+                              .AppendLine($"<a href='{userRecord.Url}'><img alt='logo' src='data:image/png;base64,{userLogoBase64}'/></a>")
+                              .AppendLine($"</div>")
+                              .AppendLine($"<div class='headBox'>").AppendLine($"<h1>")
+                              .AppendLine($"Live Games Summary <br/>For <a class='headerLink' href='{userRecord.Url}'>{chessdotcomUsername}</a><br/>On {DateTime.UtcNow.ToShortDateString()}&nbsp;<small class='priority-2'>({DateTime.UtcNow.ToShortTimeString()} UTC)</small></h1>")
+                              .AppendLine($"</div>")
+                              .AppendLine($"</div>")
+                              .AppendLine($"<div class='ratingRow'>")
+                              .AppendLine($"<div class='ratingBox'>")
+                              .AppendLine($"<div class='item1 {((userStats.ChessBullet != null) ? "active" : "inactive")}' onclick=\"window.location.href='{STATS_BASE_URL}/live/bullet/{chessdotcomUsername}'\">")
+                              .AppendLine($"Bullet {Helpers.ValueOrDash(userStats.ChessBullet?.Last.Rating)}<br/><span class='priority-2'>(Gliko RD&nbsp;{Helpers.ValueOrDash(userStats.ChessBullet?.Last.GlickoRd)})<br/></span>{((userStats.ChessBullet == null) ? "-" : userStats.ChessBullet?.Last.Date.ToShortDateString())}")
+                              .AppendLine($"</div></div>")
+                              .AppendLine($"<div class='ratingBox'>")
+                              .AppendLine($"<div class='item2 {((userStats.ChessBlitz != null) ? "active" : "inactive")}' onclick=\"window.location.href='{STATS_BASE_URL}/live/blitz/{chessdotcomUsername}'\">")
+                              .AppendLine($"Blitz {Helpers.ValueOrDash(userStats.ChessBlitz?.Last.Rating)}<br/><span class='priority-2'>(Gliko RD&nbsp;{Helpers.ValueOrDash(userStats.ChessBlitz?.Last.GlickoRd)})<br/></span>{((userStats.ChessBlitz == null) ? "-" : userStats.ChessBlitz?.Last.Date.ToShortDateString())}")
+                              .AppendLine($"</div></div>")
+                              .AppendLine($"<div class='ratingBox'>")
+                              .AppendLine($"<div class='item3 {((userStats.ChessRapid != null) ? "active" : "inactive")}' onclick=\"window.location.href='{STATS_BASE_URL}/live/rapid/{chessdotcomUsername}'\">")
+                              .AppendLine($"Rapid {Helpers.ValueOrDash(userStats.ChessRapid?.Last.Rating)}<br/><span class='priority-2'>(Gliko RD&nbsp;{Helpers.ValueOrDash(userStats.ChessRapid?.Last.GlickoRd)})<br/></span>{((userStats.ChessRapid == null) ? "-" : userStats.ChessRapid?.Last.Date.ToShortDateString())}")
+                              .AppendLine($"</div></div>")
+                              .AppendLine($"</div>")
+                              .AppendLine($"<div class='onerow'><div class='onecolumn'>")
+                              .AppendLine($"<h2>{pawnFragment}Openings Occurring More Than Once (Max 15)</h2>")
+                              .AppendLine($"{whiteOpeningshtmlOut}")
+                              .AppendLine($"{blackOpeningshtmlOut}")
+                              .AppendLine($"<div class='priority-2'>")
+                              .AppendLine($"<br/><h2>{pawnFragment}CAPS Scoring (Rolling 5 Game Average)</h2>")
+                              .AppendLine(capsRollingAverageFivehtmlOut)
+                              .AppendLine($"<h2>{pawnFragment}CAPS Scoring (Rolling 10 Game Average)</h2>")
+                              .AppendLine(capsRollingAverageTenhtmlOut)
+                              .AppendLine($"<h2>{pawnFragment}CAPS Scoring (Month Average > 4 Games)</h2>")
+                              .AppendLine(capsTablehtmlOut)
+                              .AppendLine($"</div>")
+                              .AppendLine($"<br/><h2>{pawnFragment}Time Played by Time Control/Month</h2>")
+                              .AppendLine($"<div class='priority-2'>")
+                              .AppendLine($"<div class='graphRow'>")
+                              .AppendLine($"<div class='graphBox'>{bulletGraphHtmlFragment}</div>")
+                              .AppendLine($"<div class='graphBox'>{blitzGraphHtmlFragment}</div>")
+                              .AppendLine($"<div class='graphBox'>{rapidGraphHtmlFragment}</div>")
+                              .AppendLine($"</div>")
+                              .AppendLine($"</div>")
+                              .AppendLine(playingStatshtmlOut)
+                              .AppendLine($"<h2>{pawnFragment}Time Played by Month (All Time Controls)</h2>")
+                              .AppendLine(timePlayedByMonthhtmlOut)
+                              .AppendLine($"<div class='footer'><br/><hr/><i>Generated by ChessStats (for <a href='{CHESSCOM_URL}'>Chess.com</a>)&nbsp;ver. {VERSION_NUMBER}<br/><a href='{PROJECT_LINK}'>{PROJECT_LINK}</a></i><br/><br/><br/></div>")
+                              .AppendLine("</div></div></body></html>");
+                return htmlReport.ToString();
+            }).ConfigureAwait(false);
         }
 
         private static async Task WritePgnFilesToDisk(DirectoryInfo resultsDir, string chessdotcomUsername, List<ChessGame> gameList)
@@ -430,67 +444,73 @@ namespace ChessStats
             htmlReportFileOutStream.Close();
         }
 
-        private static string BuildTextReport(string chessdotcomUsername, string whiteOpeningstextOut, string blackOpeningstextOut, string playingStatstextOut, string timePlayedByMonthtextOut, string capsTabletextOut, string capsRollingAverageTentextOut, string totalSecondsPlayedtextOut)
+        private static async Task<string> BuildTextReport(string chessdotcomUsername, string whiteOpeningstextOut, string blackOpeningstextOut, string playingStatstextOut, string timePlayedByMonthtextOut, string capsTabletextOut, string capsRollingAverageTentextOut, string totalSecondsPlayedtextOut)
         {
-            StringBuilder textReport = new StringBuilder();
-            _ = textReport.AppendLine(Helpers.GetDisplaySection($"Live Chess Report for {chessdotcomUsername} : {DateTime.UtcNow.ToShortDateString()}@{DateTime.UtcNow.ToShortTimeString()} UTC", true))
-                          .Append(whiteOpeningstextOut)
-                          .Append(blackOpeningstextOut)
-                          .Append(playingStatstextOut)
-                          .Append(timePlayedByMonthtextOut)
-                          .Append(capsTabletextOut)
-                          .Append(capsRollingAverageTentextOut)
-                          .Append(totalSecondsPlayedtextOut)
-                          .Append(Helpers.GetDisplaySection("End of Report", true));
+            return await Task<string>.Run(() =>
+            {
+                StringBuilder textReport = new StringBuilder();
+                _ = textReport.AppendLine(Helpers.GetDisplaySection($"Live Chess Report for {chessdotcomUsername} : {DateTime.UtcNow.ToShortDateString()}@{DateTime.UtcNow.ToShortTimeString()} UTC", true))
+                              .Append(whiteOpeningstextOut)
+                              .Append(blackOpeningstextOut)
+                              .Append(playingStatstextOut)
+                              .Append(timePlayedByMonthtextOut)
+                              .Append(capsTabletextOut)
+                              .Append(capsRollingAverageTentextOut)
+                              .Append(totalSecondsPlayedtextOut)
+                              .Append(Helpers.GetDisplaySection("End of Report", true));
 
-            return textReport.ToString();
+                return textReport.ToString();
+            }).ConfigureAwait(false);
         }
 
-        private static string RenderRatingGraph(List<(DateTime gameDate, int rating, string gameType)> ratingsPostGame)
+        private static async Task<string> RenderRatingGraph(List<(DateTime gameDate, int rating, string gameType)> ratingsPostGame)
         {
-            int highVal = 300;
-            int lowVal = 100;
-            int width = 100;
-            int[] postGameRatings = Array.Empty<int>();
-
-            if (ratingsPostGame.Count > 0)
+            return await Task<string>.Run(() =>
             {
-                highVal = ratingsPostGame.Select(x => x.rating).Max();
-                lowVal = ratingsPostGame.Select(x => x.rating).Min();
-                postGameRatings = ratingsPostGame.OrderBy(x => x.gameDate).Select(x => x.rating).ToArray();
-                width = postGameRatings.Length;
-            }
+                int highVal = 300;
+                int lowVal = 100;
+                int width = 100;
+                int[] postGameRatings = Array.Empty<int>();
 
-            using System.Drawing.Bitmap graphSurface = new System.Drawing.Bitmap(width, highVal - lowVal);
-            using LinearGradientBrush linGrBrush = new LinearGradientBrush(
-                                                            new Point(0, 0),
-                                                            new Point(width, highVal - lowVal),
-                                                            Color.FromArgb(255, 43, 40, 37),
-                                                            Color.FromArgb(255, 181, 180, 179));
+                if (ratingsPostGame.Count > 10)
+                {
+                    highVal = ratingsPostGame.Select(x => x.rating).Max();
+                    lowVal = ratingsPostGame.Select(x => x.rating).Min();
+                    postGameRatings = ratingsPostGame.OrderBy(x => x.gameDate).Select(x => x.rating).ToArray();
+                    width = postGameRatings.Length;
+                }
 
-            using Pen pen = new Pen(linGrBrush);
-            using Pen orangePen = new Pen(Color.FromArgb(255, 229, 139, 9), 1);
+                using System.Drawing.Bitmap graphSurface = new System.Drawing.Bitmap(width, highVal - lowVal);
+                using LinearGradientBrush linGrBrush = new LinearGradientBrush(
+                                                                new Point(0, 0),
+                                                                new Point(width, highVal - lowVal),
+                                                                Color.FromArgb(255, 43, 40, 37),
+                                                                Color.FromArgb(255, 181, 180, 179));
+
+                using Pen pen = new Pen(linGrBrush);
+                using Pen orangePen = new Pen(Color.FromArgb(255, 229, 139, 9), 1);
 
 
-            Graphics drawingSurface = Graphics.FromImage(graphSurface);
-            drawingSurface.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
-            drawingSurface.CompositingQuality = System.Drawing.Drawing2D.CompositingQuality.HighQuality;
-            drawingSurface.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
+                Graphics drawingSurface = Graphics.FromImage(graphSurface);
+                drawingSurface.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
+                drawingSurface.CompositingQuality = System.Drawing.Drawing2D.CompositingQuality.HighQuality;
+                drawingSurface.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
 
-            drawingSurface.FillRectangle(linGrBrush, 0, 0, width, highVal - lowVal);
+                drawingSurface.FillRectangle(linGrBrush, 0, 0, width, highVal - lowVal);
 
-            for (int loop = 0; loop < postGameRatings.Length; loop++)
-            {
-                drawingSurface.DrawLine(orangePen, loop, (highVal - lowVal) - (postGameRatings[loop] - lowVal), loop, graphSurface.Height);
-            }
+                for (int loop = 0; loop < postGameRatings.Length; loop++)
+                {
+                    drawingSurface.DrawLine(orangePen, loop, (highVal - lowVal) - (postGameRatings[loop] - lowVal), loop, graphSurface.Height);
+                }
 
-            using Bitmap bitmapOut = Helpers.ResizeImage(graphSurface, 640, 200);
-            
-            using MemoryStream stream = new MemoryStream();
-            bitmapOut.Save(stream, System.Drawing.Imaging.ImageFormat.Png);
-            string base64Img = Convert.ToBase64String(stream.ToArray());
+                using Bitmap bitmapOut = Helpers.ResizeImage(graphSurface, 640, 200);
 
-            return $"<img src='data:image/png;base64,{base64Img}'/>";
+                using MemoryStream stream = new MemoryStream();
+                bitmapOut.Save(stream, System.Drawing.Imaging.ImageFormat.Png);
+                string base64Img = Convert.ToBase64String(stream.ToArray());
+
+                return $"<img src='data:image/png;base64,{base64Img}'/>";
+            }).ConfigureAwait(false);
         }
 
         private static void ProcessGameData(string chessdotcomUsername, List<ChessGame> gameList,
@@ -518,16 +538,18 @@ namespace ChessStats
                 }
 
                 ExtractRatings(chessdotcomUsername, game, out string side, out int playerRating, out int opponentRating, out bool? isWin);
-                CalculateOpening(ecoPlayedRollupWhite, ecoPlayedRollupBlack, game, side, isWin);
                 CalculateGameTime(game, out DateTime parsedStartDate, out double seconds, out string gameTime);
-                totalSecondsPlayed += seconds;
+
+                UpdateOpening(ecoPlayedRollupWhite, ecoPlayedRollupBlack, game, side, isWin);
                 UpdateGameTypeTimeTotals(secondsPlayedRollup, playerRating, opponentRating, isWin, parsedStartDate, seconds, gameTime);
                 UpdateGameTimeTotals(secondsPlayedRollupMonthOnly, parsedStartDate, seconds);
-                ExtractAllGameRatings(ratingsPostGame, game, playerRating);
+                UpdateAllGameRatingsList(ratingsPostGame, game, playerRating);
+
+                totalSecondsPlayed += seconds;
             }
         }
 
-        private static void ExtractAllGameRatings(List<(DateTime gameDate, int rating, string gameType)> ratingsPostGame, ChessGame game, int playerRating)
+        private static void UpdateAllGameRatingsList(List<(DateTime gameDate, int rating, string gameType)> ratingsPostGame, ChessGame game, int playerRating)
         {
             if (game.IsRatedGame && (new string[] { "Rapid", "Bullet", "Blitz" }).Contains(game.TimeClass))
             {
@@ -715,7 +737,7 @@ namespace ChessStats
         }
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Not critical so just ignore any missing ECO data")]
-        private static void CalculateOpening(SortedList<string, (string href, int total, int winCount, int drawCount, int lossCount)> ecoPlayedRollupWhite, SortedList<string, (string href, int total, int winCount, int drawCount, int lossCount)> ecoPlayedRollupBlack, ChessGame game, string side, bool? isWin)
+        private static void UpdateOpening(SortedList<string, (string href, int total, int winCount, int drawCount, int lossCount)> ecoPlayedRollupWhite, SortedList<string, (string href, int total, int winCount, int drawCount, int lossCount)> ecoPlayedRollupBlack, ChessGame game, string side, bool? isWin)
         {
             try
             {

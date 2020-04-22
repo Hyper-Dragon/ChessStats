@@ -1,7 +1,8 @@
 {
   "profiles": {
     "ChessStats": {
-      "commandName": "Project"
+      "commandName": "Project",
+      "commandLineArgs": " JANU1792002"
     }
   }
 }
