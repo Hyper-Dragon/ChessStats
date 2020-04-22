@@ -1,5 +1,8 @@
 using System;
 using System.Diagnostics;
+using System.Drawing;
+using System.Drawing.Drawing2D;
+using System.Drawing.Imaging;
 using System.Linq;
 using System.Text;
 
@@ -37,6 +40,30 @@ namespace ChessStats
                 if (gameCount++ > 99) { Console.WriteLine(); gameCount = 1; }
                 Console.Write(outChar);
             }
+        }
+        public static Bitmap ResizeImage(Image image, int width, int height)
+        {
+            if(image == null) { throw new ArgumentNullException(nameof(image)); }
+
+            Rectangle destRect = new Rectangle(0, 0, width, height);
+            Bitmap destImage = new Bitmap(width, height);
+
+            destImage.SetResolution(image.HorizontalResolution, image.VerticalResolution);
+
+            using (Graphics graphics = Graphics.FromImage(destImage))
+            {
+                graphics.CompositingMode = CompositingMode.SourceCopy;
+                graphics.CompositingQuality = CompositingQuality.HighQuality;
+                graphics.InterpolationMode = InterpolationMode.HighQualityBicubic;
+                graphics.SmoothingMode = SmoothingMode.HighQuality;
+                graphics.PixelOffsetMode = PixelOffsetMode.HighQuality;
+
+                using ImageAttributes wrapMode = new ImageAttributes();
+                wrapMode.SetWrapMode(WrapMode.TileFlipXY);
+                graphics.DrawImage(image, destRect, 0, 0, image.Width, image.Height, GraphicsUnit.Pixel, wrapMode);
+            }
+
+            return destImage;
         }
 
         public static void ResetDisplayCounter()

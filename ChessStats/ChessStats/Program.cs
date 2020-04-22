@@ -3,6 +3,9 @@ using ChessStats.Data;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Drawing;
+using System.Drawing.Drawing2D;
+using System.Drawing.Imaging;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -172,6 +175,7 @@ namespace ChessStats
                                 out SortedList<string, dynamic> secondsPlayedRollupMonthOnly,
                                 out SortedList<string, (string href, int total, int winCount, int drawCount, int lossCount)> ecoPlayedRollupWhite,
                                 out SortedList<string, (string href, int total, int winCount, int drawCount, int lossCount)> ecoPlayedRollupBlack,
+                                out List<(DateTime gameDate, int rating, string gameType)> ratingsPostGame,
                                 out double totalSecondsPlayed);
 
                 Helpers.EndTimedSection($">>Finished Processing Games");
@@ -188,11 +192,20 @@ namespace ChessStats
                 (string capsRollingAverageTentextOut, string capsRollingAverageTenhtmlOut) = DisplayCapsRollingAverage(10, capsScores);
                 (string totalSecondsPlayedtextOut, _) = DisplayTotalSecondsPlayed(totalSecondsPlayed);
 
+                string bulletGraphHtmlFragment = RenderRatingGraph(ratingsPostGame);
+                string blitzGraphHtmlFragment = RenderRatingGraph(ratingsPostGame);
+                string rapidGraphHtmlFragment = RenderRatingGraph(ratingsPostGame);
+
                 //Build the text report
-                string textReport = BuildTextReport(chessdotcomUsername, whiteOpeningstextOut, blackOpeningstextOut, playingStatstextOut, timePlayedByMonthtextOut, capsTabletextOut, capsRollingAverageTentextOut, totalSecondsPlayedtextOut);
+                string textReport = BuildTextReport(chessdotcomUsername, whiteOpeningstextOut, blackOpeningstextOut, playingStatstextOut, 
+                                                    timePlayedByMonthtextOut, capsTabletextOut, capsRollingAverageTentextOut, 
+                                                    totalSecondsPlayedtextOut);
 
                 //Build the HTML report
-                string htmlReport = BuildHtmlReport(VERSION_NUMBER, userRecord, userStats, chessdotcomUsername, whiteOpeningshtmlOut, blackOpeningshtmlOut, playingStatshtmlOut, timePlayedByMonthhtmlOut, capsTablehtmlOut, capsRollingAverageFivehtmlOut, capsRollingAverageTenhtmlOut, userLogoBase64, pawnFragment);
+                string htmlReport = BuildHtmlReport(VERSION_NUMBER, userRecord, userStats, chessdotcomUsername, whiteOpeningshtmlOut, blackOpeningshtmlOut, 
+                                                    playingStatshtmlOut, timePlayedByMonthhtmlOut, capsTablehtmlOut, capsRollingAverageFivehtmlOut, 
+                                                    capsRollingAverageTenhtmlOut, userLogoBase64, pawnFragment, bulletGraphHtmlFragment,
+                                                    blitzGraphHtmlFragment, rapidGraphHtmlFragment);
 
                 Helpers.EndTimedSection($">>Finished Compiling Reports");
 
@@ -239,7 +252,12 @@ namespace ChessStats
             return (hasRunErrors, hasCmdLineOptionSet);
         }
 
-        private static string BuildHtmlReport(string VERSION_NUMBER, PlayerProfile userRecord, PlayerStats userStats, string chessdotcomUsername, string whiteOpeningshtmlOut, string blackOpeningshtmlOut, string playingStatshtmlOut, string timePlayedByMonthhtmlOut, string capsTablehtmlOut, string capsRollingAverageFivehtmlOut, string capsRollingAverageTenhtmlOut, string userLogoBase64, string pawnFragment)
+        private static string BuildHtmlReport(string VERSION_NUMBER, PlayerProfile userRecord, PlayerStats userStats, 
+                                              string chessdotcomUsername, string whiteOpeningshtmlOut, string blackOpeningshtmlOut, 
+                                              string playingStatshtmlOut, string timePlayedByMonthhtmlOut, string capsTablehtmlOut, 
+                                              string capsRollingAverageFivehtmlOut, string capsRollingAverageTenhtmlOut, 
+                                              string userLogoBase64, string pawnFragment, string bulletGraphHtmlFragment,
+                                              string blitzGraphHtmlFragment, string rapidGraphHtmlFragment)
         {
             StringBuilder htmlReport = new StringBuilder();
             _ = htmlReport.AppendLine("<!DOCTYPE html>")
@@ -327,6 +345,7 @@ namespace ChessStats
                           .AppendLine(capsTablehtmlOut)
                           .AppendLine($"</div>")
                           .AppendLine($"<br/><h2>{pawnFragment}Time Played by Time Control/Month</h2>")
+                          .AppendLine($"{rapidGraphHtmlFragment}")
                           .AppendLine(playingStatshtmlOut)
                           .AppendLine($"<h2>{pawnFragment}Time Played by Month (All Time Controls)</h2>")
                           .AppendLine(timePlayedByMonthhtmlOut)
@@ -414,13 +433,60 @@ namespace ChessStats
             return textReport.ToString();
         }
 
-        private static void ProcessGameData(string chessdotcomUsername, List<ChessGame> gameList, out SortedList<string, (int SecondsPlayed, int GameCount, int Win, int Loss, int Draw, int MinRating, int MaxRating, int OpponentMinRating, int OpponentMaxRating, int OpponentWorstLoss, int OpponentBestWin, int TotalWin, int TotalDraw, int TotalLoss)> secondsPlayedRollup, out SortedList<string, dynamic> secondsPlayedRollupMonthOnly, out SortedList<string, (string href, int total, int winCount, int drawCount, int lossCount)> ecoPlayedRollupWhite, out SortedList<string, (string href, int total, int winCount, int drawCount, int lossCount)> ecoPlayedRollupBlack, out double totalSecondsPlayed)
+        private static string RenderRatingGraph(List<(DateTime gameDate, int rating, string gameType)> ratingsPostGame)
+        {
+
+            int highVal = ratingsPostGame.Select(x => x.rating).Max();
+            int lowVal = ratingsPostGame.Select(x => x.rating).Min();
+            int[] postGameRatings = ratingsPostGame.OrderBy(x => x.gameDate).Select(x => x.rating).ToArray();
+
+            using System.Drawing.Bitmap graphSurface = new System.Drawing.Bitmap(postGameRatings.Length, highVal - lowVal);
+            using LinearGradientBrush linGrBrush = new LinearGradientBrush(
+                                                            new Point(0, 10),
+                                                            new Point(postGameRatings.Length, highVal - lowVal),
+                                                            Color.FromArgb(255, 255, 0, 0),   // Opaque red
+                                                            Color.FromArgb(255, 0, 0, 255));  // Opaque blue
+            using Pen pen = new Pen(linGrBrush);
+            using Pen blackPen = new Pen(Color.White, 1);
+            using Pen redPen = new Pen(Color.Red, 1);
+
+            Graphics drawingSurface = Graphics.FromImage(graphSurface);
+            drawingSurface.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
+            drawingSurface.CompositingQuality = System.Drawing.Drawing2D.CompositingQuality.HighQuality;
+            drawingSurface.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
+
+            drawingSurface.FillRectangle(linGrBrush, 0, 0, postGameRatings.Length, highVal - lowVal);
+
+            for (int loop = 0; loop < postGameRatings.Length; loop++)
+            {
+                drawingSurface.DrawLine(blackPen, loop, (highVal - lowVal) - (postGameRatings[loop] - lowVal), loop, graphSurface.Height);
+            }
+
+            using Bitmap bitmapOut = Helpers.ResizeImage(graphSurface, 300, 200);
+
+//            bitmapOut.Save("test.png", ImageFormat.Png);
+
+            using var stream = new MemoryStream();
+            bitmapOut.Save(stream, System.Drawing.Imaging.ImageFormat.Png);
+            string base64Img = Convert.ToBase64String(stream.ToArray());
+  
+            return $"<img src='data:image/png;base64,{base64Img}'/>";
+        }
+
+        private static void ProcessGameData(string chessdotcomUsername, List<ChessGame> gameList,
+                                            out SortedList<string, (int SecondsPlayed, int GameCount, int Win, int Loss, int Draw, int MinRating, int MaxRating, int OpponentMinRating, int OpponentMaxRating, int OpponentWorstLoss, int OpponentBestWin, int TotalWin, int TotalDraw, int TotalLoss)> secondsPlayedRollup,
+                                            out SortedList<string, dynamic> secondsPlayedRollupMonthOnly,
+                                            out SortedList<string, (string href, int total, int winCount, int drawCount, int lossCount)> ecoPlayedRollupWhite,
+                                            out SortedList<string, (string href, int total, int winCount, int drawCount, int lossCount)> ecoPlayedRollupBlack,
+                                            out List<(DateTime gameDate, int rating, string gameType)> ratingsPostGame,
+                                            out double totalSecondsPlayed)
         {
             //Initialise reporting lists
             secondsPlayedRollup = new SortedList<string, (int, int, int, int, int, int, int, int, int, int, int, int, int, int)>();
             secondsPlayedRollupMonthOnly = new SortedList<string, dynamic>();
             ecoPlayedRollupWhite = new SortedList<string, (string, int, int, int, int)>();
             ecoPlayedRollupBlack = new SortedList<string, (string, int, int, int, int)>();
+            ratingsPostGame = new List<(DateTime gameDate, int rating, string gameType)>();
             totalSecondsPlayed = 0;
 
             foreach (ChessGame game in gameList)
@@ -437,6 +503,16 @@ namespace ChessStats
                 totalSecondsPlayed += seconds;
                 UpdateGameTypeTimeTotals(secondsPlayedRollup, playerRating, opponentRating, isWin, parsedStartDate, seconds, gameTime);
                 UpdateGameTimeTotals(secondsPlayedRollupMonthOnly, parsedStartDate, seconds);
+                ExtractAllGameRatings(ratingsPostGame, game, playerRating);
+            }
+        }
+
+        private static void ExtractAllGameRatings(List<(DateTime gameDate, int rating, string gameType)> ratingsPostGame, ChessGame game, int playerRating)
+        {
+            if (game.IsRatedGame && (new string[] { "Rapid", "Bullet", "Blitz" }).Contains(game.TimeClass))
+            {
+                DateTime gameDate = game.GameAttributes.GetAttributeAsNullOrDateTime(SupportedAttribute.EndDate, SupportedAttribute.EndTime).Value;
+                ratingsPostGame.Add((gameDate, playerRating, game.TimeClass));
             }
         }
 
