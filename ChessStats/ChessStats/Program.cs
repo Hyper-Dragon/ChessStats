@@ -194,9 +194,9 @@ namespace ChessStats
                 Helpers.EndTimedSection($">>Finished Compiling Report Data");
 
                 Helpers.StartTimedSection($">>Rendering Graphs");
-                var graphT1 = RenderRatingGraph(ratingsPostGame.Where(x => x.gameType == "Bullet").ToList());
-                var graphT2 = RenderRatingGraph(ratingsPostGame.Where(x => x.gameType == "Blitz").ToList());
-                var graphT3 = RenderRatingGraph(ratingsPostGame.Where(x => x.gameType == "Rapid").ToList());
+                var graphT1 = RenderRatingGraph(userStats?.ChessBullet?.Last?.Rating,ratingsPostGame.Where(x => x.gameType == "Bullet").ToList());
+                var graphT2 = RenderRatingGraph(userStats?.ChessBlitz?.Last?.Rating, ratingsPostGame.Where(x => x.gameType == "Blitz").ToList());
+                var graphT3 = RenderRatingGraph(userStats?.ChessRapid?.Last?.Rating, ratingsPostGame.Where(x => x.gameType == "Rapid").ToList());
 
                 _ = await Task.WhenAll(graphT1, graphT2, graphT3).ConfigureAwait(false);
                 string bulletGraphHtmlFragment = graphT1.Result;
@@ -463,20 +463,20 @@ namespace ChessStats
             }).ConfigureAwait(false);
         }
 
-        private static async Task<string> RenderRatingGraph(List<(DateTime gameDate, int rating, string gameType)> ratingsPostGame)
+        private static async Task<string> RenderRatingGraph(int? currentRating,List<(DateTime gameDate, int rating, string gameType)> ratingsPostGame)
         {
             return await Task<string>.Run(() =>
             {
                 int highVal = 300;
                 int lowVal = 100;
                 int width = 100;
-                int[] postGameRatings = Array.Empty<int>();
+                (DateTime gameDate,int rating)[] postGameRatings = Array.Empty<(DateTime, int)>();
 
-                if (ratingsPostGame.Count > 10)
+                if (ratingsPostGame.Count > 20)
                 {
                     highVal = ratingsPostGame.Select(x => x.rating).Max();
                     lowVal = ratingsPostGame.Select(x => x.rating).Min();
-                    postGameRatings = ratingsPostGame.OrderBy(x => x.gameDate).Select(x => x.rating).ToArray();
+                    postGameRatings = ratingsPostGame.OrderBy(x => x.gameDate).Select(x => (x.gameDate,x.rating)).ToArray();
                     width = postGameRatings.Length;
                 }
 
@@ -489,21 +489,56 @@ namespace ChessStats
 
                 using Pen pen = new Pen(linGrBrush);
                 using Pen orangePen = new Pen(Color.FromArgb(255, 229, 139, 9), 1);
-
+                using Pen darkOrangePen = new Pen(Color.FromArgb(255, 222, 132, 9), 1);
+                using Pen redPen = new Pen(Color.FromArgb(255, 200, 9, 9), 3);
+                using Pen whitePen = new Pen(Color.FromArgb(255, 255, 255, 255), 1) { DashStyle = DashStyle.Dash };
 
                 Graphics drawingSurface = Graphics.FromImage(graphSurface);
                 drawingSurface.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
                 drawingSurface.CompositingQuality = System.Drawing.Drawing2D.CompositingQuality.HighQuality;
                 drawingSurface.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
 
+                //Fill background
                 drawingSurface.FillRectangle(linGrBrush, 0, 0, width, highVal - lowVal);
 
+                if (ratingsPostGame.Count > 20)
+                {
+                    //Add rating lines
+                    for (int loop = highVal % 100; loop < graphSurface.Height; loop += 100)
+                    {
+                        drawingSurface.DrawLine(whitePen, 0, loop, graphSurface.Width, loop);
+                    }
+                }
+
+                //Drwa Graph
+                DateTime lastDate = DateTime.MinValue;
+                Pen currentPen = orangePen;
                 for (int loop = 0; loop < postGameRatings.Length; loop++)
                 {
-                    drawingSurface.DrawLine(orangePen, loop, (highVal - lowVal) - (postGameRatings[loop] - lowVal), loop, graphSurface.Height);
+                    if ( postGameRatings[loop].gameDate.Month != lastDate.Month ) 
+                    {
+                        currentPen = (currentPen == orangePen) ? darkOrangePen : orangePen;
+                    } 
+                    
+                    drawingSurface.DrawLine( currentPen, loop, (highVal-lowVal)-(postGameRatings[loop].rating-lowVal), loop, graphSurface.Height);
+                    lastDate = postGameRatings[loop].gameDate;
+                }
+
+                //Add line for current rating
+                if (currentRating != null)
+                {
+                    drawingSurface.DrawLine(redPen, 0, (highVal - lowVal) - (currentRating.Value - lowVal), graphSurface.Width, (highVal - lowVal) - (currentRating.Value - lowVal));
                 }
 
                 using Bitmap bitmapOut = Helpers.ResizeImage(graphSurface, 640, 200);
+
+                //Add ratings
+                if (ratingsPostGame.Count > 20)
+                {
+                    var resizedSurface = Graphics.FromImage(bitmapOut);
+                    resizedSurface.DrawString($"{highVal}", new Font(FontFamily.GenericSansSerif, 18f), Brushes.Yellow, 1, 1);
+                    resizedSurface.DrawString($"{lowVal}", new Font(FontFamily.GenericSansSerif, 18f), Brushes.Yellow, 1, bitmapOut.Height - 30);
+                }
 
                 using MemoryStream stream = new MemoryStream();
                 bitmapOut.Save(stream, System.Drawing.Imaging.ImageFormat.Png);
