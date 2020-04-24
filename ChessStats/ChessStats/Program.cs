@@ -32,6 +32,9 @@ namespace ChessStats
         private const string DEFAULT_USER_IMAGE = "https://images.chesscomfiles.com/uploads/v1/group/57796.67ee0038.160x160o.2dc0953ad64e.png";
         private const string INDEX_PAGE_IMAGE = "https://images.chesscomfiles.com/uploads/v1/group/57796.67ee0038.160x160o.2dc0953ad64e.png";
         private const string REPORT_HEADING_ICON = "https://www.chess.com/bundles/web/favicons/favicon-16x16.31f99381.png";
+        private const int GRAPH_WIDTH = 700;
+        private const int GRAPH_HEIGHT = 350;
+
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Exit gracefully")]
         private static async Task Main(string[] args)
@@ -502,57 +505,39 @@ namespace ChessStats
                     width = postGameRatings.Length;
                 }
 
-                using System.Drawing.Bitmap graphSurface = new System.Drawing.Bitmap(width, highVal - lowVal);
-                using LinearGradientBrush linGrBrush = new LinearGradientBrush(
-                                                                new Point(0, 0),
-                                                                new Point(width, highVal - lowVal),
-                                                                Color.FromArgb(255, 43, 40, 37),
-                                                                Color.FromArgb(255, 181, 180, 179));
-
-                using Pen pen = new Pen(linGrBrush);
-                using Pen orangePen = new Pen(Color.FromArgb(255, 229, 139, 9), 1);
-                using Pen darkOrangePen = new Pen(Color.FromArgb(255, 222, 132, 9), 1);
-                using Pen redPen = new Pen(Color.FromArgb(255, 200, 9, 9), 3);
-                using Pen whitePen = new Pen(Color.FromArgb(255, 255, 255, 255), 1) { DashStyle = DashStyle.Dash };
-
-                Graphics drawingSurface = Graphics.FromImage(graphSurface);
-                drawingSurface.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
-                drawingSurface.CompositingQuality = System.Drawing.Drawing2D.CompositingQuality.HighQuality;
-                drawingSurface.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
-
-                //Fill background
-                drawingSurface.FillRectangle(linGrBrush, 0, 0, width, highVal - lowVal);
+                using GraphHelper graphHelper = new GraphHelper(Math.Max(width,GRAPH_WIDTH), highVal-lowVal);
 
                 if (ratingsPostGame.Count > 20)
                 {
                     //Add rating lines
-                    for (int loop = highVal % 100; loop < graphSurface.Height; loop += 100)
+                    for (int loop=highVal % 100; loop < graphHelper.GraphSurface.Height; loop += 100)
                     {
-                        drawingSurface.DrawLine(whitePen, 0, loop, graphSurface.Width, loop);
+                        graphHelper.DrawingSurface.DrawLine(graphHelper.WhitePen, 0, loop, graphHelper.GraphSurface.Width, loop);
                     }
                 }
 
-                //Drwa Graph
+                //Draw Graph
                 DateTime lastDate = DateTime.MinValue;
-                Pen currentPen = orangePen;
+                Pen currentPen = graphHelper.OrangePen;
+
                 for (int loop = 0; loop < postGameRatings.Length; loop++)
                 {
                     if (postGameRatings[loop].gameDate.Month != lastDate.Month)
                     {
-                        currentPen = (currentPen == orangePen) ? darkOrangePen : orangePen;
+                        currentPen = (currentPen == graphHelper.OrangePen) ? graphHelper.DarkOrangePen : graphHelper.OrangePen;
                     }
 
-                    drawingSurface.DrawLine(currentPen, loop, (highVal - lowVal) - (postGameRatings[loop].rating - lowVal), loop, graphSurface.Height);
+                    graphHelper.DrawingSurface.DrawLine(currentPen, loop, graphHelper.Height - (postGameRatings[loop].rating - lowVal), loop, graphHelper.GraphSurface.Height);
                     lastDate = postGameRatings[loop].gameDate;
                 }
 
                 //Add line for current rating
                 if (currentRating != null)
                 {
-                    drawingSurface.DrawLine(redPen, 0, (highVal - lowVal) - (currentRating.Value - lowVal), graphSurface.Width, (highVal - lowVal) - (currentRating.Value - lowVal));
+                    graphHelper.DrawingSurface.DrawLine(graphHelper.RedPen, 0, graphHelper.Height - (currentRating.Value - lowVal), graphHelper.GraphSurface.Width, (highVal - lowVal) - (currentRating.Value - lowVal));
                 }
 
-                using Bitmap bitmapOut = Helpers.ResizeImage(graphSurface, 640, 200);
+                using Bitmap bitmapOut = Helpers.ResizeImage(graphHelper.GraphSurface, GRAPH_WIDTH, GRAPH_HEIGHT);
 
                 //Add ratings
                 if (ratingsPostGame.Count > 20)
@@ -562,11 +547,8 @@ namespace ChessStats
                     resizedSurface.DrawString($"{lowVal}", new Font(FontFamily.GenericSansSerif, 18f), Brushes.Yellow, 1, bitmapOut.Height - 30);
                 }
 
-                using MemoryStream stream = new MemoryStream();
-                bitmapOut.Save(stream, System.Drawing.Imaging.ImageFormat.Png);
-                string base64Img = Convert.ToBase64String(stream.ToArray());
+                return Helpers.GetImageAsHtmlFragment(bitmapOut);
 
-                return $"<img src='data:image/png;base64,{base64Img}'/>";
             }).ConfigureAwait(false);
         }
 

@@ -3,11 +3,86 @@ using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
+using System.IO;
 using System.Linq;
 using System.Text;
 
 namespace ChessStats
 {
+    public class GraphHelper : IDisposable
+    {
+        private bool disposedValue;
+
+        public Bitmap GraphSurface { get; private set; }
+        public Graphics DrawingSurface { get; private set; }
+        public int Height => GraphSurface.Height;
+        public int Width => GraphSurface.Width;
+        public LinearGradientBrush LinGrBrush { get; private set; }                                   
+        public Pen pen { get; private set; }
+        public Pen OrangePen { get; } = new Pen(Color.FromArgb(255, 229, 139, 9), 1);
+        public Pen DarkOrangePen { get; } = new Pen(Color.FromArgb(255, 222, 132, 9), 1);
+        public Pen RedPen { get; } = new Pen(Color.FromArgb(255, 200, 9, 9), 3);
+        public Pen WhitePen { get; } = new Pen(Color.FromArgb(255, 255, 255, 255), 1) { DashStyle = DashStyle.Dash };
+
+        public GraphHelper(int width,int height) 
+        {
+            LinGrBrush = new LinearGradientBrush(
+                         new Point(0, 0),
+                         new Point(width, height),
+                         Color.FromArgb(255, 43, 40, 37),
+                         Color.FromArgb(255, 181, 180, 179));
+
+            pen = new Pen(LinGrBrush);
+
+            GraphSurface = new System.Drawing.Bitmap(width, height);
+            
+            DrawingSurface = Graphics.FromImage(GraphSurface);
+            DrawingSurface.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
+            DrawingSurface.CompositingQuality = System.Drawing.Drawing2D.CompositingQuality.HighQuality;
+            DrawingSurface.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
+
+            DrawingSurface.FillRectangle(LinGrBrush, 0, 0, width, height);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!disposedValue)
+            {
+                if (disposing)
+                {
+                    // TODO: dispose managed state (managed objects)
+                    OrangePen.Dispose();
+                    DarkOrangePen.Dispose();
+                    RedPen.Dispose();
+                    WhitePen.Dispose();
+                    LinGrBrush.Dispose();
+                    pen.Dispose();
+                    GraphSurface.Dispose();
+                    DrawingSurface.Dispose();
+                }
+
+                // TODO: free unmanaged resources (unmanaged objects) and override finalizer
+                // TODO: set large fields to null
+                disposedValue = true;
+            }
+        }
+
+        //// TODO: override finalizer only if 'Dispose(bool disposing)' has code to free unmanaged resources
+        //~GraphHelper()
+        //{
+        //    // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+        //    Dispose(disposing: false);
+        //}
+
+        public void Dispose()
+        {
+            // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+            Dispose(disposing: true);
+            GC.SuppressFinalize(this);
+        }
+    }
+
+
     public static class Helpers
     {
         private static readonly Stopwatch stopwatch = new Stopwatch();
@@ -152,6 +227,16 @@ namespace ChessStats
             return textOut.ToString();
         }
 
+        public static string GetImageAsHtmlFragment(Bitmap bitmapOut)
+        {
+            if(bitmapOut == null) { throw new ArgumentNullException(nameof(bitmapOut)); }
+
+            using MemoryStream stream = new MemoryStream();
+            bitmapOut.Save(stream, System.Drawing.Imaging.ImageFormat.Png);
+            string base64Img = Convert.ToBase64String(stream.ToArray());
+
+            return $"<img src='data:image/png;base64,{base64Img}'/>";
+        }
 
         public static string GetHtmlTail(string chessdotcomUrl,string versionNumber, string projectLink)
         {
