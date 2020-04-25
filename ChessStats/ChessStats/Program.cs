@@ -508,7 +508,7 @@ namespace ChessStats
                 int stepWidth = Math.Max(GRAPH_WIDTH / postGameRatings.Length, 1);
                 int width = postGameRatings.Length;
 
-                using GraphHelper graphHelper = new GraphHelper(Math.Max(width, postGameRatings.Length*stepWidth), highVal - lowVal);
+                using GraphHelper graphHelper = new GraphHelper(Math.Max(width, postGameRatings.Length * stepWidth), highVal - lowVal);
 
                 //Add rating lines
                 for (int loop = highVal % 100; loop < graphHelper.GraphSurface.Height; loop += 100)
@@ -548,12 +548,9 @@ namespace ChessStats
                 using Bitmap bitmapOut = Helpers.ResizeImage(graphHelper.GraphSurface, GRAPH_WIDTH, GRAPH_HEIGHT);
 
                 //Add ratings
-                if (ratingsPostGame.Count > 20)
-                {
-                    Graphics resizedSurface = Graphics.FromImage(bitmapOut);
-                    resizedSurface.DrawString($"{highVal}", new Font(FontFamily.GenericSansSerif, 18f), Brushes.Yellow, 1, 1);
-                    resizedSurface.DrawString($"{lowVal}", new Font(FontFamily.GenericSansSerif, 18f), Brushes.Yellow, 1, bitmapOut.Height - 30);
-                }
+                Graphics resizedSurface = Graphics.FromImage(bitmapOut);
+                resizedSurface.DrawString($"{highVal}", new Font(FontFamily.GenericSansSerif, 18f), Brushes.Yellow, 1, 1);
+                resizedSurface.DrawString($"{lowVal}", new Font(FontFamily.GenericSansSerif, 18f), Brushes.Yellow, 1, bitmapOut.Height - 30);
 
                 return Helpers.GetImageAsHtmlFragment(bitmapOut);
 
