@@ -232,7 +232,7 @@ namespace ChessStats
 
                 Helpers.EndTimedSection($">>Finished Building Reports");
 
-                Helpers.StartTimedSection($">>Writing Results to {resultsDir.FullName}/{chessdotcomUsername}");
+                Helpers.StartTimedSection($">>Writing Results to {resultsDir.FullName}");
 
                 foreach (string report in new string[] { "PGN", "CAPS", "TXT", "HTML" })
                 {
@@ -268,7 +268,7 @@ namespace ChessStats
 
                 Helpers.EndTimedSection($">>Finished Writing Results", newLineAfter: false);
 
-                Helpers.StartTimedSection($">>Rebuilding HTML Index at {resultsDir.FullName}");
+                Helpers.StartTimedSection($">>Rebuilding HTML Index at {baseResultsDir.FullName}");
 
                 SortedList<string, (DateTime lastUpdate,
                                     bool hasHtml, bool hasTxt,
@@ -285,7 +285,7 @@ namespace ChessStats
                     if (fileInfo.Length > 0)
                     {
                         index.Add(dir.Name, (lastUpdate: fileInfo.Select(x => x.LastWriteTimeUtc).Max(),
-                                             hasHtml: fileInfo.Any(x => x.Name.EndsWith($"-Summary.html",StringComparison.InvariantCultureIgnoreCase)),
+                                             hasHtml: fileInfo.Any(x => x.Name.EndsWith($"-Summary.html", StringComparison.InvariantCultureIgnoreCase)),
                                              hasTxt: fileInfo.Any(x => x.Name.EndsWith($"-Summary.txt", StringComparison.InvariantCultureIgnoreCase)),
                                              hasBulletPgn: fileInfo.Any(x => x.Name.EndsWith($"-Pgn-Bullet.pgn", StringComparison.InvariantCultureIgnoreCase)),
                                              hasBlitzPgn: fileInfo.Any(x => x.Name.EndsWith($"-Pgn-Blitz.pgn", StringComparison.InvariantCultureIgnoreCase)),
@@ -310,20 +310,20 @@ namespace ChessStats
                            .AppendLine("<table><thead>")
                            .AppendLine("<tr><td>User</td><td>Html</td><td class='priority-2'>Text</td><td>Bullet</td><td>Blitz</td><td>Rapid</td><td class='priority-2'>CAPs</td><td class='priority-3'>Updated (UTC)</td></tr>")
                            .AppendLine("</thead><tbody>");
-                           
+
                 foreach (var userRecords in index)
                 {
                     int daysFromLastUpdate = (DateTime.UtcNow - userRecords.Value.lastUpdate).Days;
 
                     _ = htmlOut.AppendLine("<tr>")
                                .Append($"<td>{userRecords.Key}</td>")
-                               .Append($"<td{((userRecords.Value.hasHtml)?"":" class='lower'")}>{((userRecords.Value.hasHtml)? $"<a href='./{userRecords.Key}/{userRecords.Key}-Summary.html'>Report" : "&nbsp;")}</td>")
+                               .Append($"<td{((userRecords.Value.hasHtml) ? "" : " class='lower'")}>{((userRecords.Value.hasHtml) ? $"<a href='./{userRecords.Key}/{userRecords.Key}-Summary.html'>Report" : "&nbsp;")}</td>")
                                .Append($"<td class='priority-2{((userRecords.Value.hasTxt) ? "'" : " lower'")}>{((userRecords.Value.hasTxt) ? $"<a href='./{userRecords.Key}/{userRecords.Key}-Summary.txt'>TXT" : "&nbsp;")}</td>")
                                .Append($"<td>{((userRecords.Value.hasBulletPgn) ? $"<a href='./{userRecords.Key}/{userRecords.Key}-Pgn-Bullet.pgn'>PGN" : "&nbsp;")}</td>")
                                .Append($"<td>{((userRecords.Value.hasBlitzPgn) ? $"<a href='./{userRecords.Key}/{userRecords.Key}-Pgn-Blitz.pgn'>PGN" : "&nbsp;")}</td>")
                                .Append($"<td>{((userRecords.Value.hasRapidPgn) ? $"<a href='./{userRecords.Key}/{userRecords.Key}-Pgn-Rapid.pgn'>PGN" : "&nbsp;")}</td>")
                                .Append($"<td class='priority-2{((userRecords.Value.hasCaps) ? "'" : " lower'")}>{((userRecords.Value.hasCaps) ? $"<a href='./{userRecords.Key}/{userRecords.Key}-Caps-All.tsv'>TSV" : "&nbsp;")}</td>")
-                               .Append($"<td class='priority-3{((daysFromLastUpdate < 1) ? " higher'" : ((daysFromLastUpdate >= 3) ? "'": " lower'"))}>{userRecords.Value.lastUpdate.ToShortDateString()}@{userRecords.Value.lastUpdate.ToShortTimeString()}</td>")
+                               .Append($"<td class='priority-3{((daysFromLastUpdate < 1) ? " higher'" : ((daysFromLastUpdate >= 3) ? "'" : " lower'"))}>{userRecords.Value.lastUpdate.ToShortDateString()}@{userRecords.Value.lastUpdate.ToShortTimeString()}</td>")
                                .AppendLine("</tr>");
                 }
                 htmlOut.AppendLine("</tbody></table>")
@@ -492,42 +492,50 @@ namespace ChessStats
         {
             return await Task<string>.Run(() =>
             {
-                int highVal = 300;
-                int lowVal = 100;
-                int width = 100;
                 (DateTime gameDate, int rating)[] postGameRatings = Array.Empty<(DateTime, int)>();
 
-                if (ratingsPostGame.Count > 20)
+                //If less than 10 games don't graph
+                if (ratingsPostGame.Count < 10)
                 {
-                    highVal = ratingsPostGame.Select(x => x.rating).Max();
-                    lowVal = ratingsPostGame.Select(x => x.rating).Min();
-                    postGameRatings = ratingsPostGame.OrderBy(x => x.gameDate).Select(x => (x.gameDate, x.rating)).ToArray();
-                    width = postGameRatings.Length;
+                    using GraphHelper graphHelperBlank = new GraphHelper(GRAPH_WIDTH, GRAPH_HEIGHT);
+                    return Helpers.GetImageAsHtmlFragment(graphHelperBlank.GraphSurface);
                 }
 
-                using GraphHelper graphHelper = new GraphHelper(Math.Max(width,GRAPH_WIDTH), highVal-lowVal);
+                postGameRatings = ratingsPostGame.OrderBy(x => x.gameDate).Select(x => (x.gameDate, x.rating)).ToArray();
 
-                if (ratingsPostGame.Count > 20)
+                int highVal = ratingsPostGame.Select(x => x.rating).Max();
+                int lowVal = ratingsPostGame.Select(x => x.rating).Min();
+                int stepWidth = Math.Max(GRAPH_WIDTH / postGameRatings.Length, 1);
+                int width = postGameRatings.Length;
+
+                using GraphHelper graphHelper = new GraphHelper(Math.Max(width, postGameRatings.Length*stepWidth), highVal - lowVal);
+
+                //Add rating lines
+                for (int loop = highVal % 100; loop < graphHelper.GraphSurface.Height; loop += 100)
                 {
-                    //Add rating lines
-                    for (int loop=highVal % 100; loop < graphHelper.GraphSurface.Height; loop += 100)
-                    {
-                        graphHelper.DrawingSurface.DrawLine(graphHelper.WhitePen, 0, loop, graphHelper.GraphSurface.Width, loop);
-                    }
+                    graphHelper.DrawingSurface.DrawLine(graphHelper.WhitePen, 0, loop, graphHelper.GraphSurface.Width, loop);
                 }
+
 
                 //Draw Graph
+                int graphX = 0;
                 DateTime lastDate = DateTime.MinValue;
                 Pen currentPen = graphHelper.OrangePen;
 
                 for (int loop = 0; loop < postGameRatings.Length; loop++)
                 {
+                    //Switch pen when the month changes
                     if (postGameRatings[loop].gameDate.Month != lastDate.Month)
                     {
                         currentPen = (currentPen == graphHelper.OrangePen) ? graphHelper.DarkOrangePen : graphHelper.OrangePen;
                     }
 
-                    graphHelper.DrawingSurface.DrawLine(currentPen, loop, graphHelper.Height - (postGameRatings[loop].rating - lowVal), loop, graphHelper.GraphSurface.Height);
+                    for (int innerLoop = 0; innerLoop < stepWidth; innerLoop++)
+                    {
+                        graphHelper.DrawingSurface.DrawLine(currentPen, graphX, graphHelper.Height - (postGameRatings[loop].rating - lowVal), graphX, graphHelper.GraphSurface.Height);
+                        graphX++;
+                    }
+
                     lastDate = postGameRatings[loop].gameDate;
                 }
 
