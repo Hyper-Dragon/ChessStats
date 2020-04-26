@@ -327,7 +327,7 @@ namespace ChessStats
                                .AppendLine("</tr>");
                 }
                 htmlOut.AppendLine("</tbody></table>")
-                       .AppendLine(Helpers.GetHtmlTail(CHESSCOM_URL, VERSION_NUMBER, PROJECT_LINK))
+                       .AppendLine(Helpers.GetHtmlTail(new Uri(CHESSCOM_URL), VERSION_NUMBER, PROJECT_LINK))
                        .AppendLine("</div></div></body></html>");
 
 
@@ -400,7 +400,7 @@ namespace ChessStats
                                             .AppendLine(playingStatshtmlOut)
                                             .AppendLine($"<h2>{pawnFragment}Time Played by Month (All Time Controls)</h2>")
                                             .AppendLine(timePlayedByMonthhtmlOut)
-                                            .AppendLine(Helpers.GetHtmlTail(CHESSCOM_URL, VERSION_NUMBER, PROJECT_LINK))
+                                            .AppendLine(Helpers.GetHtmlTail(new Uri(CHESSCOM_URL), VERSION_NUMBER, PROJECT_LINK))
                                             .AppendLine("</div></div></body></html>")
                                             .ToString();
             }).ConfigureAwait(false);
@@ -492,65 +492,65 @@ namespace ChessStats
         {
             return await Task<string>.Run(() =>
             {
-                (DateTime gameDate, int rating)[] postGameRatings = Array.Empty<(DateTime, int)>();
-
                 //If less than 10 games don't graph
                 if (ratingsPostGame.Count < 10)
                 {
-                    using GraphHelper graphHelperBlank = new GraphHelper(GRAPH_WIDTH, GRAPH_HEIGHT);
+                    using GraphHelper graphHelperBlank = new GraphHelper(GRAPH_WIDTH, highVal: GRAPH_HEIGHT);
                     return Helpers.GetImageAsHtmlFragment(graphHelperBlank.GraphSurface);
                 }
 
-                postGameRatings = ratingsPostGame.OrderBy(x => x.gameDate).Select(x => (x.gameDate, x.rating)).ToArray();
+                (DateTime gameDate, int rating)[] ratingsPostGameOrdered = ratingsPostGame.OrderBy(x => x.gameDate).Select(x => (x.gameDate, x.rating)).ToArray();
 
-                int highVal = ratingsPostGame.Select(x => x.rating).Max();
-                int lowVal = ratingsPostGame.Select(x => x.rating).Min();
-                int stepWidth = Math.Max(GRAPH_WIDTH / postGameRatings.Length, 1);
-                int width = postGameRatings.Length;
-
-                using GraphHelper graphHelper = new GraphHelper(Math.Max(width, postGameRatings.Length * stepWidth), highVal - lowVal);
-
-                //Add rating lines
-                for (int loop = highVal % 100; loop < graphHelper.GraphSurface.Height; loop += 100)
-                {
-                    graphHelper.DrawingSurface.DrawLine(graphHelper.WhitePen, 0, loop, graphHelper.GraphSurface.Width, loop);
-                }
-
+                int stepWidth = Math.Max(GRAPH_WIDTH / ratingsPostGameOrdered.Length, 1);
+                
+                using GraphHelper graphHelper = new GraphHelper(Math.Max(ratingsPostGameOrdered.Length, ratingsPostGameOrdered.Length * stepWidth),
+                                                                ratingsPostGame.Select(x => x.rating).Min(),
+                                                                ratingsPostGame.Select(x => x.rating).Max(),
+                                                                GraphHelper.GraphLine.RATING);
 
                 //Draw Graph
                 int graphX = 0;
                 DateTime lastDate = DateTime.MinValue;
-                Pen currentPen = graphHelper.OrangePen;
+                Pen currentPen = GraphHelper.OrangePen;
 
-                for (int loop = 0; loop < postGameRatings.Length; loop++)
+                for (int loop = 0; loop < ratingsPostGameOrdered.Length; loop++)
                 {
                     //Switch pen when the month changes
-                    if (postGameRatings[loop].gameDate.Month != lastDate.Month)
+                    if (ratingsPostGameOrdered[loop].gameDate.Month != lastDate.Month)
                     {
-                        currentPen = (currentPen == graphHelper.OrangePen) ? graphHelper.DarkOrangePen : graphHelper.OrangePen;
+                        currentPen = (currentPen.Color.Name == GraphHelper.OrangePen.Color.Name) ? GraphHelper.DarkOrangePen : GraphHelper.OrangePen;
                     }
 
                     for (int innerLoop = 0; innerLoop < stepWidth; innerLoop++)
                     {
-                        graphHelper.DrawingSurface.DrawLine(currentPen, graphX, graphHelper.Height - (postGameRatings[loop].rating - lowVal), graphX, graphHelper.GraphSurface.Height);
+                        graphHelper.DrawingSurface.DrawLine(currentPen, 
+                                                            graphX,     
+                                                            graphHelper.GetYAxisPoint(ratingsPostGameOrdered[loop].rating), 
+                                                            graphX, 
+                                                            graphHelper.BaseLine);
                         graphX++;
                     }
 
-                    lastDate = postGameRatings[loop].gameDate;
+                    lastDate = ratingsPostGameOrdered[loop].gameDate;
                 }
 
                 //Add line for current rating
                 if (currentRating != null)
                 {
-                    graphHelper.DrawingSurface.DrawLine(graphHelper.RedPen, 0, graphHelper.Height - (currentRating.Value - lowVal), graphHelper.GraphSurface.Width, (highVal - lowVal) - (currentRating.Value - lowVal));
+                    graphHelper.DrawingSurface.DrawLine(GraphHelper.RedPen, 
+                                                        0, 
+                                                        graphHelper.GetYAxisPoint(currentRating.Value), 
+                                                        graphHelper.Width, 
+                                                        graphHelper.GetYAxisPoint(currentRating.Value));
                 }
 
+                //Resize graph for output
                 using Bitmap bitmapOut = Helpers.ResizeImage(graphHelper.GraphSurface, GRAPH_WIDTH, GRAPH_HEIGHT);
 
                 //Add ratings
-                Graphics resizedSurface = Graphics.FromImage(bitmapOut);
-                resizedSurface.DrawString($"{highVal}", new Font(FontFamily.GenericSansSerif, 18f), Brushes.Yellow, 1, 1);
-                resizedSurface.DrawString($"{lowVal}", new Font(FontFamily.GenericSansSerif, 18f), Brushes.Yellow, 1, bitmapOut.Height - 30);
+                using Graphics resizedSurface = Graphics.FromImage(bitmapOut);
+                resizedSurface.DrawString($"{graphHelper.HighVal}", new Font(FontFamily.GenericSansSerif, 18f), GraphHelper.TextBrush, 1, 1);
+                resizedSurface.DrawString($"{graphHelper.LowVal}", new Font(FontFamily.GenericSansSerif, 18f), GraphHelper.TextBrush, 1, bitmapOut.Height - 30);
 
                 return Helpers.GetImageAsHtmlFragment(bitmapOut);
 

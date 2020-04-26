@@ -13,35 +13,61 @@ namespace ChessStats
     {
         private bool disposedValue;
 
+        public static Pen OrangePen => new Pen(Color.FromArgb(255, 229, 139, 9), 1);
+        public static Pen DarkOrangePen => new Pen(Color.FromArgb(255, 222, 132, 9), 1);
+        public static Pen RedPen => new Pen(Color.FromArgb(255, 200, 9, 9), 3);
+        public static Pen WhitePen => new Pen(Color.FromArgb(255, 255, 255, 255), 1) { DashStyle = DashStyle.Dash };
+        public static Brush TextBrush { get { return Brushes.Yellow; } }
         public Bitmap GraphSurface { get; private set; }
         public Graphics DrawingSurface { get; private set; }
         public int Height => GraphSurface.Height;
         public int Width => GraphSurface.Width;
         public LinearGradientBrush LinGrBrush { get; private set; }                                   
-        public Pen pen { get; private set; }
-        public Pen OrangePen { get; } = new Pen(Color.FromArgb(255, 229, 139, 9), 1);
-        public Pen DarkOrangePen { get; } = new Pen(Color.FromArgb(255, 222, 132, 9), 1);
-        public Pen RedPen { get; } = new Pen(Color.FromArgb(255, 200, 9, 9), 3);
-        public Pen WhitePen { get; } = new Pen(Color.FromArgb(255, 255, 255, 255), 1) { DashStyle = DashStyle.Dash };
-
-        public GraphHelper(int width,int height) 
+        public Pen BackgroundPen { get; private set; }
+        public int LowVal { get; }
+        public int HighVal { get; }
+        public int BaseLine { get { return this.Height; } }
+        public int Range { get { return HighVal - LowVal; } }
+        public enum GraphLine { NONE, RATING, PERCENTAGE}
+        public GraphHelper(int width, int lowVal=0, int highVal=0, GraphLine graphLines = GraphLine.NONE) 
         {
+            this.LowVal = lowVal;
+            this.HighVal = highVal;
+
             LinGrBrush = new LinearGradientBrush(
                          new Point(0, 0),
-                         new Point(width, height),
+                         new Point(width, this.Range),
                          Color.FromArgb(255, 49, 46, 43),
                          Color.FromArgb(255, 181, 180, 179));
 
-            pen = new Pen(LinGrBrush);
+            BackgroundPen = new Pen(LinGrBrush);
 
-            GraphSurface = new System.Drawing.Bitmap(width, height);
+            GraphSurface = new System.Drawing.Bitmap(width, this.Range);
             
             DrawingSurface = Graphics.FromImage(GraphSurface);
             DrawingSurface.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
             DrawingSurface.CompositingQuality = System.Drawing.Drawing2D.CompositingQuality.HighQuality;
             DrawingSurface.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
 
-            DrawingSurface.FillRectangle(LinGrBrush, 0, 0, width, height);
+            DrawingSurface.FillRectangle(LinGrBrush, 0, 0, width, this.Range);
+
+            //Add horizontal lines
+            if (graphLines == GraphLine.RATING)
+            {
+                for (int loop = HighVal % 100; loop < GraphSurface.Height; loop += 100)
+                {
+                    DrawingSurface.DrawLine(GraphHelper.WhitePen, 0, loop, Width, loop);
+                }
+            }
+            else if(graphLines == GraphLine.PERCENTAGE)
+            {
+
+            }
+        }
+
+        public int GetYAxisPoint(int actualValue)
+        {
+            return Height-(actualValue-LowVal);
         }
 
         protected virtual void Dispose(bool disposing)
@@ -50,33 +76,23 @@ namespace ChessStats
             {
                 if (disposing)
                 {
-                    // TODO: dispose managed state (managed objects)
+                    // dispose managed state (managed objects)
                     OrangePen.Dispose();
                     DarkOrangePen.Dispose();
                     RedPen.Dispose();
                     WhitePen.Dispose();
                     LinGrBrush.Dispose();
-                    pen.Dispose();
+                    BackgroundPen.Dispose();
                     GraphSurface.Dispose();
                     DrawingSurface.Dispose();
                 }
 
-                // TODO: free unmanaged resources (unmanaged objects) and override finalizer
-                // TODO: set large fields to null
                 disposedValue = true;
             }
         }
 
-        //// TODO: override finalizer only if 'Dispose(bool disposing)' has code to free unmanaged resources
-        //~GraphHelper()
-        //{
-        //    // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
-        //    Dispose(disposing: false);
-        //}
-
         public void Dispose()
         {
-            // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
             Dispose(disposing: true);
             GC.SuppressFinalize(this);
         }
@@ -134,7 +150,7 @@ namespace ChessStats
                 graphics.PixelOffsetMode = PixelOffsetMode.HighQuality;
 
                 using ImageAttributes wrapMode = new ImageAttributes();
-                wrapMode.SetWrapMode(WrapMode.TileFlipXY);
+                wrapMode.SetWrapMode(WrapMode.Clamp);
                 graphics.DrawImage(image, destRect, 0, 0, image.Width, image.Height, GraphicsUnit.Pixel, wrapMode);
             }
 
@@ -238,9 +254,11 @@ namespace ChessStats
             return $"<img src='data:image/png;base64,{base64Img}'/>";
         }
 
-        public static string GetHtmlTail(string chessdotcomUrl,string versionNumber, string projectLink)
+        public static string GetHtmlTail(Uri chessdotcomUrl,string versionNumber, string projectLink)
         {
-            return ($"<div class='footer'><br/><hr/><i>Generated by ChessStats (for <a href='{chessdotcomUrl}'>Chess.com</a>)&nbsp;ver. {versionNumber}<br/><a href='{projectLink}'>{projectLink}</a></i><br/><br/><br/></div>");
+            if (chessdotcomUrl == null) { throw new ArgumentNullException(nameof(chessdotcomUrl)); }
+
+            return ($"<div class='footer'><br/><hr/><i>Generated by ChessStats (for <a href='{chessdotcomUrl.OriginalString}'>Chess.com</a>)&nbsp;ver. {versionNumber}<br/><a href='{projectLink}'>{projectLink}</a></i><br/><br/><br/></div>");
         }
 
         public static string GetHtmlTop(string pageTitle)
