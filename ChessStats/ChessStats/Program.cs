@@ -4,7 +4,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
-using System.Drawing.Drawing2D;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -192,7 +191,7 @@ namespace ChessStats
                 //Extract reporting data
                 (string whiteOpeningstextOut, string whiteOpeningshtmlOut) = DisplayOpeningsAsWhite(ecoPlayedRollupWhite);
                 (string blackOpeningstextOut, string blackOpeningshtmlOut) = DisplayOpeningsAsBlack(ecoPlayedRollupBlack);
-                (string playingStatstextOut, string playingStatshtmlOut) = DisplayPlayingStats(secondsPlayedRollup, userStats.ChessBullet?.Last.Rating, userStats.ChessBlitz?.Last.Rating, userStats.ChessRapid?.Last.Rating);
+                (string playingStatstextOut, string playingStatshtmlOut, List<(string TimeControl, int VsMin, int Worst, int LossAv, int DrawAv, int WinAv, int Best, int VsMax)> graphData) = DisplayPlayingStats(secondsPlayedRollup, userStats.ChessBullet?.Last.Rating, userStats.ChessBlitz?.Last.Rating, userStats.ChessRapid?.Last.Rating);
                 (string timePlayedByMonthtextOut, string timePlayedByMonthhtmlOut) = DisplayTimePlayedByMonth(secondsPlayedRollupMonthOnly);
                 (string capsTabletextOut, string capsTablehtmlOut) = DisplayCapsTable(capsScores);
                 (_, string capsRollingAverageFivehtmlOut) = DisplayCapsRollingAverage(5, capsScores);
@@ -206,12 +205,12 @@ namespace ChessStats
                 Task<string> graphT2 = RenderRatingGraph(userStats?.ChessBlitz?.Last?.Rating, ratingsPostGame.Where(x => x.gameType == "Blitz").ToList());
                 Task<string> graphT3 = RenderRatingGraph(userStats?.ChessRapid?.Last?.Rating, ratingsPostGame.Where(x => x.gameType == "Rapid").ToList());
 
-                Task<string> graphT4 = RenderAverageStatsGraph(userStats?.ChessBullet?.Last?.Rating, ratingsPostGame.Where(x => x.gameType == "Bullet").ToList());
-                Task<string> graphT5 = RenderAverageStatsGraph(userStats?.ChessBlitz?.Last?.Rating, ratingsPostGame.Where(x => x.gameType == "Blitz").ToList());
-                Task<string> graphT6 = RenderAverageStatsGraph(userStats?.ChessRapid?.Last?.Rating, ratingsPostGame.Where(x => x.gameType == "Rapid").ToList());
+                Task<string> graphT4 = RenderAverageStatsGraph(graphData.Where( x => x.TimeControl.Contains("Bullet",StringComparison.InvariantCultureIgnoreCase)).OrderBy(x => x.TimeControl).ToList());
+                Task<string> graphT5 = RenderAverageStatsGraph(graphData.Where(x => x.TimeControl.Contains("Blitz", StringComparison.InvariantCultureIgnoreCase)).OrderBy(x => x.TimeControl).ToList());
+                Task<string> graphT6 = RenderAverageStatsGraph(graphData.Where(x => x.TimeControl.Contains("Rapid", StringComparison.InvariantCultureIgnoreCase)).OrderBy(x => x.TimeControl).ToList());
 
                 _ = await Task.WhenAll(graphT1, graphT2, graphT3, graphT4, graphT5, graphT6).ConfigureAwait(false);
-                
+
                 string bulletGraphHtmlFragment = graphT1.Result;
                 string blitzGraphHtmlFragment = graphT2.Result;
                 string rapidGraphHtmlFragment = graphT3.Result;
@@ -231,8 +230,8 @@ namespace ChessStats
                 //Build the HTML report
                 Task<string> reportT2 = BuildHtmlReport(VERSION_NUMBER, userRecord, userStats, chessdotcomUsername, whiteOpeningshtmlOut, blackOpeningshtmlOut,
                                                           playingStatshtmlOut, timePlayedByMonthhtmlOut, capsTablehtmlOut, capsRollingAverageFivehtmlOut,
-                                                          capsRollingAverageTenhtmlOut, userLogoBase64, pawnFragment, 
-                                                          bulletGraphHtmlFragment,blitzGraphHtmlFragment, rapidGraphHtmlFragment,
+                                                          capsRollingAverageTenhtmlOut, userLogoBase64, pawnFragment,
+                                                          bulletGraphHtmlFragment, blitzGraphHtmlFragment, rapidGraphHtmlFragment,
                                                           bulletAvStatsGraphHtmlFragment, blitzAvStatsraphHtmlFragment, rapidAvStatsraphHtmlFragment);
 
                 _ = await Task.WhenAll(reportT1, reportT2).ConfigureAwait(false);
@@ -321,7 +320,7 @@ namespace ChessStats
                            .AppendLine("<tr><td>User</td><td>Html</td><td class='priority-2'>Text</td><td>Bullet</td><td>Blitz</td><td>Rapid</td><td class='priority-2'>CAPs</td><td class='priority-3'>Updated (UTC)</td></tr>")
                            .AppendLine("</thead><tbody>");
 
-                foreach (var userRecords in index)
+                foreach (KeyValuePair<string, (DateTime lastUpdate, bool hasHtml, bool hasTxt, bool hasBulletPgn, bool hasBlitzPgn, bool hasRapidPgn, bool hasCaps)> userRecords in index)
                 {
                     int daysFromLastUpdate = (DateTime.UtcNow - userRecords.Value.lastUpdate).Days;
 
@@ -361,7 +360,7 @@ namespace ChessStats
                                                           string capsRollingAverageFivehtmlOut, string capsRollingAverageTenhtmlOut,
                                                           string userLogoBase64, string pawnFragment, string bulletGraphHtmlFragment,
                                                           string blitzGraphHtmlFragment, string rapidGraphHtmlFragment,
-                                                          string bulletAvStatsGraphHtmlFragment, string blitzAvStatsGraphHtmlFragment, 
+                                                          string bulletAvStatsGraphHtmlFragment, string blitzAvStatsGraphHtmlFragment,
                                                           string rapidAvStatsGraphHtmlFragment)
         {
             return await Task<string>.Run(() =>
@@ -521,75 +520,6 @@ namespace ChessStats
                 (DateTime gameDate, int rating)[] ratingsPostGameOrdered = ratingsPostGame.OrderBy(x => x.gameDate).Select(x => (x.gameDate, x.rating)).ToArray();
 
                 int stepWidth = Math.Max(GRAPH_WIDTH / ratingsPostGameOrdered.Length, 1);
-                
-                using GraphHelper graphHelper = new GraphHelper(Math.Max(ratingsPostGameOrdered.Length, ratingsPostGameOrdered.Length * stepWidth),
-                                                                ratingsPostGame.Select(x => x.rating).Min(),
-                                                                ratingsPostGame.Select(x => x.rating).Max(),
-                                                                GraphHelper.GraphLine.RATING);
-
-                //Draw Graph
-                int graphX = 0;
-                DateTime lastDate = DateTime.MinValue;
-                Pen currentPen = GraphHelper.OrangePen;
-
-                for (int loop = 0; loop < ratingsPostGameOrdered.Length; loop++)
-                {
-                    //Switch pen when the month changes
-                    if (ratingsPostGameOrdered[loop].gameDate.Month != lastDate.Month)
-                    {
-                        currentPen = (currentPen.Color.Name == GraphHelper.OrangePen.Color.Name) ? GraphHelper.DarkOrangePen : GraphHelper.OrangePen;
-                    }
-
-                    for (int innerLoop = 0; innerLoop < stepWidth; innerLoop++)
-                    {
-                        graphHelper.DrawingSurface.DrawLine(currentPen, 
-                                                            graphX,     
-                                                            graphHelper.GetYAxisPoint(ratingsPostGameOrdered[loop].rating), 
-                                                            graphX, 
-                                                            graphHelper.BaseLine);
-                        graphX++;
-                    }
-
-                    lastDate = ratingsPostGameOrdered[loop].gameDate;
-                }
-
-                //Add line for current rating
-                if (currentRating != null)
-                {
-                    graphHelper.DrawingSurface.DrawLine(GraphHelper.RedPen, 
-                                                        0, 
-                                                        graphHelper.GetYAxisPoint(currentRating.Value), 
-                                                        graphHelper.Width, 
-                                                        graphHelper.GetYAxisPoint(currentRating.Value));
-                }
-
-                //Resize graph for output
-                using Bitmap bitmapOut = Helpers.ResizeImage(graphHelper.GraphSurface, GRAPH_WIDTH, GRAPH_HEIGHT);
-
-                //Add ratings
-                using Graphics resizedSurface = Graphics.FromImage(bitmapOut);
-                resizedSurface.DrawString($"{graphHelper.HighVal}", new Font(FontFamily.GenericSansSerif, 18f), GraphHelper.TextBrush, 1, 1);
-                resizedSurface.DrawString($"{graphHelper.LowVal}", new Font(FontFamily.GenericSansSerif, 18f), GraphHelper.TextBrush, 1, bitmapOut.Height - 30);
-
-                return Helpers.GetImageAsHtmlFragment(bitmapOut);
-
-            }).ConfigureAwait(false);
-        }
-
-        private static async Task<string> RenderAverageStatsGraph(int? currentRating, List<(DateTime gameDate, int rating, string gameType)> ratingsPostGame)
-        {
-            return await Task<string>.Run(() =>
-            {
-                //If less than 10 games don't graph
-                if (ratingsPostGame.Count < 10)
-                {
-                    using GraphHelper graphHelperBlank = new GraphHelper(GRAPH_WIDTH, highVal: GRAPH_HEIGHT);
-                    return Helpers.GetImageAsHtmlFragment(graphHelperBlank.GraphSurface);
-                }
-
-                (DateTime gameDate, int rating)[] ratingsPostGameOrdered = ratingsPostGame.OrderBy(x => x.gameDate).Select(x => (x.gameDate, x.rating)).ToArray();
-
-                int stepWidth = Math.Max(GRAPH_WIDTH / ratingsPostGameOrdered.Length, 1);
 
                 using GraphHelper graphHelper = new GraphHelper(Math.Max(ratingsPostGameOrdered.Length, ratingsPostGameOrdered.Length * stepWidth),
                                                                 ratingsPostGame.Select(x => x.rating).Min(),
@@ -639,6 +569,84 @@ namespace ChessStats
                 using Graphics resizedSurface = Graphics.FromImage(bitmapOut);
                 resizedSurface.DrawString($"{graphHelper.HighVal}", new Font(FontFamily.GenericSansSerif, 18f), GraphHelper.TextBrush, 1, 1);
                 resizedSurface.DrawString($"{graphHelper.LowVal}", new Font(FontFamily.GenericSansSerif, 18f), GraphHelper.TextBrush, 1, bitmapOut.Height - 30);
+
+                return Helpers.GetImageAsHtmlFragment(bitmapOut);
+
+            }).ConfigureAwait(false);
+        }
+
+        private static async Task<string> RenderAverageStatsGraph(List<(string TimeControl, int VsMin, int Worst, int LossAv, int DrawAv, int WinAv, int Best, int VsMax)> graphData)
+        {
+            return await Task<string>.Run(() =>
+            {
+                bool isGraphRequired = true;
+                int graphMin = 0;
+                int graphMax = 0;
+                
+                if (graphData == null || graphData.Count < 2)
+                {
+                    isGraphRequired = false;
+                }
+                else
+                {
+                    graphMin = graphData.Where(x => x.WinAv != 0 && x.LossAv != 0).Select(x => x.WinAv).DefaultIfEmpty(0).Min();
+                    graphMax = graphData.Where(x => x.WinAv != 0 && x.LossAv != 0).Select(x => x.LossAv).DefaultIfEmpty(0).Max();
+
+                    if(graphMin == 0 || graphMax == 0)
+                    {
+                        isGraphRequired = false;
+                    }
+                }
+
+
+                    //If less than 10 games don't graph
+                    if ( !isGraphRequired)
+                {
+                    using GraphHelper graphHelperBlank = new GraphHelper(GRAPH_WIDTH, highVal: GRAPH_HEIGHT);
+
+                    return Helpers.GetImageAsHtmlFragment(graphHelperBlank.GraphSurface);
+                }
+
+                int stepWidth = Math.Max(GRAPH_WIDTH / graphData.Count, 1);
+
+                using GraphHelper graphHelper = new GraphHelper(Math.Max(graphData.Count, graphData.Count * stepWidth),
+                                                                graphMin,
+                                                                graphMax,
+                                                                GraphHelper.GraphLine.RATING);
+
+                //Draw Graph
+                Pen currentPen = GraphHelper.OrangePen;
+                int graphX = 0;
+
+                for (int loop = 0; loop < graphData.Count; loop++)
+                {
+                    for (int innerLoop = 0; innerLoop < stepWidth; innerLoop++)
+                    {
+                        if (graphData[loop].WinAv != 0 &&
+                            graphData[loop].LossAv != 0)
+                        {
+                            graphHelper.DrawingSurface.
+                                        DrawLine(currentPen,
+                                                 graphX,
+                                                 graphHelper.GetYAxisPoint(graphData[loop].WinAv),
+                                                 graphX,
+                                                 graphHelper.GetYAxisPoint(graphData[loop].LossAv));
+                        }
+
+                        graphX++;
+                    }
+
+                    currentPen = (currentPen.Color.Name == GraphHelper.OrangePen.Color.Name) ? GraphHelper.DarkOrangePen : GraphHelper.OrangePen;
+                }
+
+
+                //Resize graph for output
+                using Bitmap bitmapOut = Helpers.ResizeImage(graphHelper.GraphSurface, GRAPH_WIDTH, GRAPH_HEIGHT);
+
+                //Add ratings
+                using Graphics resizedSurface = Graphics.FromImage(bitmapOut);
+                resizedSurface.DrawString($"{graphHelper.HighVal} (Av Loss)", new Font(FontFamily.GenericSansSerif, 18f), GraphHelper.TextBrush, 1, 1);
+                resizedSurface.DrawString($"{graphHelper.LowVal} (Av Win)", new Font(FontFamily.GenericSansSerif, 18f), GraphHelper.TextBrush, 1, bitmapOut.Height - 30);
 
                 return Helpers.GetImageAsHtmlFragment(bitmapOut);
 
@@ -957,10 +965,11 @@ namespace ChessStats
         }
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Globalization", "CA1303:Do not pass literals as localized parameters", Justification = "<Pending>")]
-        private static (string textOut, string htmlOut) DisplayPlayingStats(SortedList<string, (int SecondsPlayed, int GameCount, int Win, int Loss, int Draw, int MinRating, int MaxRating, int OpponentMinRating, int OpponentMaxRating, int OpponentWorstLoss, int OpponentBestWin, int TotalWin, int TotalDraw, int TotalLoss)> secondsPlayedRollup, int? bulletRating, int? blitzRating, int? rapidRating)
+        private static (string textOut, string htmlOut, List<(string TimeControl, int VsMin, int Worst, int LossAv, int DrawAv, int WinAv, int Best, int VsMax)> graphData) DisplayPlayingStats(SortedList<string, (int SecondsPlayed, int GameCount, int Win, int Loss, int Draw, int MinRating, int MaxRating, int OpponentMinRating, int OpponentMaxRating, int OpponentWorstLoss, int OpponentBestWin, int TotalWin, int TotalDraw, int TotalLoss)> secondsPlayedRollup, int? bulletRating, int? blitzRating, int? rapidRating)
         {
             StringBuilder textOut = new StringBuilder();
             StringBuilder htmlOut = new StringBuilder();
+            List<(string TimeControl, int VsMin, int Worst, int LossAv, int DrawAv, int WinAv, int Best, int VsMax)> graphData = new List<(string TimeControl, int VsMin, int Worst, int LossAv, int DrawAv, int WinAv, int Best, int VsMax)>();
 
             textOut.AppendLine("");
             textOut.AppendLine(Helpers.GetDisplaySection("Time Played/Ratings by Time Control/Month", false));
@@ -1016,11 +1025,23 @@ namespace ChessStats
                                    $"<td class='priority-3'>{rolledUp.Value.Loss.ToString(CultureInfo.CurrentCulture).PadLeft(4, '$').Replace("$$$0", "$$$-", true, CultureInfo.InvariantCulture).Replace("$", "&nbsp;", true, CultureInfo.InvariantCulture)}</td>" +
                                    $"<td class='priority-4'>{rolledUp.Value.GameCount.ToString(CultureInfo.CurrentCulture).PadLeft(4, '$').Replace("$$$0", "$$$-", true, CultureInfo.InvariantCulture).Replace("$", "&nbsp;", true, CultureInfo.InvariantCulture)}</td>"
                                    );
+
+                if (!rolledUp.Key.Contains("NR", StringComparison.InvariantCulture))
+                {
+                    graphData.Add((rolledUp.Key,
+                                   rolledUp.Value.OpponentMinRating,
+                                   rolledUp.Value.OpponentWorstLoss,
+                                   ((rolledUp.Value.Loss == 0) ? 0 : rolledUp.Value.TotalLoss / rolledUp.Value.Loss),
+                                   ((rolledUp.Value.Draw == 0) ? 0 : rolledUp.Value.TotalDraw / rolledUp.Value.Draw),
+                                   ((rolledUp.Value.Win == 0) ? 0 : rolledUp.Value.TotalWin / rolledUp.Value.Win),
+                                   rolledUp.Value.OpponentBestWin,
+                                   rolledUp.Value.OpponentMaxRating));
+                }
             }
 
             htmlOut.AppendLine("</tbody></table>");
 
-            return (textOut.ToString(), htmlOut.ToString());
+            return (textOut.ToString(), htmlOut.ToString(), graphData);
         }
 
         private static (string textOut, string htmlOut) DisplayTimePlayedByMonth(SortedList<string, dynamic> secondsPlayedRollupMonthOnly)

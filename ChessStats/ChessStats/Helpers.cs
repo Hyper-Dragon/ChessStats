@@ -17,39 +17,39 @@ namespace ChessStats
         public static Pen DarkOrangePen => new Pen(Color.FromArgb(255, 222, 132, 9), 1);
         public static Pen RedPen => new Pen(Color.FromArgb(255, 200, 9, 9), 3);
         public static Pen WhitePen => new Pen(Color.FromArgb(255, 255, 255, 255), 1) { DashStyle = DashStyle.Dash };
-        public static Brush TextBrush { get { return Brushes.Yellow; } }
+        public static Brush TextBrush => Brushes.Yellow;
         public Bitmap GraphSurface { get; private set; }
         public Graphics DrawingSurface { get; private set; }
         public int Height => GraphSurface.Height;
         public int Width => GraphSurface.Width;
-        public LinearGradientBrush LinGrBrush { get; private set; }                                   
+        public LinearGradientBrush LinGrBrush { get; private set; }
         public Pen BackgroundPen { get; private set; }
         public int LowVal { get; }
         public int HighVal { get; }
-        public int BaseLine { get { return this.Height; } }
-        public int Range { get { return HighVal - LowVal; } }
-        public enum GraphLine { NONE, RATING, PERCENTAGE}
-        public GraphHelper(int width, int lowVal=0, int highVal=0, GraphLine graphLines = GraphLine.NONE) 
+        public int BaseLine => Height;
+        public int Range => HighVal - LowVal;
+        public enum GraphLine { NONE, RATING, PERCENTAGE }
+        public GraphHelper(int width, int lowVal = 0, int highVal = 0, GraphLine graphLines = GraphLine.NONE)
         {
-            this.LowVal = lowVal;
-            this.HighVal = highVal;
+            LowVal = lowVal;
+            HighVal = highVal;
 
             LinGrBrush = new LinearGradientBrush(
                          new Point(0, 0),
-                         new Point(width, this.Range),
+                         new Point(width, Range),
                          Color.FromArgb(255, 49, 46, 43),
                          Color.FromArgb(255, 181, 180, 179));
 
             BackgroundPen = new Pen(LinGrBrush);
 
-            GraphSurface = new System.Drawing.Bitmap(width, this.Range);
-            
+            GraphSurface = new System.Drawing.Bitmap(width, Range);
+
             DrawingSurface = Graphics.FromImage(GraphSurface);
             DrawingSurface.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
             DrawingSurface.CompositingQuality = System.Drawing.Drawing2D.CompositingQuality.HighQuality;
             DrawingSurface.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
 
-            DrawingSurface.FillRectangle(LinGrBrush, 0, 0, width, this.Range);
+            DrawingSurface.FillRectangle(LinGrBrush, 0, 0, width, Range);
 
             //Add horizontal lines
             if (graphLines == GraphLine.RATING)
@@ -59,7 +59,7 @@ namespace ChessStats
                     DrawingSurface.DrawLine(GraphHelper.WhitePen, 0, loop, Width, loop);
                 }
             }
-            else if(graphLines == GraphLine.PERCENTAGE)
+            else if (graphLines == GraphLine.PERCENTAGE)
             {
 
             }
@@ -67,7 +67,7 @@ namespace ChessStats
 
         public int GetYAxisPoint(int actualValue)
         {
-            return Height-(actualValue-LowVal);
+            return Height - (actualValue - LowVal);
         }
 
         protected virtual void Dispose(bool disposing)
@@ -245,7 +245,7 @@ namespace ChessStats
 
         public static string GetImageAsHtmlFragment(Bitmap bitmapOut)
         {
-            if(bitmapOut == null) { throw new ArgumentNullException(nameof(bitmapOut)); }
+            if (bitmapOut == null) { throw new ArgumentNullException(nameof(bitmapOut)); }
 
             using MemoryStream stream = new MemoryStream();
             bitmapOut.Save(stream, System.Drawing.Imaging.ImageFormat.Png);
@@ -254,7 +254,7 @@ namespace ChessStats
             return $"<img src='data:image/png;base64,{base64Img}'/>";
         }
 
-        public static string GetHtmlTail(Uri chessdotcomUrl,string versionNumber, string projectLink)
+        public static string GetHtmlTail(Uri chessdotcomUrl, string versionNumber, string projectLink)
         {
             if (chessdotcomUrl == null) { throw new ArgumentNullException(nameof(chessdotcomUrl)); }
 
