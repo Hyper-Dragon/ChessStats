@@ -206,10 +206,19 @@ namespace ChessStats
                 Task<string> graphT2 = RenderRatingGraph(userStats?.ChessBlitz?.Last?.Rating, ratingsPostGame.Where(x => x.gameType == "Blitz").ToList());
                 Task<string> graphT3 = RenderRatingGraph(userStats?.ChessRapid?.Last?.Rating, ratingsPostGame.Where(x => x.gameType == "Rapid").ToList());
 
-                _ = await Task.WhenAll(graphT1, graphT2, graphT3).ConfigureAwait(false);
+                Task<string> graphT4 = RenderAverageStatsGraph(userStats?.ChessBullet?.Last?.Rating, ratingsPostGame.Where(x => x.gameType == "Bullet").ToList());
+                Task<string> graphT5 = RenderAverageStatsGraph(userStats?.ChessBlitz?.Last?.Rating, ratingsPostGame.Where(x => x.gameType == "Blitz").ToList());
+                Task<string> graphT6 = RenderAverageStatsGraph(userStats?.ChessRapid?.Last?.Rating, ratingsPostGame.Where(x => x.gameType == "Rapid").ToList());
+
+                _ = await Task.WhenAll(graphT1, graphT2, graphT3, graphT4, graphT5, graphT6).ConfigureAwait(false);
+                
                 string bulletGraphHtmlFragment = graphT1.Result;
                 string blitzGraphHtmlFragment = graphT2.Result;
                 string rapidGraphHtmlFragment = graphT3.Result;
+
+                string bulletAvStatsGraphHtmlFragment = graphT4.Result;
+                string blitzAvStatsraphHtmlFragment = graphT5.Result;
+                string rapidAvStatsraphHtmlFragment = graphT6.Result;
 
                 Helpers.EndTimedSection($">>Finished Rendering Graphs");
 
@@ -222,8 +231,9 @@ namespace ChessStats
                 //Build the HTML report
                 Task<string> reportT2 = BuildHtmlReport(VERSION_NUMBER, userRecord, userStats, chessdotcomUsername, whiteOpeningshtmlOut, blackOpeningshtmlOut,
                                                           playingStatshtmlOut, timePlayedByMonthhtmlOut, capsTablehtmlOut, capsRollingAverageFivehtmlOut,
-                                                          capsRollingAverageTenhtmlOut, userLogoBase64, pawnFragment, bulletGraphHtmlFragment,
-                                                          blitzGraphHtmlFragment, rapidGraphHtmlFragment);
+                                                          capsRollingAverageTenhtmlOut, userLogoBase64, pawnFragment, 
+                                                          bulletGraphHtmlFragment,blitzGraphHtmlFragment, rapidGraphHtmlFragment,
+                                                          bulletAvStatsGraphHtmlFragment, blitzAvStatsraphHtmlFragment, rapidAvStatsraphHtmlFragment);
 
                 _ = await Task.WhenAll(reportT1, reportT2).ConfigureAwait(false);
                 string textReport = reportT1.Result;
@@ -350,7 +360,9 @@ namespace ChessStats
                                                           string playingStatshtmlOut, string timePlayedByMonthhtmlOut, string capsTablehtmlOut,
                                                           string capsRollingAverageFivehtmlOut, string capsRollingAverageTenhtmlOut,
                                                           string userLogoBase64, string pawnFragment, string bulletGraphHtmlFragment,
-                                                          string blitzGraphHtmlFragment, string rapidGraphHtmlFragment)
+                                                          string blitzGraphHtmlFragment, string rapidGraphHtmlFragment,
+                                                          string bulletAvStatsGraphHtmlFragment, string blitzAvStatsGraphHtmlFragment, 
+                                                          string rapidAvStatsGraphHtmlFragment)
         {
             return await Task<string>.Run(() =>
             {
@@ -395,6 +407,13 @@ namespace ChessStats
                                             .AppendLine($"<div class='graphBox'>{bulletGraphHtmlFragment}</div>")
                                             .AppendLine($"<div class='graphBox'>{blitzGraphHtmlFragment}</div>")
                                             .AppendLine($"<div class='graphBox'>{rapidGraphHtmlFragment}</div>")
+                                            .AppendLine($"</div>")
+                                            .AppendLine($"</div>")
+                                            .AppendLine($"<div class='priority-2'>")
+                                            .AppendLine($"<div class='graphRow'>")
+                                            .AppendLine($"<div class='graphBox'>{bulletAvStatsGraphHtmlFragment}</div>")
+                                            .AppendLine($"<div class='graphBox'>{blitzAvStatsGraphHtmlFragment}</div>")
+                                            .AppendLine($"<div class='graphBox'>{rapidAvStatsGraphHtmlFragment}</div>")
                                             .AppendLine($"</div>")
                                             .AppendLine($"</div>")
                                             .AppendLine(playingStatshtmlOut)
@@ -541,6 +560,75 @@ namespace ChessStats
                                                         0, 
                                                         graphHelper.GetYAxisPoint(currentRating.Value), 
                                                         graphHelper.Width, 
+                                                        graphHelper.GetYAxisPoint(currentRating.Value));
+                }
+
+                //Resize graph for output
+                using Bitmap bitmapOut = Helpers.ResizeImage(graphHelper.GraphSurface, GRAPH_WIDTH, GRAPH_HEIGHT);
+
+                //Add ratings
+                using Graphics resizedSurface = Graphics.FromImage(bitmapOut);
+                resizedSurface.DrawString($"{graphHelper.HighVal}", new Font(FontFamily.GenericSansSerif, 18f), GraphHelper.TextBrush, 1, 1);
+                resizedSurface.DrawString($"{graphHelper.LowVal}", new Font(FontFamily.GenericSansSerif, 18f), GraphHelper.TextBrush, 1, bitmapOut.Height - 30);
+
+                return Helpers.GetImageAsHtmlFragment(bitmapOut);
+
+            }).ConfigureAwait(false);
+        }
+
+        private static async Task<string> RenderAverageStatsGraph(int? currentRating, List<(DateTime gameDate, int rating, string gameType)> ratingsPostGame)
+        {
+            return await Task<string>.Run(() =>
+            {
+                //If less than 10 games don't graph
+                if (ratingsPostGame.Count < 10)
+                {
+                    using GraphHelper graphHelperBlank = new GraphHelper(GRAPH_WIDTH, highVal: GRAPH_HEIGHT);
+                    return Helpers.GetImageAsHtmlFragment(graphHelperBlank.GraphSurface);
+                }
+
+                (DateTime gameDate, int rating)[] ratingsPostGameOrdered = ratingsPostGame.OrderBy(x => x.gameDate).Select(x => (x.gameDate, x.rating)).ToArray();
+
+                int stepWidth = Math.Max(GRAPH_WIDTH / ratingsPostGameOrdered.Length, 1);
+
+                using GraphHelper graphHelper = new GraphHelper(Math.Max(ratingsPostGameOrdered.Length, ratingsPostGameOrdered.Length * stepWidth),
+                                                                ratingsPostGame.Select(x => x.rating).Min(),
+                                                                ratingsPostGame.Select(x => x.rating).Max(),
+                                                                GraphHelper.GraphLine.RATING);
+
+                //Draw Graph
+                int graphX = 0;
+                DateTime lastDate = DateTime.MinValue;
+                Pen currentPen = GraphHelper.OrangePen;
+
+                for (int loop = 0; loop < ratingsPostGameOrdered.Length; loop++)
+                {
+                    //Switch pen when the month changes
+                    if (ratingsPostGameOrdered[loop].gameDate.Month != lastDate.Month)
+                    {
+                        currentPen = (currentPen.Color.Name == GraphHelper.OrangePen.Color.Name) ? GraphHelper.DarkOrangePen : GraphHelper.OrangePen;
+                    }
+
+                    for (int innerLoop = 0; innerLoop < stepWidth; innerLoop++)
+                    {
+                        graphHelper.DrawingSurface.DrawLine(currentPen,
+                                                            graphX,
+                                                            graphHelper.GetYAxisPoint(ratingsPostGameOrdered[loop].rating),
+                                                            graphX,
+                                                            graphHelper.BaseLine);
+                        graphX++;
+                    }
+
+                    lastDate = ratingsPostGameOrdered[loop].gameDate;
+                }
+
+                //Add line for current rating
+                if (currentRating != null)
+                {
+                    graphHelper.DrawingSurface.DrawLine(GraphHelper.RedPen,
+                                                        0,
+                                                        graphHelper.GetYAxisPoint(currentRating.Value),
+                                                        graphHelper.Width,
                                                         graphHelper.GetYAxisPoint(currentRating.Value));
                 }
 
