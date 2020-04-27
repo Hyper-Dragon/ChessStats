@@ -32,8 +32,8 @@ namespace ChessStats
         private const string INDEX_PAGE_IMAGE = "https://images.chesscomfiles.com/uploads/v1/group/57796.67ee0038.160x160o.2dc0953ad64e.png";
         private const string REPORT_HEADING_ICON = "https://www.chess.com/bundles/web/favicons/favicon-16x16.31f99381.png";
         private const int GRAPH_WIDTH = 700;
-        private const int GRAPH_HEIGHT = 350;
-
+        private const int GRAPH_HEIGHT_STATS = 300;
+        private const int GRAPH_HEIGHT_AVERAGE = 200;
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Exit gracefully")]
         private static async Task Main(string[] args)
@@ -194,8 +194,8 @@ namespace ChessStats
                 (string playingStatstextOut, string playingStatshtmlOut, List<(string TimeControl, int VsMin, int Worst, int LossAv, int DrawAv, int WinAv, int Best, int VsMax)> graphData) = DisplayPlayingStats(secondsPlayedRollup, userStats.ChessBullet?.Last.Rating, userStats.ChessBlitz?.Last.Rating, userStats.ChessRapid?.Last.Rating);
                 (string timePlayedByMonthtextOut, string timePlayedByMonthhtmlOut) = DisplayTimePlayedByMonth(secondsPlayedRollupMonthOnly);
                 (string capsTabletextOut, string capsTablehtmlOut) = DisplayCapsTable(capsScores);
-                (_, string capsRollingAverageFivehtmlOut) = DisplayCapsRollingAverage(5, capsScores);
-                (string capsRollingAverageTentextOut, string capsRollingAverageTenhtmlOut) = DisplayCapsRollingAverage(10, capsScores);
+                (_, string capsRollingAverageFivehtmlOut, Dictionary<string, double[]> capsAverageFiveOut) = DisplayCapsRollingAverage(5, capsScores);
+                (string capsRollingAverageTentextOut, string capsRollingAverageTenhtmlOut, Dictionary<string, double[]> capsAverageTenOut) = DisplayCapsRollingAverage(10, capsScores);
                 (string totalSecondsPlayedtextOut, _) = DisplayTotalSecondsPlayed(totalSecondsPlayed);
 
                 Helpers.EndTimedSection($">>Finished Compiling Report Data");
@@ -205,11 +205,22 @@ namespace ChessStats
                 Task<string> graphT2 = RenderRatingGraph(userStats?.ChessBlitz?.Last?.Rating, ratingsPostGame.Where(x => x.gameType == "Blitz").ToList());
                 Task<string> graphT3 = RenderRatingGraph(userStats?.ChessRapid?.Last?.Rating, ratingsPostGame.Where(x => x.gameType == "Rapid").ToList());
 
-                Task<string> graphT4 = RenderAverageStatsGraph(graphData.Where( x => x.TimeControl.Contains("Bullet",StringComparison.InvariantCultureIgnoreCase)).OrderBy(x => x.TimeControl).ToList());
+                Task<string> graphT4 = RenderAverageStatsGraph(graphData.Where(x => x.TimeControl.Contains("Bullet", StringComparison.InvariantCultureIgnoreCase)).OrderBy(x => x.TimeControl).ToList());
                 Task<string> graphT5 = RenderAverageStatsGraph(graphData.Where(x => x.TimeControl.Contains("Blitz", StringComparison.InvariantCultureIgnoreCase)).OrderBy(x => x.TimeControl).ToList());
                 Task<string> graphT6 = RenderAverageStatsGraph(graphData.Where(x => x.TimeControl.Contains("Rapid", StringComparison.InvariantCultureIgnoreCase)).OrderBy(x => x.TimeControl).ToList());
 
-                _ = await Task.WhenAll(graphT1, graphT2, graphT3, graphT4, graphT5, graphT6).ConfigureAwait(false);
+                Task<string> graphT7 = RenderCapsAverageGraph(capsAverageFiveOut.Where(x => x.Key.Contains("Rullet", StringComparison.InvariantCultureIgnoreCase)).ToDictionary(x => x.Key, x => x.Value));
+                Task<string> graphT8 = RenderCapsAverageGraph(capsAverageFiveOut.Where(x => x.Key.Contains("Blitz", StringComparison.InvariantCultureIgnoreCase)).ToDictionary(x => x.Key, x => x.Value));
+                Task<string> graphT9 = RenderCapsAverageGraph(capsAverageFiveOut.Where(x => x.Key.Contains("Rapid", StringComparison.InvariantCultureIgnoreCase)).ToDictionary(x => x.Key, x => x.Value));
+
+                Task<string> graphT10 = RenderCapsAverageGraph(capsAverageTenOut.Where(x => x.Key.Contains("Bullet", StringComparison.InvariantCultureIgnoreCase)).ToDictionary(x => x.Key, x => x.Value));
+                Task<string> graphT11 = RenderCapsAverageGraph(capsAverageTenOut.Where(x => x.Key.Contains("Blitz", StringComparison.InvariantCultureIgnoreCase)).ToDictionary(x => x.Key, x => x.Value));
+                Task<string> graphT12 = RenderCapsAverageGraph(capsAverageTenOut.Where(x => x.Key.Contains("Rapid", StringComparison.InvariantCultureIgnoreCase)).ToDictionary(x => x.Key, x => x.Value));
+
+                _ = await Task.WhenAll(graphT1, graphT2, graphT3,
+                                       graphT4, graphT5, graphT6,
+                                       graphT7, graphT8, graphT9,
+                                       graphT10, graphT11, graphT12).ConfigureAwait(false);
 
                 string bulletGraphHtmlFragment = graphT1.Result;
                 string blitzGraphHtmlFragment = graphT2.Result;
@@ -218,6 +229,14 @@ namespace ChessStats
                 string bulletAvStatsGraphHtmlFragment = graphT4.Result;
                 string blitzAvStatsraphHtmlFragment = graphT5.Result;
                 string rapidAvStatsraphHtmlFragment = graphT6.Result;
+
+                string bulletFiveAvCaps = graphT7.Result;
+                string blitzFiveAvCaps = graphT8.Result;
+                string rapidFiveAvCaps = graphT9.Result;
+
+                string bulletTenAvCaps = graphT10.Result;
+                string blitzTenAvCaps = graphT11.Result;
+                string rapidTenAvCaps = graphT12.Result;
 
                 Helpers.EndTimedSection($">>Finished Rendering Graphs");
 
@@ -232,7 +251,9 @@ namespace ChessStats
                                                           playingStatshtmlOut, timePlayedByMonthhtmlOut, capsTablehtmlOut, capsRollingAverageFivehtmlOut,
                                                           capsRollingAverageTenhtmlOut, userLogoBase64, pawnFragment,
                                                           bulletGraphHtmlFragment, blitzGraphHtmlFragment, rapidGraphHtmlFragment,
-                                                          bulletAvStatsGraphHtmlFragment, blitzAvStatsraphHtmlFragment, rapidAvStatsraphHtmlFragment);
+                                                          bulletAvStatsGraphHtmlFragment, blitzAvStatsraphHtmlFragment, rapidAvStatsraphHtmlFragment,
+                                                          bulletFiveAvCaps, blitzFiveAvCaps, rapidFiveAvCaps, bulletTenAvCaps,
+                                                          blitzTenAvCaps, rapidTenAvCaps);
 
                 _ = await Task.WhenAll(reportT1, reportT2).ConfigureAwait(false);
                 string textReport = reportT1.Result;
@@ -361,7 +382,8 @@ namespace ChessStats
                                                           string userLogoBase64, string pawnFragment, string bulletGraphHtmlFragment,
                                                           string blitzGraphHtmlFragment, string rapidGraphHtmlFragment,
                                                           string bulletAvStatsGraphHtmlFragment, string blitzAvStatsGraphHtmlFragment,
-                                                          string rapidAvStatsGraphHtmlFragment)
+                                                          string rapidAvStatsGraphHtmlFragment, string bulletFiveAvCaps, string blitzFiveAvCaps,
+                                                          string rapidFiveAvCaps, string bulletTenAvCaps, string blitzTenAvCaps, string rapidTenAvCaps)
         {
             return await Task<string>.Run(() =>
             {
@@ -394,8 +416,27 @@ namespace ChessStats
                                             .AppendLine($"{blackOpeningshtmlOut}")
                                             .AppendLine($"<div class='priority-2'>")
                                             .AppendLine($"<br/><h2>{pawnFragment}CAPS Scoring (Rolling 5 Game Average)</h2>")
+
+                                            .AppendLine($"<div class='priority-2'>")
+                                            .AppendLine($"<div class='graphRow'>")
+                                            .AppendLine($"<div class='graphBox'>{bulletFiveAvCaps}</div>")
+                                            .AppendLine($"<div class='graphBox'>{blitzFiveAvCaps}</div>")
+                                            .AppendLine($"<div class='graphBox'>{rapidFiveAvCaps}</div>")
+                                            .AppendLine($"</div>")
+                                            .AppendLine($"</div>")
+
                                             .AppendLine(capsRollingAverageFivehtmlOut)
                                             .AppendLine($"<h2>{pawnFragment}CAPS Scoring (Rolling 10 Game Average)</h2>")
+
+                                            .AppendLine($"<div class='priority-2'>")
+                                            .AppendLine($"<div class='graphRow'>")
+                                            .AppendLine($"<div class='graphBox'>{bulletTenAvCaps}</div>")
+                                            .AppendLine($"<div class='graphBox'>{blitzTenAvCaps}</div>")
+                                            .AppendLine($"<div class='graphBox'>{rapidTenAvCaps}</div>")
+                                            .AppendLine($"</div>")
+                                            .AppendLine($"</div>")
+
+
                                             .AppendLine(capsRollingAverageTenhtmlOut)
                                             .AppendLine($"<h2>{pawnFragment}CAPS Scoring (Month Average > 4 Games)</h2>")
                                             .AppendLine(capsTablehtmlOut)
@@ -506,6 +547,54 @@ namespace ChessStats
             }).ConfigureAwait(false);
         }
 
+        private static async Task<string> RenderCapsAverageGraph(Dictionary<string, double[]> graphData)
+        {
+            return await Task<string>.Run(() =>
+            {
+                if (graphData == null || graphData.Count < 2)
+                {
+                    using GraphHelper graphHelperBlank = new GraphHelper(GRAPH_WIDTH, highVal: 150);
+                    return Helpers.GetImageAsHtmlFragment(graphHelperBlank.GraphSurface);
+                }
+
+
+                int stepWidth = GRAPH_WIDTH / 10;
+
+                using GraphHelper graphHelper = new GraphHelper(GRAPH_WIDTH-stepWidth,
+                                                                0,
+                                                                100,
+                                                                GraphHelper.GraphLine.PERCENTAGE);
+
+                //Draw Graph
+                foreach (var graphItem in graphData)
+                {
+                    Pen sidePen = graphItem.Key.Contains("White", StringComparison.InvariantCultureIgnoreCase) ? 
+                                                                new Pen(Color.Yellow,3f) : new Pen(Color.Red, 3f);
+
+                    for (int loop = 1; loop < graphItem.Value.Length; loop++)
+                    {
+                        graphHelper.DrawingSurface.
+                                    DrawLine(sidePen,
+                                             (loop - 1) * stepWidth,
+                                             graphHelper.GetYAxisPoint((int)graphItem.Value[loop-1]),
+                                             loop * stepWidth,
+                                             graphHelper.GetYAxisPoint((int)graphItem.Value[loop])
+                                             );
+                    }
+                }
+
+                //Resize graph for output
+                using Bitmap bitmapOut = Helpers.ResizeImage(graphHelper.GraphSurface, GRAPH_WIDTH, 150);
+
+                //Add ratings
+                using Graphics resizedSurface = Graphics.FromImage(bitmapOut);
+                resizedSurface.DrawString($"CAPs (Newest to Oldest)", new Font(FontFamily.GenericSansSerif, 14f), GraphHelper.TextBrush, 1, bitmapOut.Height - 30);
+
+                return Helpers.GetImageAsHtmlFragment(bitmapOut);
+
+            }).ConfigureAwait(false);
+        }
+
         private static async Task<string> RenderRatingGraph(int? currentRating, List<(DateTime gameDate, int rating, string gameType)> ratingsPostGame)
         {
             return await Task<string>.Run(() =>
@@ -513,7 +602,7 @@ namespace ChessStats
                 //If less than 10 games don't graph
                 if (ratingsPostGame.Count < 10)
                 {
-                    using GraphHelper graphHelperBlank = new GraphHelper(GRAPH_WIDTH, highVal: GRAPH_HEIGHT);
+                    using GraphHelper graphHelperBlank = new GraphHelper(GRAPH_WIDTH, highVal: GRAPH_HEIGHT_STATS);
                     return Helpers.GetImageAsHtmlFragment(graphHelperBlank.GraphSurface);
                 }
 
@@ -563,7 +652,7 @@ namespace ChessStats
                 }
 
                 //Resize graph for output
-                using Bitmap bitmapOut = Helpers.ResizeImage(graphHelper.GraphSurface, GRAPH_WIDTH, GRAPH_HEIGHT);
+                using Bitmap bitmapOut = Helpers.ResizeImage(graphHelper.GraphSurface, GRAPH_WIDTH, GRAPH_HEIGHT_STATS);
 
                 //Add ratings
                 using Graphics resizedSurface = Graphics.FromImage(bitmapOut);
@@ -582,7 +671,7 @@ namespace ChessStats
                 bool isGraphRequired = true;
                 int graphMin = 0;
                 int graphMax = 0;
-                
+
                 if (graphData == null || graphData.Count < 2)
                 {
                     isGraphRequired = false;
@@ -592,17 +681,16 @@ namespace ChessStats
                     graphMin = graphData.Where(x => x.WinAv != 0 && x.LossAv != 0).Select(x => x.WinAv).DefaultIfEmpty(0).Min();
                     graphMax = graphData.Where(x => x.WinAv != 0 && x.LossAv != 0).Select(x => x.LossAv).DefaultIfEmpty(0).Max();
 
-                    if(graphMin == 0 || graphMax == 0)
+                    if (graphMin == 0 || graphMax == 0)
                     {
                         isGraphRequired = false;
                     }
                 }
 
-
-                    //If less than 10 games don't graph
-                    if ( !isGraphRequired)
+                //If less than 10 games don't graph
+                if (!isGraphRequired)
                 {
-                    using GraphHelper graphHelperBlank = new GraphHelper(GRAPH_WIDTH, highVal: GRAPH_HEIGHT);
+                    using GraphHelper graphHelperBlank = new GraphHelper(GRAPH_WIDTH, highVal: GRAPH_HEIGHT_AVERAGE);
 
                     return Helpers.GetImageAsHtmlFragment(graphHelperBlank.GraphSurface);
                 }
@@ -641,7 +729,7 @@ namespace ChessStats
 
 
                 //Resize graph for output
-                using Bitmap bitmapOut = Helpers.ResizeImage(graphHelper.GraphSurface, GRAPH_WIDTH, GRAPH_HEIGHT);
+                using Bitmap bitmapOut = Helpers.ResizeImage(graphHelper.GraphSurface, GRAPH_WIDTH, GRAPH_HEIGHT_AVERAGE);
 
                 //Add ratings
                 using Graphics resizedSurface = Graphics.FromImage(bitmapOut);
@@ -754,10 +842,11 @@ namespace ChessStats
             return (textOut.ToString(), htmlOut.ToString());
         }
 
-        private static (string textOut, string htmlOut) DisplayCapsRollingAverage(int averageOver, Dictionary<string, List<CapsRecord>> capsScores)
+        private static (string textOut, string htmlOut, Dictionary<string, double[]> capsAverageOut) DisplayCapsRollingAverage(int averageOver, Dictionary<string, List<CapsRecord>> capsScores)
         {
             StringBuilder textOut = new StringBuilder();
             StringBuilder htmlOut = new StringBuilder();
+            Dictionary<string, double[]> capsAverageOut = new Dictionary<string, double[]>();
 
             textOut.AppendLine("");
             textOut.AppendLine(Helpers.GetDisplaySection($"CAPS Scoring (Rolling {averageOver} Game Average)", false));
@@ -781,17 +870,22 @@ namespace ChessStats
 
 
                     htmlOut.Append($"<tr><td>{CultureInfo.InvariantCulture.TextInfo.ToTitleCase(capsScore.Key)}</td>");
+                    double[] scoreList = new double[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+
                     for (int loop = 0; loop < 10; loop++)
                     {
                         htmlOut.AppendLine($"<td>{((loop < avList.Length) ? avList[loop] : "&nbsp;")}</td>");
+                        scoreList[loop] = ((loop < avList.Length) ? double.Parse(avList[loop], CultureInfo.InvariantCulture) : 0);
                     }
+
                     htmlOut.AppendLine($"</tr>");
+                    capsAverageOut.Add(CultureInfo.InvariantCulture.TextInfo.ToTitleCase(capsScore.Key), scoreList);
                 }
             }
 
             htmlOut.AppendLine("</tbody></table>");
 
-            return (textOut.ToString(), htmlOut.ToString());
+            return (textOut.ToString(), htmlOut.ToString(), capsAverageOut);
         }
 
 

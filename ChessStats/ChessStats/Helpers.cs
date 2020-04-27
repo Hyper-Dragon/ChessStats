@@ -61,7 +61,15 @@ namespace ChessStats
             }
             else if (graphLines == GraphLine.PERCENTAGE)
             {
+                for (int loop = 25; loop < 100; loop += 25)
+                {
+                    DrawingSurface.DrawLine(GraphHelper.WhitePen, 0, loop, Width, loop);
+                }
 
+                for (int loop = 70; loop < Width; loop += 70)
+                {
+                    DrawingSurface.DrawLine(GraphHelper.WhitePen, loop, lowVal ,loop, highVal);
+                }
             }
         }
 
