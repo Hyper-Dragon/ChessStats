@@ -1004,7 +1004,7 @@ namespace ChessStats
             }
         }
 
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Globalization", "CA1303:Do not pass literals as localized parameters", Justification = "<Pending>")]
+
         private static (string textOut, string htmlOut) DisplayOpeningsAsWhite(SortedList<string, (string href, int total, int winCount, int drawCount, int lossCount)> ecoPlayedRollupWhite)
         {
             StringBuilder textOut = new StringBuilder();
@@ -1058,7 +1058,6 @@ namespace ChessStats
             return (textOut.ToString(), htmlOut.ToString());
         }
 
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Globalization", "CA1303:Do not pass literals as localized parameters", Justification = "<Pending>")]
         private static (string textOut, string htmlOut, List<(string TimeControl, int VsMin, int Worst, int LossAv, int DrawAv, int WinAv, int Best, int VsMax)> graphData) DisplayPlayingStats(SortedList<string, (int SecondsPlayed, int GameCount, int Win, int Loss, int Draw, int MinRating, int MaxRating, int OpponentMinRating, int OpponentMaxRating, int OpponentWorstLoss, int OpponentBestWin, int TotalWin, int TotalDraw, int TotalLoss)> secondsPlayedRollup, int? bulletRating, int? blitzRating, int? rapidRating)
         {
             StringBuilder textOut = new StringBuilder();
