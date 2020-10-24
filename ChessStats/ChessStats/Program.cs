@@ -397,7 +397,6 @@ namespace ChessStats
 
                 GC.Collect();
                 GC.WaitForPendingFinalizers();
-                GC.Collect();
             }
 
             return (hasRunErrors, hasCmdLineOptionSet);
