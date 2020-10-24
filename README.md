@@ -4,8 +4,10 @@
 ChessStats is a console app used to retrieve monthly play time, ratings and top openings for any chess.com user. Note that variant game types are not included in the stats (displayed as 'X' during game retrieval) and unrated game ('NR') information is time only. 
 
 __Version 0.6__ 
-* 
-* CAPS scores have been removed from this version due to chess.com site changes
+* Graphs for ratings and monthly win/loss averages (included in Html Reports)
+* Html index file generation
+* Several minor fixes
+* CAPS scores removed due to chess.com site changes
  
 __Version 0.5__ is a major release with numerous improvements over v0.4 including:
 
