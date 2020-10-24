@@ -286,7 +286,7 @@ namespace ChessStats
                                 await WritePgnFilesToDisk(resultsDir, chessdotcomUsername, gameList).ConfigureAwait(false);
                                 break;
                             case "CAPS":
-                                Console.WriteLine($"  {((isCapsIncluded)? ">>Writing CAPS Data":">>CAPS Data Skipped")}");
+                                Console.WriteLine($"  {((isCapsIncluded) ? ">>Writing CAPS Data" : ">>CAPS Data Skipped")}");
                                 await WriteCapsTsvToDisk(resultsDir, chessdotcomUsername, capsScores).ConfigureAwait(false);
                                 break;
                             case "TXT":
@@ -381,6 +381,23 @@ namespace ChessStats
 
                 Console.WriteLine(textReport.ToString(CultureInfo.InvariantCulture));
                 Console.WriteLine("");
+
+                //Clear out user data before next run to avoid out of memory problems
+                capsScores = null;
+                gameList = null;
+                secondsPlayedRollup = null;
+                secondsPlayedRollupMonthOnly = null;
+                ecoPlayedRollupWhite = ecoPlayedRollupBlack = null;
+                ratingsPostGame = null;
+                graphData = null;
+                graphT1 = graphT2 = graphT3 = graphT4 = graphT5 = graphT6 = graphT7 = graphT8 = graphT9 = graphT10 = graphT11 = graphT12 = reportT1 = reportT2 = null;
+                bulletGraphHtmlFragment = blitzGraphHtmlFragment = rapidGraphHtmlFragment = bulletAvStatsGraphHtmlFragment = blitzAvStatsraphHtmlFragment = rapidAvStatsraphHtmlFragment = null;
+                bulletFiveAvCaps = blitzFiveAvCaps = rapidFiveAvCaps = bulletTenAvCaps = blitzTenAvCaps = rapidTenAvCaps = textReport = htmlReport = null;
+                htmlOut = null;
+
+                GC.Collect();
+                GC.WaitForPendingFinalizers();
+                GC.Collect();
             }
 
             return (hasRunErrors, hasCmdLineOptionSet);
