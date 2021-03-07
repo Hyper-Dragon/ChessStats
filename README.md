@@ -219,6 +219,8 @@ Time Played (hh:mm:ss):    171:55:39
 
 ## Known Issues
 - CAPS scores are not available due to Chess.com site changes
+- Error: An assembly specified in the application dependencies manifest (ChessStats.deps.json) was not found
+-- Delete the folder C:\Users\<username>\AppData\Local\Temp\.net and rerun
 
 ## Dependencies
 
