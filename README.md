@@ -247,4 +247,4 @@ Time Played (hh:mm:ss):    171:55:39
 * Thanks to chess.com user _NefariousNebula_ for highlighting the (undocumented) CAPS endpoint
 
 ## Saying Thank You
-If you find this useful and want to say thanks just send me a fun trophy or two or three over on chess.com :smiley:
+If you find this useful and want to say thanks [just send me a fun trophy or two or three](https://www.chess.com/member/hyper-dragon) over on chess.com :smiley:
