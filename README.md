@@ -3,6 +3,9 @@
 ## About
 ChessStats is a console app used to retrieve monthly play time, ratings and top openings for any chess.com user. Note that variant game types are not included in the stats (displayed as 'X' during game retrieval) and unrated game ('NR') information is time only. 
 
+## Installation
+Download the latest version from the [Releases](https://github.com/Hyper-Dragon/ChessStats/releases) page, extract _ChessStats.exe_ and put it where you want it to go.  Note that the cache and reporting directories are created relative to the executable's location. 
+
 ## Version History
 __Version 0.7__ 
 * CAPS scores, limited to the last 20 games, now included
@@ -32,12 +35,6 @@ __Version 0.5__
 __version 0.4__ 
 * CAPS averages broken down by time control.  
     * These are available for games that have been analysed on the chess.com website (games with no analysis are marked with '-' on ingest). 
-
-## Installation
-Download the latest version from the [Releases](https://github.com/Hyper-Dragon/ChessStats/releases) page, extract _ChessStats.exe_ and put it where you want it to go.  Note that the cache and reporting directories are created relative to the executable's location. 
-
-## Saying Thank You
-If you find this useful and want to say thanks just send me a fun trophy or two or three over on chess.com :smiley:
 
 ## Usage
 ```
@@ -234,17 +231,20 @@ Time Played (hh:mm:ss):    171:55:39
     * CAPS scores are not available due to Chess.com site changes
     * Error: An assembly specified in the application dependencies manifest (ChessStats.deps.json) was not found 
         * Delete the folder C:\Users\<username>\AppData\Local\Temp\ .net\ and rerun
+    * Error: Unable to write index.html 
+        * Make sure that index.html is no in use and rerun
 
 ## Dependencies
-
 * [ChessDotComSharp](https://github.com/nullablebool/ChessDotComSharp) @nullablebool
 * Chess.com Api
 * ~~Chess.com website HTML for CAPs extraction (broken)~~
 * Chess.com undocumented endpoint for CAPs extraction (last 20 games only)
 
 ## Acknowledgements
-
 * [Chess.Com](https://github.com/ChessCom) @ChessCom
 * Covid-19 & Social Isolation
 * Thanks to chess.com users _BaronVonChickenpants_ and _maxmlynek2_ for bug spotting
 * Thanks to chess.com user _NefariousNebula_ for highlighting the (undocumented) CAPS endpoint
+
+## Saying Thank You
+If you find this useful and want to say thanks just send me a fun trophy or two or three over on chess.com :smiley:
