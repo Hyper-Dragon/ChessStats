@@ -7,6 +7,7 @@ __Version 0.7__
 * CAPS scores, limited to the last 20 games, now included
 * Changed background in stats pages
 * Openings for last ??? games table added
+* Fixed v0.6 missing assembly issue
 
 __Version 0.6__ 
 * Graphs for ratings and monthly win/loss averages (included in Html Reports)
@@ -223,19 +224,20 @@ Time Played (hh:mm:ss):    171:55:39
 </pre>
 
 ## Known Issues
-- CAPS scores are not available due to Chess.com site changes
-- Error: An assembly specified in the application dependencies manifest (ChessStats.deps.json) was not found
-- Delete the folder C:\Users\<username>\AppData\Local\Temp\.net\ and rerun
+* Version 0.6
+    * CAPS scores are not available due to Chess.com site changes
+    * Error: An assembly specified in the application dependencies manifest (ChessStats.deps.json) was not found 
+        * Delete the folder C:\Users\<username>\AppData\Local\Temp\ .net\ and rerun
 
 ## Dependencies
 
-- [ChessDotComSharp](https://github.com/nullablebool/ChessDotComSharp) @nullablebool
-- Chess.com Api
-- Chess.com website HTML for CAPs extraction (broken)
+* [ChessDotComSharp](https://github.com/nullablebool/ChessDotComSharp) @nullablebool
+* Chess.com Api
+* Chess.com website HTML for CAPs extraction (broken)
 
 ## Acknowledgements
 
-- [Chess.Com](https://github.com/ChessCom) @ChessCom
-- Covid-19 & Social Isolation
-- Thanks to chess.com users _BaronVonChickenpants_ and _maxmlynek2_ for bug spotting
-
+* [Chess.Com](https://github.com/ChessCom) @ChessCom
+* Covid-19 & Social Isolation
+* Thanks to chess.com users _BaronVonChickenpants_ and _maxmlynek2_ for bug spotting
+* Thanks to ????? for highlighting the (undocumented) CAPS ????
