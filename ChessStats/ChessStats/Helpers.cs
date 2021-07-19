@@ -245,7 +245,7 @@ namespace ChessStats
             textOut.AppendLine(@$"    |__|           \/      \/      \/      \/      \/             \/             \/for Chess.com\/  ");
             textOut.AppendLine(@$"   /____\                                                                                           ");
             textOut.AppendLine(@$"  (______)                                                                                          ");
-            textOut.AppendLine(@$" (________)   Hyper-Dragon :: Version {versionNo} :: 04/2020 :: https://github.com/Hyper-Dragon/ChessStats  ");
+            textOut.AppendLine(@$" (________)   Hyper-Dragon :: Version {versionNo} :: 07/2021 :: https://github.com/Hyper-Dragon/ChessStats  ");
             textOut.AppendLine(@$"                                                                                                    ");
 
             return textOut.ToString();
