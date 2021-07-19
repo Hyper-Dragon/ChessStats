@@ -233,11 +233,12 @@ Time Played (hh:mm:ss):    171:55:39
 
 * [ChessDotComSharp](https://github.com/nullablebool/ChessDotComSharp) @nullablebool
 * Chess.com Api
-* Chess.com website HTML for CAPs extraction (broken)
+* ~~Chess.com website HTML for CAPs extraction (broken)~~
+* Chess.com undocumented endpoint for CAPs extraction (last 20 games only)
 
 ## Acknowledgements
 
 * [Chess.Com](https://github.com/ChessCom) @ChessCom
 * Covid-19 & Social Isolation
 * Thanks to chess.com users _BaronVonChickenpants_ and _maxmlynek2_ for bug spotting
-* Thanks to ????? for highlighting the (undocumented) CAPS ????
+* Thanks to chess.com user _NefariousNebula_ for highlighting the (undocumented) CAPS endpoint
