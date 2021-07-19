@@ -3,6 +3,11 @@
 ## About
 ChessStats is a console app used to retrieve monthly play time, ratings and top openings for any chess.com user. Note that variant game types are not included in the stats (displayed as 'X' during game retrieval) and unrated game ('NR') information is time only. 
 
+__Version 0.7__ 
+* CAPS scores, limited to the last 20 games, now included
+* Changed background in stats pages
+* Openings for last ??? games table added
+
 __Version 0.6__ 
 * Graphs for ratings and monthly win/loss averages (included in Html Reports)
 * Html index file generation _([location of executable]/ChessStatsResults/index.html)_
@@ -220,7 +225,7 @@ Time Played (hh:mm:ss):    171:55:39
 ## Known Issues
 - CAPS scores are not available due to Chess.com site changes
 - Error: An assembly specified in the application dependencies manifest (ChessStats.deps.json) was not found
--- Delete the folder C:\Users\<username>\AppData\Local\Temp\.net and rerun
+- Delete the folder C:\Users\<username>\AppData\Local\Temp\.net\ and rerun
 
 ## Dependencies
 
