@@ -33,7 +33,7 @@ The __version 0.4__ update included CAPS averages broken down by time control.  
 Download the latest version from the [Releases](https://github.com/Hyper-Dragon/ChessStats/releases) page, extract _ChessStats.exe_ and put it where you want it to go.  Note that the cache and reporting directories are created relative to the executable's location. 
 
 ## Saying Thank You
-If you find this useful and want to say thanks just send me a fun trophy over on chess.com :smiley:
+If you find this useful and want to say thanks just send me a fun trophy or two or three over on chess.com :smiley:
 
 ## Usage
 ```
