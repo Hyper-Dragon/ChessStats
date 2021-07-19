@@ -224,6 +224,8 @@ Time Played (hh:mm:ss):    171:55:39
 </pre>
 
 ## Known Issues
+* Version 0.7
+    * None (yet)
 * Version 0.6
     * CAPS scores are not available due to Chess.com site changes
     * Error: An assembly specified in the application dependencies manifest (ChessStats.deps.json) was not found 
