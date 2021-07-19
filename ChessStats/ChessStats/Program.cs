@@ -19,7 +19,7 @@ namespace ChessStats
     {
         private const int MAX_CAPS_PAGES = 50;
         private const int MAX_CAPS_PAGES_WITH_CACHE = 3;
-        private const string VERSION_NUMBER = "0.6";
+        private const string VERSION_NUMBER = "0.8";
         private const string RESULTS_DIR_NAME = "ChessStatsResults";
         private const string CACHE_DIR_NAME = "ChessStatsCache";
         private const string CACHE_VERSION_NUMBER = "1";
@@ -31,6 +31,7 @@ namespace ChessStats
         private const string DEFAULT_USER_IMAGE = "https://images.chesscomfiles.com/uploads/v1/group/57796.67ee0038.160x160o.2dc0953ad64e.png";
         private const string INDEX_PAGE_IMAGE = "https://images.chesscomfiles.com/uploads/v1/group/57796.67ee0038.160x160o.2dc0953ad64e.png";
         private const string REPORT_HEADING_ICON = "https://www.chess.com/bundles/web/favicons/favicon-16x16.31f99381.png";
+        private const string CAPS_URL = "https://www.chess.com/callback/user/daily/archive?all=1&userId=";
         private const int GRAPH_WIDTH = 700;
         private const int GRAPH_HEIGHT_STATS = 300;
         private const int GRAPH_HEIGHT_AVERAGE = 200;
@@ -75,7 +76,7 @@ namespace ChessStats
         {
             bool hasRunErrors = false;
             bool hasCmdLineOptionSet = true;
-            bool isCapsIncluded = false;
+            bool isCapsIncluded = true;
 
             //Set up data directories
             DirectoryInfo applicationPath = new DirectoryInfo(Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName));
@@ -124,6 +125,7 @@ namespace ChessStats
 
                 //Replace username with correct case - api returns ID in lower case so extract from URL property
                 string chessdotcomUsername = userRecord.Url.Replace(MEMBER_URL, "", StringComparison.InvariantCultureIgnoreCase);
+                int chessdotcomPlayerId = userRecord.PlayerId;
 
                 //Create output directory
                 DirectoryInfo resultsDir = baseResultsDir.CreateSubdirectory(chessdotcomUsername);
@@ -156,7 +158,8 @@ namespace ChessStats
                 if (isCapsIncluded)
                 {
                     Helpers.StartTimedSection($">>Fetching and Processing Available CAPS Scores");
-                    capsScores = await CapsFromChessDotCom.GetCapsScores(cacheDir, chessdotcomUsername, MAX_CAPS_PAGES, MAX_CAPS_PAGES_WITH_CACHE).ConfigureAwait(false);
+                    capsScores = await CapsFromChessDotCom.GetCapsScoresJson(cacheDir, chessdotcomUsername,chessdotcomPlayerId, MAX_CAPS_PAGES, MAX_CAPS_PAGES_WITH_CACHE).ConfigureAwait(false);
+                    //capsScores = await CapsFromChessDotCom.GetCapsScores(cacheDir, chessdotcomUsername, MAX_CAPS_PAGES, MAX_CAPS_PAGES_WITH_CACHE).ConfigureAwait(false);
                     Helpers.EndTimedSection(">>Finished Fetching and Processing Available CAPS Scores", true);
                 }
                 else

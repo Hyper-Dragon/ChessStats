@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netcoreapp3.0</TargetFramework>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
     <Description>A .NET wrapper for Chess.com's API</Description>
     <Company>Ambersoft Labs</Company>
     <Authors>Kurt Gooding</Authors>
