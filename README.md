@@ -232,7 +232,7 @@ Time Played (hh:mm:ss):    171:55:39
     * Error: An assembly specified in the application dependencies manifest (ChessStats.deps.json) was not found 
         * Delete the folder C:\Users\<username>\AppData\Local\Temp\ .net\ and rerun
     * Error: Unable to write index.html 
-        * Make sure that index.html is no in use and rerun
+        * Make sure that index.html is not in use and rerun
 
 ## Dependencies
 * [ChessDotComSharp](https://github.com/nullablebool/ChessDotComSharp) @nullablebool
