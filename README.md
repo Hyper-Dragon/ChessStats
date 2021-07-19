@@ -7,20 +7,20 @@ ChessStats is a console app used to retrieve monthly play time, ratings and top 
 Download the latest version from the [Releases](https://github.com/Hyper-Dragon/ChessStats/releases) page, extract _ChessStats.exe_ and put it where you want it to go.  Note that the cache and reporting directories are created relative to the executable's location. 
 
 ## Version History
-__Version 0.7__ 
+### Version 0.7 
 * CAPS scores, limited to the last 20 games, now included
 * Changed background in stats pages
 * Openings for last ??? games table added
 * Fixed v0.6 missing assembly issue
 * Migrated from Microsoft.CodeAnalysis.FxCopAnalyzers (depricated) to Microsoft.CodeAnalysis.NetAnalyzers
 
-__Version 0.6__ 
+### Version 0.6 
 * Graphs for ratings and monthly win/loss averages (included in Html Reports)
 * Html index file generation _([location of executable]/ChessStatsResults/index.html)_
 * Several minor fixes
 * CAPS scores removed due to chess.com site changes
  
-__Version 0.5__
+### Version 0.5
 
 * Output files written to a reporting directory _([location of executable]/ChessStatsResults/[Username]/)_ containing:
   * A full (self-contained) HTML Report
@@ -32,7 +32,7 @@ __Version 0.5__
 * Error handling improvements
 * Several minor display fixes
 
-__version 0.4__ 
+### Version 0.4 
 * CAPS averages broken down by time control.  
     * These are available for games that have been analysed on the chess.com website (games with no analysis are marked with '-' on ingest). 
 
