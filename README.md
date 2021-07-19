@@ -8,6 +8,7 @@ __Version 0.7__
 * Changed background in stats pages
 * Openings for last ??? games table added
 * Fixed v0.6 missing assembly issue
+* Migrated from Microsoft.CodeAnalysis.FxCopAnalyzers (depricated) to Microsoft.CodeAnalysis.NetAnalyzers
 
 __Version 0.6__ 
 * Graphs for ratings and monthly win/loss averages (included in Html Reports)
