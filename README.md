@@ -9,7 +9,7 @@ Download the latest version from the [Releases](https://github.com/Hyper-Dragon/
 ## Version History
 ### Version 0.7 
 * CAPS scores, limited to the last 20 games, now included
-* Changed background in stats pages
+* Html tweeks including a tiled background image
 * Openings for last ??? games table added
 * Fixed v0.6 missing assembly issue
 * Migrated from Microsoft.CodeAnalysis.FxCopAnalyzers (depricated) to Microsoft.CodeAnalysis.NetAnalyzers
