@@ -38,8 +38,8 @@ namespace ChessStats
             LinGrBrush = new LinearGradientBrush(
                          new Point(0, 0),
                          new Point(width, Range),
-                         Color.FromArgb(255, 49, 46, 43),
-                         Color.FromArgb(255, 181, 180, 179));
+                         Color.FromArgb(20, 49, 46, 43),
+                         Color.FromArgb(20, 181, 180, 179));
 
             BackgroundPen = new Pen(LinGrBrush);
 
