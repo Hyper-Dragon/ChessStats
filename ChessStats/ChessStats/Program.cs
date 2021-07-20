@@ -113,6 +113,26 @@ namespace ChessStats
                 _ => new string[] { args[0] }
             };
 
+            //Get reporting graphics
+            Helpers.StartTimedSection(">>Download report images/fonts");
+
+            using (HttpClient httpClient = new HttpClient())
+            {
+                string indexPageLogo = Convert.ToBase64String(await httpClient.GetByteArrayAsync(new Uri(INDEX_PAGE_IMAGE)).ConfigureAwait(false));
+                indexPageLogoFragment = $"<img src='data:image/png;base64,{indexPageLogo}'/>";
+
+                string pawnFileBase64 = Convert.ToBase64String(await httpClient.GetByteArrayAsync(new Uri(REPORT_HEADING_ICON)).ConfigureAwait(false));
+                pawnFragment = $"<img src='data:image/png;base64,{pawnFileBase64}'/>";
+
+                string font700FragmentBase64 = Convert.ToBase64String(await httpClient.GetByteArrayAsync(new Uri(FONT_700_WOFF2_URL)).ConfigureAwait(false));
+                font700Fragment = $"font-display:swap; font-family:Montserrat; font-style:normal; font-weight:700; src: url('data:font/ttf;base64,{font700FragmentBase64}') format('woff2');";
+
+                string font800FragmentBase64 = Convert.ToBase64String(await httpClient.GetByteArrayAsync(new Uri(FONT_800_WOFF2_URL)).ConfigureAwait(false));
+                font800Fragment = $"font-display:swap; font-family:Montserrat; font-style:normal; font-weight:800; src: url('data:font/ttf;base64,{font800FragmentBase64}') format('woff2');";
+            }
+
+            Helpers.EndTimedSection(">>Download complete");
+
             foreach (string user in chessdotcomUsers)
             {
                 PlayerProfile userRecord = null;
@@ -145,24 +165,12 @@ namespace ChessStats
                 Helpers.DisplaySection($"Fetching Data for {chessdotcomUsername}", true);
 
                 //Get reporting graphics
-                Helpers.StartTimedSection(">>Download report images/fonts");
+                Helpers.StartTimedSection(">>Download user profile image");
 
                 using (HttpClient httpClient = new HttpClient())
                 {
                     Uri userLogoUri = new Uri(string.IsNullOrEmpty(userRecord.Avatar) ? DEFAULT_USER_IMAGE : userRecord.Avatar);
                     userLogoBase64 = Convert.ToBase64String(await httpClient.GetByteArrayAsync(userLogoUri).ConfigureAwait(false));
-
-                    string indexPageLogo = Convert.ToBase64String(await httpClient.GetByteArrayAsync(new Uri(INDEX_PAGE_IMAGE)).ConfigureAwait(false));
-                    indexPageLogoFragment = $"<img src='data:image/png;base64,{indexPageLogo}'/>";
-
-                    string pawnFileBase64 = Convert.ToBase64String(await httpClient.GetByteArrayAsync(new Uri(REPORT_HEADING_ICON)).ConfigureAwait(false));
-                    pawnFragment = $"<img src='data:image/png;base64,{pawnFileBase64}'/>";
-
-                    string font700FragmentBase64 = Convert.ToBase64String(await httpClient.GetByteArrayAsync(new Uri(FONT_700_WOFF2_URL)).ConfigureAwait(false));
-                    font700Fragment = $"font-display:swap; font-family:Montserrat; font-style:normal; font-weight:700; src: url('data:font/ttf;base64,{font700FragmentBase64}') format('woff2');";
-
-                    string font800FragmentBase64 = Convert.ToBase64String(await httpClient.GetByteArrayAsync(new Uri(FONT_800_WOFF2_URL)).ConfigureAwait(false));
-                    font800Fragment = $"font-display:swap; font-family:Montserrat; font-style:normal; font-weight:800; src: url('data:font/ttf;base64,{font800FragmentBase64}') format('woff2');";
                 }
 
                 Helpers.EndTimedSection(">>Download complete");
@@ -329,76 +337,6 @@ namespace ChessStats
 
                 Helpers.EndTimedSection($">>Finished Writing Results", newLineAfter: false);
 
-                Helpers.StartTimedSection($">>Rebuilding HTML Index at {baseResultsDir.FullName}");
-
-                SortedList<string, (DateTime lastUpdate,
-                                    bool hasHtml, bool hasTxt,
-                                    bool hasBulletPgn, bool hasBlitzPgn,
-                                    bool hasRapidPgn, bool hasCaps)> index = new SortedList<string, (DateTime lastUpdate, bool hasHtml,
-                                                                                                     bool hasTxt, bool hasBulletPgn,
-                                                                                                     bool hasBlitzPgn, bool hasRapidPgn,
-                                                                                                     bool hasCaps)>();
-
-                foreach (DirectoryInfo dir in baseResultsDir.GetDirectories())
-                {
-                    FileInfo[] fileInfo = dir.GetFiles();
-
-                    if (fileInfo.Length > 0)
-                    {
-                        index.Add(dir.Name, (lastUpdate: fileInfo.Select(x => x.LastWriteTimeUtc).Max(),
-                                             hasHtml: fileInfo.Any(x => x.Name.EndsWith($"-Summary.html", StringComparison.InvariantCultureIgnoreCase)),
-                                             hasTxt: fileInfo.Any(x => x.Name.EndsWith($"-Summary.txt", StringComparison.InvariantCultureIgnoreCase)),
-                                             hasBulletPgn: fileInfo.Any(x => x.Name.EndsWith($"-Pgn-Bullet.pgn", StringComparison.InvariantCultureIgnoreCase)),
-                                             hasBlitzPgn: fileInfo.Any(x => x.Name.EndsWith($"-Pgn-Blitz.pgn", StringComparison.InvariantCultureIgnoreCase)),
-                                             hasRapidPgn: fileInfo.Any(x => x.Name.EndsWith($"-Pgn-Rapid.pgn", StringComparison.InvariantCultureIgnoreCase)),
-                                             hasCaps: fileInfo.Any(x => x.Name.EndsWith($"-Caps-All.tsv", StringComparison.InvariantCultureIgnoreCase))
-                                            ));
-                    }
-                }
-
-                StringBuilder htmlOut = new StringBuilder();
-                _ = htmlOut.Append(Helpers.GetHtmlTop($"ChessStats Index", bkgImageBase64,font700Fragment,font800Fragment))
-                           .AppendLine($"<div class='headRow'>")
-                           .AppendLine($"<div class='headBox priority-2'>")
-                           .AppendLine($"{indexPageLogoFragment}")
-                           .AppendLine($"</div>")
-                           .AppendLine($"<div class='headBox'>").AppendLine($"<h1>")
-                           .AppendLine($"ChessStats Index<br/>On {DateTime.UtcNow.ToShortDateString()}&nbsp;<small class='priority-2'>({DateTime.UtcNow.ToShortTimeString()} UTC)</small></h1>")
-                           .AppendLine($"</div>")
-                           .AppendLine($"</div><br/>")
-                           .AppendLine($"<div class='onerow'><div class='onecolumn'>")
-                           .AppendLine($"<h2>{pawnFragment}Available Files</h2>")
-                           .AppendLine("<table><thead>")
-                           .AppendLine("<tr><td>User</td><td>Html</td><td class='priority-2'>Text</td><td>Bullet</td><td>Blitz</td><td>Rapid</td><td class='priority-2'>CAPs</td><td class='priority-3'>Updated (UTC)</td></tr>")
-                           .AppendLine("</thead><tbody>");
-
-                foreach (KeyValuePair<string, (DateTime lastUpdate, bool hasHtml, bool hasTxt, bool hasBulletPgn, bool hasBlitzPgn, bool hasRapidPgn, bool hasCaps)> userRecords in index)
-                {
-                    int daysFromLastUpdate = (DateTime.UtcNow - userRecords.Value.lastUpdate).Days;
-
-                    _ = htmlOut.AppendLine("<tr>")
-                               .Append($"<td>{userRecords.Key}</td>")
-                               .Append($"<td{((userRecords.Value.hasHtml) ? "" : " class='lower'")}>{((userRecords.Value.hasHtml) ? $"<a href='./{userRecords.Key}/{userRecords.Key}-Summary.html'>Report" : "&nbsp;")}</td>")
-                               .Append($"<td class='priority-2{((userRecords.Value.hasTxt) ? "'" : " lower'")}>{((userRecords.Value.hasTxt) ? $"<a href='./{userRecords.Key}/{userRecords.Key}-Summary.txt'>TXT" : "&nbsp;")}</td>")
-                               .Append($"<td>{((userRecords.Value.hasBulletPgn) ? $"<a href='./{userRecords.Key}/{userRecords.Key}-Pgn-Bullet.pgn'>PGN" : "&nbsp;")}</td>")
-                               .Append($"<td>{((userRecords.Value.hasBlitzPgn) ? $"<a href='./{userRecords.Key}/{userRecords.Key}-Pgn-Blitz.pgn'>PGN" : "&nbsp;")}</td>")
-                               .Append($"<td>{((userRecords.Value.hasRapidPgn) ? $"<a href='./{userRecords.Key}/{userRecords.Key}-Pgn-Rapid.pgn'>PGN" : "&nbsp;")}</td>")
-                               .Append($"<td class='priority-2{((userRecords.Value.hasCaps) ? "'" : " lower'")}>{((userRecords.Value.hasCaps) ? $"<a href='./{userRecords.Key}/{userRecords.Key}-Caps-All.tsv'>TSV" : "&nbsp;")}</td>")
-                               .Append($"<td class='priority-3{((daysFromLastUpdate < 1) ? " higher'" : ((daysFromLastUpdate >= 3) ? "'" : " lower'"))}>{userRecords.Value.lastUpdate.ToShortDateString()}@{userRecords.Value.lastUpdate.ToShortTimeString()}</td>")
-                               .AppendLine("</tr>");
-                }
-                htmlOut.AppendLine("</tbody></table>")
-                       .AppendLine(Helpers.GetHtmlTail(new Uri(CHESSCOM_URL), VERSION_NUMBER, PROJECT_LINK))
-                       .AppendLine("</div></div></body></html>");
-
-
-                using FileStream indexFileOutStream = File.Create($"{Path.Combine(baseResultsDir.FullName, $"index.html")}");
-                await indexFileOutStream.WriteAsync(Encoding.UTF8.GetBytes(htmlOut.ToString())).ConfigureAwait(false);
-                await indexFileOutStream.FlushAsync().ConfigureAwait(false);
-                indexFileOutStream.Close();
-
-                Helpers.EndTimedSection($">>Finished Rebuilding HTML Index", newLineAfter: true);
-
                 Console.WriteLine(textReport.ToString(CultureInfo.InvariantCulture));
                 Console.WriteLine("");
 
@@ -413,11 +351,80 @@ namespace ChessStats
                 graphT1 = graphT2 = graphT3 = graphT4 = graphT5 = graphT6 = graphT7 = graphT8 = graphT9 = graphT10 = graphT11 = graphT12 = reportT1 = reportT2 = null;
                 bulletGraphHtmlFragment = blitzGraphHtmlFragment = rapidGraphHtmlFragment = bulletAvStatsGraphHtmlFragment = blitzAvStatsraphHtmlFragment = rapidAvStatsraphHtmlFragment = null;
                 bulletFiveAvCaps = blitzFiveAvCaps = rapidFiveAvCaps = bulletTenAvCaps = blitzTenAvCaps = rapidTenAvCaps = textReport = htmlReport = null;
-                htmlOut = null;
-
+                
                 GC.Collect();
                 GC.WaitForPendingFinalizers();
             }
+
+            Helpers.StartTimedSection($">>Rebuilding HTML Index at {baseResultsDir.FullName}");
+
+            SortedList<string, (DateTime lastUpdate,
+                                bool hasHtml, bool hasTxt,
+                                bool hasBulletPgn, bool hasBlitzPgn,
+                                bool hasRapidPgn, bool hasCaps)> index = new SortedList<string, (DateTime lastUpdate, bool hasHtml,
+                                                                                                 bool hasTxt, bool hasBulletPgn,
+                                                                                                 bool hasBlitzPgn, bool hasRapidPgn,
+                                                                                                 bool hasCaps)>();
+
+            foreach (DirectoryInfo dir in baseResultsDir.GetDirectories())
+            {
+                FileInfo[] fileInfo = dir.GetFiles();
+
+                if (fileInfo.Length > 0)
+                {
+                    index.Add(dir.Name, (lastUpdate: fileInfo.Select(x => x.LastWriteTimeUtc).Max(),
+                                         hasHtml: fileInfo.Any(x => x.Name.EndsWith($"-Summary.html", StringComparison.InvariantCultureIgnoreCase)),
+                                         hasTxt: fileInfo.Any(x => x.Name.EndsWith($"-Summary.txt", StringComparison.InvariantCultureIgnoreCase)),
+                                         hasBulletPgn: fileInfo.Any(x => x.Name.EndsWith($"-Pgn-Bullet.pgn", StringComparison.InvariantCultureIgnoreCase)),
+                                         hasBlitzPgn: fileInfo.Any(x => x.Name.EndsWith($"-Pgn-Blitz.pgn", StringComparison.InvariantCultureIgnoreCase)),
+                                         hasRapidPgn: fileInfo.Any(x => x.Name.EndsWith($"-Pgn-Rapid.pgn", StringComparison.InvariantCultureIgnoreCase)),
+                                         hasCaps: fileInfo.Any(x => x.Name.EndsWith($"-Caps-All.tsv", StringComparison.InvariantCultureIgnoreCase))
+                                        ));
+                }
+            }
+
+            StringBuilder htmlOut = new StringBuilder();
+            _ = htmlOut.Append(Helpers.GetHtmlTop($"ChessStats Index", bkgImageBase64, font700Fragment, font800Fragment))
+                       .AppendLine($"<div class='headRow'>")
+                       .AppendLine($"<div class='headBox priority-2'>")
+                       .AppendLine($"{indexPageLogoFragment}")
+                       .AppendLine($"</div>")
+                       .AppendLine($"<div class='headBox'>").AppendLine($"<h1>")
+                       .AppendLine($"ChessStats Index<br/>On {DateTime.UtcNow.ToShortDateString()}&nbsp;<small class='priority-2'>({DateTime.UtcNow.ToShortTimeString()} UTC)</small></h1>")
+                       .AppendLine($"</div>")
+                       .AppendLine($"</div><br/>")
+                       .AppendLine($"<div class='onerow'><div class='onecolumn'>")
+                       .AppendLine($"<h2>{pawnFragment}Available Files</h2>")
+                       .AppendLine("<table><thead>")
+                       .AppendLine("<tr><td>User</td><td>Html</td><td class='priority-2'>Text</td><td>Bullet</td><td>Blitz</td><td>Rapid</td><td class='priority-2'>CAPs</td><td class='priority-3'>Updated (UTC)</td></tr>")
+                       .AppendLine("</thead><tbody>");
+
+            foreach (KeyValuePair<string, (DateTime lastUpdate, bool hasHtml, bool hasTxt, bool hasBulletPgn, bool hasBlitzPgn, bool hasRapidPgn, bool hasCaps)> userRecords in index)
+            {
+                int daysFromLastUpdate = (DateTime.UtcNow - userRecords.Value.lastUpdate).Days;
+
+                _ = htmlOut.AppendLine("<tr>")
+                           .Append($"<td>{userRecords.Key}</td>")
+                           .Append($"<td{((userRecords.Value.hasHtml) ? "" : " class='lower'")}>{((userRecords.Value.hasHtml) ? $"<a href='./{userRecords.Key}/{userRecords.Key}-Summary.html'>Report" : "&nbsp;")}</td>")
+                           .Append($"<td class='priority-2{((userRecords.Value.hasTxt) ? "'" : " lower'")}>{((userRecords.Value.hasTxt) ? $"<a href='./{userRecords.Key}/{userRecords.Key}-Summary.txt'>TXT" : "&nbsp;")}</td>")
+                           .Append($"<td>{((userRecords.Value.hasBulletPgn) ? $"<a href='./{userRecords.Key}/{userRecords.Key}-Pgn-Bullet.pgn'>PGN" : "&nbsp;")}</td>")
+                           .Append($"<td>{((userRecords.Value.hasBlitzPgn) ? $"<a href='./{userRecords.Key}/{userRecords.Key}-Pgn-Blitz.pgn'>PGN" : "&nbsp;")}</td>")
+                           .Append($"<td>{((userRecords.Value.hasRapidPgn) ? $"<a href='./{userRecords.Key}/{userRecords.Key}-Pgn-Rapid.pgn'>PGN" : "&nbsp;")}</td>")
+                           .Append($"<td class='priority-2{((userRecords.Value.hasCaps) ? "'" : " lower'")}>{((userRecords.Value.hasCaps) ? $"<a href='./{userRecords.Key}/{userRecords.Key}-Caps-All.tsv'>TSV" : "&nbsp;")}</td>")
+                           .Append($"<td class='priority-3{((daysFromLastUpdate < 1) ? " higher'" : ((daysFromLastUpdate >= 3) ? "'" : " lower'"))}>{userRecords.Value.lastUpdate.ToShortDateString()}@{userRecords.Value.lastUpdate.ToShortTimeString()}</td>")
+                           .AppendLine("</tr>");
+            }
+            htmlOut.AppendLine("</tbody></table>")
+                   .AppendLine(Helpers.GetHtmlTail(new Uri(CHESSCOM_URL), VERSION_NUMBER, PROJECT_LINK))
+                   .AppendLine("</div></div></body></html>");
+
+
+            using FileStream indexFileOutStream = File.Create($"{Path.Combine(baseResultsDir.FullName, $"index.html")}");
+            await indexFileOutStream.WriteAsync(Encoding.UTF8.GetBytes(htmlOut.ToString())).ConfigureAwait(false);
+            await indexFileOutStream.FlushAsync().ConfigureAwait(false);
+            indexFileOutStream.Close();
+
+            Helpers.EndTimedSection($">>Finished Rebuilding HTML Index", newLineAfter: true);
 
             return (hasRunErrors, hasCmdLineOptionSet);
         }
