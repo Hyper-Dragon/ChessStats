@@ -31,12 +31,19 @@ namespace ChessStats
         private const string DEFAULT_USER_IMAGE = "https://images.chesscomfiles.com/uploads/v1/group/57796.67ee0038.160x160o.2dc0953ad64e.png";
         private const string INDEX_PAGE_IMAGE = "https://images.chesscomfiles.com/uploads/v1/group/57796.67ee0038.160x160o.2dc0953ad64e.png";
         private const string REPORT_HEADING_ICON = "https://www.chess.com/bundles/web/favicons/favicon-16x16.31f99381.png";
+        private const string FONT_700_WOFF2_URL = "https://www.chess.com/bundles/web/fonts/montserrat-700.5e7b9b6f.woff2";
+        private const string FONT_800_WOFF2_URL = "https://www.chess.com/bundles/web/fonts/montserrat-800.92157f3f.woff2";
         private const string CAPS_URL = "https://www.chess.com/callback/user/daily/archive?all=1&userId=";
         private const int GRAPH_WIDTH = 700;
         private const int GRAPH_HEIGHT_STATS = 300;
         private const int GRAPH_HEIGHT_AVERAGE = 200;
 
         private static string bkgImageBase64 = "";
+        private static string userLogoBase64 = "";
+        private static string indexPageLogoFragment = "";
+        private static string pawnFragment = "";
+        private static string font700Fragment = "";
+        private static string font800Fragment = "";
 
         private static async Task Main(string[] args)
         {
@@ -138,10 +145,7 @@ namespace ChessStats
                 Helpers.DisplaySection($"Fetching Data for {chessdotcomUsername}", true);
 
                 //Get reporting graphics
-                Helpers.StartTimedSection(">>Download report images");
-                string userLogoBase64 = "";
-                string indexPageLogoFragment = "";
-                string pawnFragment = "";
+                Helpers.StartTimedSection(">>Download report images/fonts");
 
                 using (HttpClient httpClient = new HttpClient())
                 {
@@ -153,6 +157,12 @@ namespace ChessStats
 
                     string pawnFileBase64 = Convert.ToBase64String(await httpClient.GetByteArrayAsync(new Uri(REPORT_HEADING_ICON)).ConfigureAwait(false));
                     pawnFragment = $"<img src='data:image/png;base64,{pawnFileBase64}'/>";
+
+                    string font700FragmentBase64 = Convert.ToBase64String(await httpClient.GetByteArrayAsync(new Uri(FONT_700_WOFF2_URL)).ConfigureAwait(false));
+                    font700Fragment = $"font-display:swap; font-family:Montserrat; font-style:normal; font-weight:700; src: url('data:font/ttf;base64,{font700FragmentBase64}') format('woff2');";
+
+                    string font800FragmentBase64 = Convert.ToBase64String(await httpClient.GetByteArrayAsync(new Uri(FONT_800_WOFF2_URL)).ConfigureAwait(false));
+                    font800Fragment = $"font-display:swap; font-family:Montserrat; font-style:normal; font-weight:800; src: url('data:font/ttf;base64,{font800FragmentBase64}') format('woff2');";
                 }
 
                 Helpers.EndTimedSection(">>Download complete");
@@ -270,7 +280,7 @@ namespace ChessStats
                 Task<string> reportT2 = BuildHtmlReport(isCapsIncluded, VERSION_NUMBER, userRecord, userStats, chessdotcomUsername, whiteOpeningshtmlOut, blackOpeningshtmlOut,
                                                           whiteOpeningsRecenthtmlOut, blackOpeningsRecenthtmlOut,
                                                           playingStatshtmlOut, timePlayedByMonthhtmlOut, capsTablehtmlOut, capsRollingAverageFivehtmlOut,
-                                                          capsRollingAverageTenhtmlOut, userLogoBase64, pawnFragment,
+                                                          capsRollingAverageTenhtmlOut, userLogoBase64, pawnFragment, 
                                                           bulletGraphHtmlFragment, blitzGraphHtmlFragment, rapidGraphHtmlFragment,
                                                           bulletAvStatsGraphHtmlFragment, blitzAvStatsraphHtmlFragment, rapidAvStatsraphHtmlFragment,
                                                           bulletFiveAvCaps, blitzFiveAvCaps, rapidFiveAvCaps, bulletTenAvCaps,
@@ -347,7 +357,7 @@ namespace ChessStats
                 }
 
                 StringBuilder htmlOut = new StringBuilder();
-                _ = htmlOut.Append(Helpers.GetHtmlTop($"ChessStats Index", bkgImageBase64))
+                _ = htmlOut.Append(Helpers.GetHtmlTop($"ChessStats Index", bkgImageBase64,font700Fragment,font800Fragment))
                            .AppendLine($"<div class='headRow'>")
                            .AppendLine($"<div class='headBox priority-2'>")
                            .AppendLine($"{indexPageLogoFragment}")
@@ -427,7 +437,7 @@ namespace ChessStats
             {
                 var htmlOut = new StringBuilder();
 
-                _ = htmlOut.Append(Helpers.GetHtmlTop($"ChessStats for {chessdotcomUsername}", bkgImageBase64))
+                _ = htmlOut.Append(Helpers.GetHtmlTop($"ChessStats for {chessdotcomUsername}", bkgImageBase64, font700Fragment, font800Fragment))
                            .AppendLine($"<br/><div class='headRow'>")
                            .AppendLine($"<div class='headBox priority-2'>")
                            .AppendLine($"<a href='{userRecord.Url}'><img alt='logo' src='data:image/png;base64,{userLogoBase64}'/></a>")
