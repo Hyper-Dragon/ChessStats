@@ -36,7 +36,8 @@ namespace ChessStats
         private const int GRAPH_HEIGHT_STATS = 300;
         private const int GRAPH_HEIGHT_AVERAGE = 200;
 
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Exit gracefully")]
+        private static string bkgImageBase64 = "";
+
         private static async Task Main(string[] args)
         {
             Helpers.DisplayLogo(VERSION_NUMBER);
@@ -82,6 +83,9 @@ namespace ChessStats
             DirectoryInfo applicationPath = new DirectoryInfo(Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName));
             DirectoryInfo baseResultsDir = applicationPath.CreateSubdirectory(RESULTS_DIR_NAME);
             DirectoryInfo baseCacheDir = applicationPath.CreateSubdirectory($"{CACHE_DIR_NAME}/CacheV{CACHE_VERSION_NUMBER}");
+
+            //Load Embeded Resources
+            bkgImageBase64 = Helpers.EncodeResourceImageAsHtmlFragment("SeamlessBkg01.png");
 
             while (args.Length != 1 || string.IsNullOrWhiteSpace(args[0]))
             {
@@ -158,7 +162,7 @@ namespace ChessStats
                 if (isCapsIncluded)
                 {
                     Helpers.StartTimedSection($">>Fetching and Processing Available CAPS Scores");
-                    capsScores = await CapsFromChessDotCom.GetCapsScoresJson(cacheDir, chessdotcomUsername,chessdotcomPlayerId, MAX_CAPS_PAGES, MAX_CAPS_PAGES_WITH_CACHE).ConfigureAwait(false);
+                    capsScores = await CapsFromChessDotCom.GetCapsScoresJson(cacheDir, chessdotcomUsername,chessdotcomPlayerId).ConfigureAwait(false);
                     //capsScores = await CapsFromChessDotCom.GetCapsScores(cacheDir, chessdotcomUsername, MAX_CAPS_PAGES, MAX_CAPS_PAGES_WITH_CACHE).ConfigureAwait(false);
                     Helpers.EndTimedSection(">>Finished Fetching and Processing Available CAPS Scores", true);
                 }
@@ -340,7 +344,7 @@ namespace ChessStats
                 }
 
                 StringBuilder htmlOut = new StringBuilder();
-                _ = htmlOut.Append(Helpers.GetHtmlTop($"ChessStats Index"))
+                _ = htmlOut.Append(Helpers.GetHtmlTop($"ChessStats Index", bkgImageBase64))
                            .AppendLine($"<div class='headRow'>")
                            .AppendLine($"<div class='headBox priority-2'>")
                            .AppendLine($"{indexPageLogoFragment}")
@@ -419,7 +423,7 @@ namespace ChessStats
             {
                 var htmlOut = new StringBuilder();
 
-                _ = htmlOut.Append(Helpers.GetHtmlTop($"ChessStats for {chessdotcomUsername}"))
+                _ = htmlOut.Append(Helpers.GetHtmlTop($"ChessStats for {chessdotcomUsername}", bkgImageBase64))
                            .AppendLine($"<div class='headRow'>")
                            .AppendLine($"<div class='headBox priority-2'>")
                            .AppendLine($"<a href='{userRecord.Url}'><img alt='logo' src='data:image/png;base64,{userLogoBase64}'/></a>")
@@ -1008,7 +1012,6 @@ namespace ChessStats
             gameTime = $"{game.TimeClass,-6}{((game.IsRatedGame) ? "   " : " NR")}";
         }
 
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Not critical so just ignore any missing ECO data")]
         private static void UpdateOpening(SortedList<string, (string href, int total, int winCount, int drawCount, int lossCount)> ecoPlayedRollupWhite, SortedList<string, (string href, int total, int winCount, int drawCount, int lossCount)> ecoPlayedRollupBlack, ChessGame game, string side, bool? isWin)
         {
             try
