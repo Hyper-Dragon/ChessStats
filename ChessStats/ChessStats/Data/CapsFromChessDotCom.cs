@@ -19,10 +19,8 @@ namespace ChessStats.Data
 
     public static class CapsFromChessDotCom
     {
-        public static async Task<Dictionary<string, List<CapsRecord>>> GetCapsScoresJson(DirectoryInfo cache, string chessdotcomUsername, int chessdotcomPlayerId)
+        public static async Task<Dictionary<string, List<CapsRecord>>> GetCapsScoresJson(int chessdotcomPlayerId)
         {
-            if (cache == null) { throw new ArgumentNullException(nameof(cache)); }
-
             Helpers.ResetDisplayCounter();
 
             using HttpClient client2 = new HttpClient();
@@ -31,87 +29,52 @@ namespace ChessStats.Data
 
             List<Root> myDeserializedClass = JsonSerializer.Deserialize<List<Root>>(pageContents2);
 
-
-
-
-            string cacheFileName = $"{Path.Combine(cache.FullName, $"{chessdotcomUsername}Caps")}";
-            Dictionary<string, List<CapsRecord>> capsScores = new Dictionary<string, List<CapsRecord>>();
-            Dictionary<string, List<CapsRecord>> capsScoresCached = new Dictionary<string, List<CapsRecord>>();
-
-            /*
-            if (File.Exists(cacheFileName))
+            Dictionary<string, List<CapsRecord>> capsScores = new Dictionary<string, List<CapsRecord>>
             {
-                using FileStream capsFileInStream = File.OpenRead(cacheFileName);
-                capsScoresCached = await JsonSerializer.DeserializeAsync<Dictionary<string, List<CapsRecord>>>(capsFileInStream).ConfigureAwait(false);
 
-                //If we have cached records only pull back the first few pages
-                maxPages = maxPagesWithCache;
-            }
-            */
+                //foreach (string control in new string[] { "bullet", "blitz", "rapid" })
+                //{
+                //foreach (string colour in new string[] { "white", "black" })
+                //{
+                //string iterationKey = $"{control} {colour}";
+                //capsScores.Add(iterationKey, new List<CapsRecord>());
 
-            foreach (string control in new string[] { "bullet", "blitz", "rapid" })
+                { $"rapid white", new List<CapsRecord>() },
+                { $"rapid black", new List<CapsRecord>() }
+            };
+
+            foreach (var record in myDeserializedClass)
             {
-                foreach (string colour in new string[] { "white", "black" })
+                List<double> capsScoreWhite = new List<double>();
+                List<double> capsScoreBlack = new List<double>();
+
+                try
                 {
-                    string iterationKey = $"{control} {colour}";
-                    capsScores.Add(iterationKey, new List<CapsRecord>());
-
-                    foreach (var record in myDeserializedClass)
+                    CapsRecord capsRecord = new CapsRecord()
                     {
-                        List<double> capsScoreWhite = new List<double>();
+                        Caps = record.User1.Id == chessdotcomPlayerId ? record.User1Accuracy: record.User1Accuracy,
+                        GameDate = DateTime.Parse(record.GameEndTime),
+                    };
 
-                        try
-                        {
-                            CapsRecord capsRecord = new CapsRecord()
-                            {
-                                Caps = record.User1Accuracy,
-                                GameDate = DateTime.Parse(record.GameEndTime),
-                            };
-
-                            Helpers.ProcessedDisplay(".");
-                            capsScores[iterationKey].Add(capsRecord);
-                        }
-                        catch (System.NullReferenceException)
-                        {
-                            //Value missing
-                            Helpers.ProcessedDisplay("-");
-                        }
-                        catch
-                        {
-                            Helpers.ProcessedDisplay("E");
-                        }
-                    }
-
+                    Helpers.ProcessedDisplay(".");
+                    capsScores[$"rapid {((record.User1.Id == chessdotcomPlayerId) ?"white":"black")}"].Add(capsRecord);
                 }
-            }
-
-
-
-           
-
-            //Resolve cache
-            /*
-            if (capsScoresCached.Count != 0)
-            {
-                foreach (string capsKey in capsScores.Where(x => x.Value.Count > 0).Select(x => x.Key).ToArray())
+                catch (System.NullReferenceException)
                 {
-                    //Remove records from the cache equal or after the new data
-                    DateTime firstDate = capsScores[capsKey].Select(x => x.GameDate).Min();
-                    capsScoresCached[capsKey] = capsScoresCached[capsKey].Where(x => DateTime.Compare(x.GameDate, firstDate) <= 0).ToList<CapsRecord>();
-                    capsScores[capsKey] = capsScores[capsKey].Where(x => DateTime.Compare(x.GameDate, firstDate) > 0).ToList<CapsRecord>();
-                    //Merge the lists back together
-                    capsScores[capsKey] = capsScores[capsKey].Concat(capsScoresCached[capsKey]).ToList<CapsRecord>();
+                    //Value missing
+                    Helpers.ProcessedDisplay("-");
+                }
+                catch
+                {
+                    Helpers.ProcessedDisplay("E");
                 }
             }
 
-            using FileStream capsFileOutStream = File.Create(cacheFileName);
-            await JsonSerializer.SerializeAsync(capsFileOutStream, capsScores).ConfigureAwait(false);
-            await capsFileOutStream.FlushAsync().ConfigureAwait(false);
-            */
+            //}
+            //}
 
             return capsScores;
         }
-
     }
     
     public class GameType

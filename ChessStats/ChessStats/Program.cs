@@ -162,8 +162,7 @@ namespace ChessStats
                 if (isCapsIncluded)
                 {
                     Helpers.StartTimedSection($">>Fetching and Processing Available CAPS Scores");
-                    capsScores = await CapsFromChessDotCom.GetCapsScoresJson(cacheDir, chessdotcomUsername,chessdotcomPlayerId).ConfigureAwait(false);
-                    //capsScores = await CapsFromChessDotCom.GetCapsScores(cacheDir, chessdotcomUsername, MAX_CAPS_PAGES, MAX_CAPS_PAGES_WITH_CACHE).ConfigureAwait(false);
+                    capsScores = await CapsFromChessDotCom.GetCapsScoresJson(chessdotcomPlayerId).ConfigureAwait(false);
                     Helpers.EndTimedSection(">>Finished Fetching and Processing Available CAPS Scores", true);
                 }
                 else
@@ -181,7 +180,6 @@ namespace ChessStats
                 }
                 catch (Exception ex)
                 {
-
                     Console.WriteLine("");
                     Console.WriteLine($"  >>Fetching Games From Chess.Com Failed");
                     Console.WriteLine($"    {ex.Message}");
@@ -199,6 +197,8 @@ namespace ChessStats
                                 out SortedList<string, dynamic> secondsPlayedRollupMonthOnly,
                                 out SortedList<string, (string href, int total, int winCount, int drawCount, int lossCount)> ecoPlayedRollupWhite,
                                 out SortedList<string, (string href, int total, int winCount, int drawCount, int lossCount)> ecoPlayedRollupBlack,
+                                out SortedList<string, (string href, int total, int winCount, int drawCount, int lossCount)> ecoPlayedRollupWhiteRecent,
+                                out SortedList<string, (string href, int total, int winCount, int drawCount, int lossCount)> ecoPlayedRollupBlackRecent,
                                 out List<(DateTime gameDate, int rating, string gameType)> ratingsPostGame,
                                 out double totalSecondsPlayed);
 
@@ -209,10 +209,12 @@ namespace ChessStats
                 //Extract reporting data
                 (string whiteOpeningstextOut, string whiteOpeningshtmlOut) = DisplayOpeningsAsWhite(ecoPlayedRollupWhite);
                 (string blackOpeningstextOut, string blackOpeningshtmlOut) = DisplayOpeningsAsBlack(ecoPlayedRollupBlack);
+                (string whiteOpeningsRecenttextOut, string whiteOpeningsRecenthtmlOut) = DisplayOpeningsAsWhite(ecoPlayedRollupWhiteRecent);
+                (string blackOpeningsRecenttextOut, string blackOpeningsRecenthtmlOut) = DisplayOpeningsAsBlack(ecoPlayedRollupBlackRecent);
                 (string playingStatstextOut, string playingStatshtmlOut, List<(string TimeControl, int VsMin, int Worst, int LossAv, int DrawAv, int WinAv, int Best, int VsMax)> graphData) = DisplayPlayingStats(secondsPlayedRollup, userStats.ChessBullet?.Last.Rating, userStats.ChessBlitz?.Last.Rating, userStats.ChessRapid?.Last.Rating);
                 (string timePlayedByMonthtextOut, string timePlayedByMonthhtmlOut) = DisplayTimePlayedByMonth(secondsPlayedRollupMonthOnly);
                 (string capsTabletextOut, string capsTablehtmlOut) = DisplayCapsTable(capsScores);
-                (_, string capsRollingAverageFivehtmlOut, Dictionary<string, double[]> capsAverageFiveOut) = DisplayCapsRollingAverage(5, capsScores);
+                (_, string capsRollingAverageFivehtmlOut, Dictionary<string, double[]> capsAverageFiveOut) = DisplayCapsRollingAverage(3, capsScores);
                 (string capsRollingAverageTentextOut, string capsRollingAverageTenhtmlOut, Dictionary<string, double[]> capsAverageTenOut) = DisplayCapsRollingAverage(10, capsScores);
                 (string totalSecondsPlayedtextOut, _) = DisplayTotalSecondsPlayed(totalSecondsPlayed);
 
@@ -261,11 +263,12 @@ namespace ChessStats
                 Helpers.StartTimedSection($">>Building Reports");
                 //Build the text report
                 Task<string> reportT1 = BuildTextReport(isCapsIncluded, chessdotcomUsername, whiteOpeningstextOut, blackOpeningstextOut, playingStatstextOut,
-                                                          timePlayedByMonthtextOut, capsTabletextOut, capsRollingAverageTentextOut,
+                                                          timePlayedByMonthtextOut, "", "",
                                                           totalSecondsPlayedtextOut);
 
                 //Build the HTML report
                 Task<string> reportT2 = BuildHtmlReport(isCapsIncluded, VERSION_NUMBER, userRecord, userStats, chessdotcomUsername, whiteOpeningshtmlOut, blackOpeningshtmlOut,
+                                                          whiteOpeningsRecenthtmlOut, blackOpeningsRecenthtmlOut,
                                                           playingStatshtmlOut, timePlayedByMonthhtmlOut, capsTablehtmlOut, capsRollingAverageFivehtmlOut,
                                                           capsRollingAverageTenhtmlOut, userLogoBase64, pawnFragment,
                                                           bulletGraphHtmlFragment, blitzGraphHtmlFragment, rapidGraphHtmlFragment,
@@ -411,6 +414,7 @@ namespace ChessStats
 
         private static async Task<string> BuildHtmlReport(bool isCapsIncluded, string VERSION_NUMBER, PlayerProfile userRecord, PlayerStats userStats,
                                                           string chessdotcomUsername, string whiteOpeningshtmlOut, string blackOpeningshtmlOut,
+                                                          string whiteOpeningsRecenthtmlOut, string blackOpeningsRecenthtmlOut,
                                                           string playingStatshtmlOut, string timePlayedByMonthhtmlOut, string capsTablehtmlOut,
                                                           string capsRollingAverageFivehtmlOut, string capsRollingAverageTenhtmlOut,
                                                           string userLogoBase64, string pawnFragment, string bulletGraphHtmlFragment,
@@ -424,14 +428,14 @@ namespace ChessStats
                 var htmlOut = new StringBuilder();
 
                 _ = htmlOut.Append(Helpers.GetHtmlTop($"ChessStats for {chessdotcomUsername}", bkgImageBase64))
-                           .AppendLine($"<div class='headRow'>")
+                           .AppendLine($"<br/><div class='headRow'>")
                            .AppendLine($"<div class='headBox priority-2'>")
                            .AppendLine($"<a href='{userRecord.Url}'><img alt='logo' src='data:image/png;base64,{userLogoBase64}'/></a>")
                            .AppendLine($"</div>")
                            .AppendLine($"<div class='headBox'>").AppendLine($"<h1>")
                            .AppendLine($"Live Games Summary <br/>For <a class='headerLink' href='{userRecord.Url}'>{chessdotcomUsername}</a><br/>On {DateTime.UtcNow.ToShortDateString()}&nbsp;<small class='priority-2'>({DateTime.UtcNow.ToShortTimeString()} UTC)</small></h1>")
                            .AppendLine($"</div>")
-                           .AppendLine($"</div>")
+                           .AppendLine($"</div><br/>")
                            .AppendLine($"<div class='ratingRow'>")
                            .AppendLine($"<div class='ratingBox'>")
                            .AppendLine($"<div class='item1 {((userStats.ChessBullet != null) ? "active" : "inactive")}' onclick=\"window.location.href='{STATS_BASE_URL}/live/bullet/{chessdotcomUsername}'\">")
@@ -447,14 +451,16 @@ namespace ChessStats
                            .AppendLine($"</div></div>")
                            .AppendLine($"</div>")
                            .AppendLine($"<div class='onerow'><div class='onecolumn'>")
-                           .AppendLine($"<h2>{pawnFragment}Openings Occurring More Than Once (Max 15)</h2>")
+                           .AppendLine($"<br/><h2>{pawnFragment}Recent Openings</h2>")
+                           .AppendLine($"{whiteOpeningsRecenthtmlOut}")
+                           .AppendLine($"{blackOpeningsRecenthtmlOut}")
+                           .AppendLine($"<br/><h2>{pawnFragment}All Openings (Max 15)</h2>")
                            .AppendLine($"{whiteOpeningshtmlOut}")
                            .AppendLine($"{blackOpeningshtmlOut}");
-
                 if (isCapsIncluded)
                 {
                     _ = htmlOut.AppendLine($"<div class='priority-2'>")
-                               .AppendLine($"<br/><h2>{pawnFragment}CAPS Scoring (Rolling 5 Game Average)</h2>")
+                               .AppendLine($"<br/><h2>{pawnFragment}CAPS Scoring (Rolling 3 Game Average)</h2>")
                                .AppendLine($"<div class='priority-2'>")
                                .AppendLine($"<div class='graphRow'>")
                                .AppendLine($"<div class='graphBox'>{bulletFiveAvCaps}</div>")
@@ -463,22 +469,22 @@ namespace ChessStats
                                .AppendLine($"</div>")
                                .AppendLine($"</div>")
                                .AppendLine(capsRollingAverageFivehtmlOut)
-                               .AppendLine($"<h2>{pawnFragment}CAPS Scoring (Rolling 10 Game Average)</h2>")
-                               .AppendLine($"<div class='priority-2'>")
-                               .AppendLine($"<div class='graphRow'>")
-                               .AppendLine($"<div class='graphBox'>{bulletTenAvCaps}</div>")
-                               .AppendLine($"<div class='graphBox'>{blitzTenAvCaps}</div>")
-                               .AppendLine($"<div class='graphBox'>{rapidTenAvCaps}</div>")
-                               .AppendLine($"</div>")
-                               .AppendLine($"</div>")
-                               .AppendLine(capsRollingAverageTenhtmlOut)
-                               .AppendLine($"<h2>{pawnFragment}CAPS Scoring (Month Average > 4 Games)</h2>")
-                               .AppendLine(capsTablehtmlOut)
+                               //.AppendLine($"<h2>{pawnFragment}CAPS Scoring (Rolling 10 Game Average)</h2>")
+                               //.AppendLine($"<div class='priority-2'>")
+                               //.AppendLine($"<div class='graphRow'>")
+                               //.AppendLine($"<div class='graphBox'>{bulletTenAvCaps}</div>")
+                               //.AppendLine($"<div class='graphBox'>{blitzTenAvCaps}</div>")
+                               //.AppendLine($"<div class='graphBox'>{rapidTenAvCaps}</div>")
+                               //.AppendLine($"</div>")
+                               //.AppendLine($"</div>")
+                               //.AppendLine(capsRollingAverageTenhtmlOut)
+                               //.AppendLine($"<h2>{pawnFragment}CAPS Scoring (Month Average > 4 Games)</h2>")
+                               //.AppendLine(capsTablehtmlOut)
                                .AppendLine($"</div>");
                 }
 
-                _ = htmlOut.AppendLine($"<br/><h2>{pawnFragment}Time Played by Time Control/Month</h2>")
-                           .AppendLine($"<div class='priority-2'>")
+                _ = htmlOut.AppendLine($"<div class='priority-2'>")
+                           .AppendLine($"<br/><h2>{pawnFragment}Ratings/Win Loss Average by Time Control/Month</h2>")
                            .AppendLine($"<div class='graphRow'>")
                            .AppendLine($"<div class='graphBox'>{bulletGraphHtmlFragment}</div>")
                            .AppendLine($"<div class='graphBox'>{blitzGraphHtmlFragment}</div>")
@@ -492,8 +498,9 @@ namespace ChessStats
                            .AppendLine($"<div class='graphBox'>{rapidAvStatsGraphHtmlFragment}</div>")
                            .AppendLine($"</div>")
                            .AppendLine($"</div>")
+                           .AppendLine($"<br/><h2>{pawnFragment}Time Played by Time Control/Month</h2>")
                            .AppendLine(playingStatshtmlOut)
-                           .AppendLine($"<h2>{pawnFragment}Time Played by Month (All Time Controls)</h2>")
+                           .AppendLine($"<br/><h2>{pawnFragment}Time Played by Month (All Time Controls)</h2>")
                            .AppendLine(timePlayedByMonthhtmlOut)
                            .AppendLine(Helpers.GetHtmlTail(new Uri(CHESSCOM_URL), VERSION_NUMBER, PROJECT_LINK))
                            .AppendLine("</div></div></body></html>");
@@ -788,6 +795,8 @@ namespace ChessStats
                                             out SortedList<string, dynamic> secondsPlayedRollupMonthOnly,
                                             out SortedList<string, (string href, int total, int winCount, int drawCount, int lossCount)> ecoPlayedRollupWhite,
                                             out SortedList<string, (string href, int total, int winCount, int drawCount, int lossCount)> ecoPlayedRollupBlack,
+                                            out SortedList<string, (string href, int total, int winCount, int drawCount, int lossCount)> ecoPlayedRollupWhiteRecent,
+                                            out SortedList<string, (string href, int total, int winCount, int drawCount, int lossCount)> ecoPlayedRollupBlackRecent,
                                             out List<(DateTime gameDate, int rating, string gameType)> ratingsPostGame,
                                             out double totalSecondsPlayed)
         {
@@ -796,8 +805,12 @@ namespace ChessStats
             secondsPlayedRollupMonthOnly = new SortedList<string, dynamic>();
             ecoPlayedRollupWhite = new SortedList<string, (string, int, int, int, int)>();
             ecoPlayedRollupBlack = new SortedList<string, (string, int, int, int, int)>();
+            ecoPlayedRollupWhiteRecent = new SortedList<string, (string, int, int, int, int)>();
+            ecoPlayedRollupBlackRecent  = new SortedList<string, (string, int, int, int, int)>();
             ratingsPostGame = new List<(DateTime gameDate, int rating, string gameType)>();
             totalSecondsPlayed = 0;
+
+            int _gameCount = 0;
 
             foreach (ChessGame game in gameList)
             {
@@ -811,6 +824,12 @@ namespace ChessStats
                 CalculateGameTime(game, out DateTime parsedStartDate, out double seconds, out string gameTime);
 
                 UpdateOpening(ecoPlayedRollupWhite, ecoPlayedRollupBlack, game, side, isWin);
+
+                if (_gameCount++ < 40)
+                {
+                    UpdateOpening(ecoPlayedRollupWhiteRecent, ecoPlayedRollupBlackRecent, game, side, isWin);
+                }
+
                 UpdateGameTypeTimeTotals(secondsPlayedRollup, playerRating, opponentRating, isWin, parsedStartDate, seconds, gameTime);
                 UpdateGameTimeTotals(secondsPlayedRollupMonthOnly, parsedStartDate, seconds);
                 UpdateAllGameRatingsList(ratingsPostGame, game, playerRating);
@@ -1052,7 +1071,7 @@ namespace ChessStats
             StringBuilder htmlOut = new StringBuilder();
 
             textOut.AppendLine("");
-            textOut.AppendLine(Helpers.GetDisplaySection($"Openings Occurring More Than Once (Max 15)", false));
+            textOut.AppendLine(Helpers.GetDisplaySection($"All Openings (Max 15)", false));
             textOut.AppendLine("Playing As White                                                        | Tot.");
             textOut.AppendLine("------------------------------------------------------------------------+------");
 
@@ -1060,7 +1079,7 @@ namespace ChessStats
 
             foreach (KeyValuePair<string, (string href, int total, int winCount, int drawCount, int lossCount)> ecoCount in ecoPlayedRollupWhite.OrderByDescending(uses => uses.Value.total).Take(15))
             {
-                if (ecoCount.Value.total < 2) { break; }
+                //if (ecoCount.Value.total < 2) { break; }
 
                 //Calculate highlight class
                 int activeCell = (ecoCount.Value.winCount > ecoCount.Value.lossCount) ? 0 : ((ecoCount.Value.winCount < ecoCount.Value.lossCount) ? 2 : 1);
@@ -1086,7 +1105,7 @@ namespace ChessStats
 
             foreach (KeyValuePair<string, (string href, int total, int winCount, int drawCount, int lossCount)> ecoCount in ecoPlayedRollupBlack.OrderByDescending(uses => uses.Value.total).Take(15))
             {
-                if (ecoCount.Value.total < 2) { break; }
+                //if (ecoCount.Value.total < 2) { break; }
 
                 //Calculate highlight class
                 int activeCell = (ecoCount.Value.winCount > ecoCount.Value.lossCount) ? 0 : ((ecoCount.Value.winCount < ecoCount.Value.lossCount) ? 2 : 1);
