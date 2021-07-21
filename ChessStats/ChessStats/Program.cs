@@ -28,8 +28,9 @@ namespace ChessStats
         private const string OPENING_URL = "https://www.chess.com/openings/";
         private const string STATS_BASE_URL = "https://www.chess.com/stats";
         private const string PROJECT_LINK = "https://github.com/Hyper-Dragon/ChessStats";
-        private const string DEFAULT_USER_IMAGE = "https://images.chesscomfiles.com/uploads/v1/group/57796.67ee0038.160x160o.2dc0953ad64e.png";
-        private const string INDEX_PAGE_IMAGE = "https://images.chesscomfiles.com/uploads/v1/group/57796.67ee0038.160x160o.2dc0953ad64e.png";
+        //private const string DEFAULT_USER_IMAGE = "https://images.chesscomfiles.com/uploads/v1/group/57796.67ee0038.160x160o.2dc0953ad64e.png";
+        private const string DEFAULT_USER_IMAGE = "https://betacssjs.chesscomfiles.com/bundles/web/images/black_400.918cdaa6.png";
+        private const string INDEX_PAGE_IMAGE = "https://betacssjs.chesscomfiles.com/bundles/web/images/black_400.918cdaa6.png";
         private const string REPORT_HEADING_ICON = "https://www.chess.com/bundles/web/favicons/favicon-16x16.31f99381.png";
         private const string FONT_700_WOFF2_URL = "https://www.chess.com/bundles/web/fonts/montserrat-700.5e7b9b6f.woff2";
         private const string FONT_800_WOFF2_URL = "https://www.chess.com/bundles/web/fonts/montserrat-800.92157f3f.woff2";
@@ -119,7 +120,7 @@ namespace ChessStats
             using (HttpClient httpClient = new HttpClient())
             {
                 string indexPageLogo = Convert.ToBase64String(await httpClient.GetByteArrayAsync(new Uri(INDEX_PAGE_IMAGE)).ConfigureAwait(false));
-                indexPageLogoFragment = $"<img src='data:image/png;base64,{indexPageLogo}'/>";
+                indexPageLogoFragment = $"<img width='200px' height='200px' src='data:image/png;base64,{indexPageLogo}'/>";
 
                 string pawnFileBase64 = Convert.ToBase64String(await httpClient.GetByteArrayAsync(new Uri(REPORT_HEADING_ICON)).ConfigureAwait(false));
                 pawnFragment = $"<img src='data:image/png;base64,{pawnFileBase64}'/>";
@@ -180,7 +181,7 @@ namespace ChessStats
                 if (isCapsIncluded)
                 {
                     Helpers.StartTimedSection($">>Fetching and Processing Available CAPS Scores");
-                    capsScores = await CapsFromChessDotCom.GetCapsScoresJson(chessdotcomPlayerId).ConfigureAwait(false);
+                    capsScores = await CapsFromChessDotCom.GetCapsScoresJson(chessdotcomPlayerId,CAPS_URL).ConfigureAwait(false);
                     Helpers.EndTimedSection(">>Finished Fetching and Processing Available CAPS Scores", true);
                 }
                 else
@@ -447,7 +448,7 @@ namespace ChessStats
                 _ = htmlOut.Append(Helpers.GetHtmlTop($"ChessStats for {chessdotcomUsername}", bkgImageBase64, font700Fragment, font800Fragment))
                            .AppendLine($"<br/><div class='headRow'>")
                            .AppendLine($"<div class='headBox priority-2'>")
-                           .AppendLine($"<a href='{userRecord.Url}'><img alt='logo' src='data:image/png;base64,{userLogoBase64}'/></a>")
+                           .AppendLine($"<a href='{userRecord.Url}'><img width='200px' height='200px' alt='logo' src='data:image/png;base64,{userLogoBase64}'/></a>")
                            .AppendLine($"</div>")
                            .AppendLine($"<div class='headBox'>").AppendLine($"<h1>")
                            .AppendLine($"Live Games Summary <br/>For <a class='headerLink' href='{userRecord.Url}'>{chessdotcomUsername}</a><br/>On {DateTime.UtcNow.ToShortDateString()}&nbsp;<small class='priority-2'>({DateTime.UtcNow.ToShortTimeString()} UTC)</small></h1>")

@@ -19,15 +19,15 @@ namespace ChessStats.Data
 
     public static class CapsFromChessDotCom
     {
-        public static async Task<Dictionary<string, List<CapsRecord>>> GetCapsScoresJson(int chessdotcomPlayerId)
+        public static async Task<Dictionary<string, List<CapsRecord>>> GetCapsScoresJson(int chessdotcomPlayerId, string capsUrl)
         {
             Helpers.ResetDisplayCounter();
 
             using HttpClient client2 = new HttpClient();
-            HttpResponseMessage response2 = await client2.GetAsync(new Uri($"https://www.chess.com/callback/user/daily/archive?all=0&userId={chessdotcomPlayerId}")).ConfigureAwait(false);
+            HttpResponseMessage response2 = await client2.GetAsync(new Uri($"{capsUrl}{chessdotcomPlayerId}")).ConfigureAwait(false);
             string pageContents2 = await response2.Content.ReadAsStringAsync().ConfigureAwait(false);
 
-            List<Root> myDeserializedClass = JsonSerializer.Deserialize<List<Root>>(pageContents2);
+            List<Root> deserializedArchiveRecords = JsonSerializer.Deserialize<List<Root>>(pageContents2, new JsonSerializerOptions() { IgnoreNullValues = true });
 
             Dictionary<string, List<CapsRecord>> capsScores = new Dictionary<string, List<CapsRecord>>
             {
@@ -43,21 +43,24 @@ namespace ChessStats.Data
                 { $"rapid black", new List<CapsRecord>() }
             };
 
-            foreach (var record in myDeserializedClass)
+            foreach (var record in deserializedArchiveRecords)
             {
                 List<double> capsScoreWhite = new List<double>();
                 List<double> capsScoreBlack = new List<double>();
 
                 try
                 {
-                    CapsRecord capsRecord = new CapsRecord()
+                    if (record.User1Accuracy.HasValue && record.User2Accuracy.HasValue) 
                     {
-                        Caps = record.User1.Id == chessdotcomPlayerId ? record.User1Accuracy: record.User1Accuracy,
-                        GameDate = DateTime.Parse(record.GameEndTime),
-                    };
+                        CapsRecord capsRecord = new CapsRecord()
+                        {
+                            Caps = record.User1.Id == chessdotcomPlayerId ? record.User1Accuracy.Value : record.User2Accuracy.Value,
+                            GameDate = DateTime.Parse(record.GameEndTime),
+                        };
 
-                    Helpers.ProcessedDisplay(".");
-                    capsScores[$"rapid {((record.User1.Id == chessdotcomPlayerId) ?"white":"black")}"].Add(capsRecord);
+                        Helpers.ProcessedDisplay(".");
+                        capsScores[$"rapid {((record.User1.Id == chessdotcomPlayerId) ? "white" : "black")}"].Add(capsRecord);
+                    }
                 }
                 catch (System.NullReferenceException)
                 {
@@ -218,10 +221,10 @@ namespace ChessStats.Data
         public bool IsArena { get; set; }
 
         [JsonPropertyName("user1Accuracy")]
-        public double User1Accuracy { get; set; }
+        public double? User1Accuracy { get; set; }
 
         [JsonPropertyName("user2Accuracy")]
-        public double User2Accuracy { get; set; }
+        public double? User2Accuracy { get; set; }
     }
 
 }
