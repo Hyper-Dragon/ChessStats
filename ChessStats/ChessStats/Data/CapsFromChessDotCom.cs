@@ -116,13 +116,13 @@ namespace ChessStats.Data
         public string Username { get; set; }
 
         [JsonPropertyName("countryId")]
-        public int CountryId { get; set; }
+        public int? CountryId { get; set; }
 
         [JsonPropertyName("countryName")]
         public string CountryName { get; set; }
 
         [JsonPropertyName("membershipLevel")]
-        public int MembershipLevel { get; set; }
+        public int? MembershipLevel { get; set; }
 
         [JsonPropertyName("flairCode")]
         public string FlairCode { get; set; }
@@ -140,7 +140,7 @@ namespace ChessStats.Data
         public string Username { get; set; }
 
         [JsonPropertyName("countryId")]
-        public int CountryId { get; set; }
+        public int? CountryId { get; set; }
 
         [JsonPropertyName("countryName")]
         public string CountryName { get; set; }
@@ -161,28 +161,28 @@ namespace ChessStats.Data
         public string Fen { get; set; }
 
         [JsonPropertyName("daysPerTurn")]
-        public double DaysPerTurn { get; set; }
+        public double? DaysPerTurn { get; set; }
 
         [JsonPropertyName("moves")]
-        public int Moves { get; set; }
+        public int? Moves { get; set; }
 
         [JsonPropertyName("user1Rating")]
-        public int User1Rating { get; set; }
+        public int? User1Rating { get; set; }
 
         [JsonPropertyName("user2Rating")]
-        public int User2Rating { get; set; }
+        public int? User2Rating { get; set; }
 
         [JsonPropertyName("user1Result")]
-        public double User1Result { get; set; }
+        public double? User1Result { get; set; }
 
         [JsonPropertyName("user2Result")]
-        public double User2Result { get; set; }
+        public double? User2Result { get; set; }
 
         [JsonPropertyName("isTournament")]
-        public bool IsTournament { get; set; }
+        public bool? IsTournament { get; set; }
 
         [JsonPropertyName("isTeamMatch")]
-        public bool IsTeamMatch { get; set; }
+        public bool? IsTeamMatch { get; set; }
 
         [JsonPropertyName("highlightSquares")]
         public string HighlightSquares { get; set; }
@@ -191,13 +191,13 @@ namespace ChessStats.Data
         public string GameEndTime { get; set; }
 
         [JsonPropertyName("isTimeout")]
-        public bool IsTimeout { get; set; }
+        public bool? IsTimeout { get; set; }
 
         [JsonPropertyName("isLive")]
-        public bool IsLive { get; set; }
+        public bool? IsLive { get; set; }
 
         [JsonPropertyName("isVsComputer")]
-        public bool IsVsComputer { get; set; }
+        public bool? IsVsComputer { get; set; }
 
         [JsonPropertyName("gameType")]
         public GameType GameType { get; set; }
@@ -206,10 +206,10 @@ namespace ChessStats.Data
         public string GameTimeClass { get; set; }
 
         [JsonPropertyName("baseTime1")]
-        public int BaseTime1 { get; set; }
+        public int? BaseTime1 { get; set; }
 
         [JsonPropertyName("timeIncrement")]
-        public int TimeIncrement { get; set; }
+        public int? TimeIncrement { get; set; }
 
         [JsonPropertyName("user1")]
         public User1 User1 { get; set; }
@@ -218,7 +218,7 @@ namespace ChessStats.Data
         public User2 User2 { get; set; }
 
         [JsonPropertyName("isArena")]
-        public bool IsArena { get; set; }
+        public bool? IsArena { get; set; }
 
         [JsonPropertyName("user1Accuracy")]
         public double? User1Accuracy { get; set; }
