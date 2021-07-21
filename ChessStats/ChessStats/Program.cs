@@ -234,7 +234,6 @@ namespace ChessStats
                 (string blackOpeningsRecenttextOut, string blackOpeningsRecenthtmlOut) = DisplayOpeningsAsBlack(ecoPlayedRollupBlackRecent);
                 (string playingStatstextOut, string playingStatshtmlOut, List<(string TimeControl, int VsMin, int Worst, int LossAv, int DrawAv, int WinAv, int Best, int VsMax)> graphData) = DisplayPlayingStats(secondsPlayedRollup, userStats.ChessBullet?.Last.Rating, userStats.ChessBlitz?.Last.Rating, userStats.ChessRapid?.Last.Rating);
                 (string timePlayedByMonthtextOut, string timePlayedByMonthhtmlOut) = DisplayTimePlayedByMonth(secondsPlayedRollupMonthOnly);
-                (string capsTabletextOut, string capsTablehtmlOut) = DisplayCapsTable(capsScores);
                 (_, string capsRollingAverageFivehtmlOut, Dictionary<string, double[]> capsAverageFiveOut) = DisplayCapsRollingAverage(3, capsScores);
                 (string totalSecondsPlayedtextOut, _) = DisplayTotalSecondsPlayed(totalSecondsPlayed);
 
@@ -249,7 +248,7 @@ namespace ChessStats
                 Task<string> graphT5 = RenderAverageStatsGraph(graphData.Where(x => x.TimeControl.Contains("Blitz", StringComparison.InvariantCultureIgnoreCase)).OrderBy(x => x.TimeControl).ToList());
                 Task<string> graphT6 = RenderAverageStatsGraph(graphData.Where(x => x.TimeControl.Contains("Rapid", StringComparison.InvariantCultureIgnoreCase)).OrderBy(x => x.TimeControl).ToList());
 
-                Task<string> graphT9 = RenderCapsAverageGraph(capsAverageFiveOut.Where(x => x.Key.Contains("Rapid", StringComparison.InvariantCultureIgnoreCase)).ToDictionary(x => x.Key, x => x.Value));
+                Task<string> graphT9 = RenderCapsAverageGraph(capsAverageFiveOut.ToDictionary(x => x.Key, x => x.Value));
 
                 _ = await Task.WhenAll(graphT1, graphT2, graphT3,
                                        graphT4, graphT5, graphT6,
@@ -277,7 +276,7 @@ namespace ChessStats
                 Task<string> reportT2 = BuildHtmlReport(isCapsIncluded, VERSION_NUMBER, userRecord, userStats, chessdotcomUsername, whiteOpeningshtmlOut, 
                                                         blackOpeningshtmlOut,
                                                         whiteOpeningsRecenthtmlOut, blackOpeningsRecenthtmlOut,
-                                                        playingStatshtmlOut, timePlayedByMonthhtmlOut, capsTablehtmlOut, capsRollingAverageFivehtmlOut,
+                                                        playingStatshtmlOut, timePlayedByMonthhtmlOut, capsRollingAverageFivehtmlOut,
                                                         userLogoBase64, pawnFragment,
                                                         bulletGraphHtmlFragment, blitzGraphHtmlFragment, rapidGraphHtmlFragment,
                                                         bulletAvStatsGraphHtmlFragment, blitzAvStatsraphHtmlFragment, rapidAvStatsraphHtmlFragment,
@@ -421,7 +420,7 @@ namespace ChessStats
         private static async Task<string> BuildHtmlReport(bool isCapsIncluded, string VERSION_NUMBER, PlayerProfile userRecord, PlayerStats userStats,
                                                           string chessdotcomUsername, string whiteOpeningshtmlOut, string blackOpeningshtmlOut,
                                                           string whiteOpeningsRecenthtmlOut, string blackOpeningsRecenthtmlOut,
-                                                          string playingStatshtmlOut, string timePlayedByMonthhtmlOut, string capsTablehtmlOut,
+                                                          string playingStatshtmlOut, string timePlayedByMonthhtmlOut,
                                                           string capsRollingAverageFivehtmlOut, 
                                                           string userLogoBase64, string pawnFragment, string bulletGraphHtmlFragment,
                                                           string blitzGraphHtmlFragment, string rapidGraphHtmlFragment,
@@ -433,7 +432,7 @@ namespace ChessStats
                 var htmlOut = new StringBuilder();
 
                 _ = htmlOut.Append(Helpers.GetHtmlTop($"ChessStats for {chessdotcomUsername}", bkgImageBase64, favIconBase64, font700Fragment, font800Fragment))
-                           .AppendLine($"<br/><div class='headRow'>")
+                           .AppendLine($"<div class='headRow'>")
                            .AppendLine($"<div class='headBox priority-2'>")
                            .AppendLine($"<a href='{userRecord.Url}'><img width='200px' height='200px' alt='logo' src='data:image/png;base64,{userLogoBase64}'/></a>")
                            .AppendLine($"</div>")
@@ -466,46 +465,21 @@ namespace ChessStats
                 if (isCapsIncluded)
                 {
                     _ = htmlOut.AppendLine($"<div class='priority-2'>")
-                               .AppendLine($"<br/>")
-                               .AppendLine($"<h2>{pawnFragment}CAPS Rolling 3 Game Average</h2>")
-                               .AppendLine($"<div class='priority-2'>")
-                               .AppendLine($"          <div class='graphCapsRow'>           ")
-                               .AppendLine($"            <table class='capsRollingTable'>   ")
-                               .AppendLine($"              <thead>                          ")
-                               .AppendLine($"                <tr>                           ")
-                               .AppendLine($"                  <td>Playing As..</td>        ")
-                               .AppendLine($"                  <td colspan='6'>New->Old</td></tr>")
-                               .AppendLine($"              </thead>          ")
-                               .AppendLine($"              <tbody>           ")
-                               .AppendLine($"                <tr>            ")
-                               .AppendLine($"                  <td>White</td>")
-                               .AppendLine($"                  <td>60.39</td>")
-                               .AppendLine($"                  <td>65.03</td>")
-                               .AppendLine($"                  <td>78.57</td>")
-                               .AppendLine($"                  <td>69.68</td>")
-                               .AppendLine($"                  <td>50.03</td>")
-                               .AppendLine($"                  <td>45.13</td>")
-                               .AppendLine($"                </tr>           ")
-                               .AppendLine($"                <tr>            ")
-                               .AppendLine($"                  <td>Black</td>")
-                               .AppendLine($"                  <td>49.70</td>")
-                               .AppendLine($"                  <td>48.87</td>")
-                               .AppendLine($"                  <td>45.13</td>")
-                               .AppendLine($"                  <td>76.04</td>")
-                               .AppendLine($"                  <td>83.58</td>")
-                               .AppendLine($"                  <td>93.62</td>")
-                               .AppendLine($"                </tr>")
-                               .AppendLine($"              </tbody>")
-                               .AppendLine($"            </table>")
-                               .AppendLine($"            <div class='graphCapsBox'>{rapidFiveAvCaps}</div>")
-                               .AppendLine($"          </div>")
-                               .AppendLine($"        </div>")
-                               .AppendLine($"      </div>");
-                               //.AppendLine(capsRollingAverageFivehtmlOut)
+                               .AppendLine($"  <br/>")
+                               .AppendLine($"  <h2>{pawnFragment}CAPS Rolling 3 Game Avg.</h2>")
+                               .AppendLine($"  <div class='priority-2'>")
+                               .AppendLine($"    <div class='graphCapsRow'>           ")
+                               .AppendLine($"      {capsRollingAverageFivehtmlOut}")
+                               .AppendLine($"      <div class='graphCapsBox'>")
+                               .AppendLine($"        {rapidFiveAvCaps}")
+                               .AppendLine($"      </div>")
+                               .AppendLine($"    </div>")
+                               .AppendLine($"  </div>")
+                               .AppendLine($"</div>");
                 }
 
                 _ = htmlOut.AppendLine($"<div class='priority-2'>")
-                           .AppendLine($"<br/><h2>{pawnFragment}Ratings/Win Loss Average by Time Control/Month</h2>")
+                           .AppendLine($"<br/><h2>{pawnFragment}Ratings/Win Loss Avg. by Time Ctrl/Mth</h2>")
                            .AppendLine($"<div class='graphRow'>")
                            .AppendLine($"<div class='graphBox'>{bulletGraphHtmlFragment}</div>")
                            .AppendLine($"<div class='graphBox'>{blitzGraphHtmlFragment}</div>")
@@ -519,9 +493,9 @@ namespace ChessStats
                            .AppendLine($"<div class='graphBox'>{rapidAvStatsGraphHtmlFragment}</div>")
                            .AppendLine($"</div>")
                            .AppendLine($"</div>")
-                           .AppendLine($"<br/><h2>{pawnFragment}Time Played by Time Control/Month</h2>")
+                           .AppendLine($"<br/><h2>{pawnFragment}Time Played by Time Ctrl/Mth</h2>")
                            .AppendLine(playingStatshtmlOut)
-                           .AppendLine($"<br/><h2>{pawnFragment}Time Played by Month (All Time Controls)</h2>")
+                           .AppendLine($"<br/><h2>{pawnFragment}Time Played by Mth (All Time Ctrls)</h2>")
                            .AppendLine(timePlayedByMonthhtmlOut)
                            .AppendLine(Helpers.GetHtmlTail(new Uri(CHESSCOM_URL), VERSION_NUMBER, PROJECT_LINK))
                            .AppendLine("</div></div></body></html>");
@@ -868,62 +842,6 @@ namespace ChessStats
             }
         }
 
-        private static (string textOut, string htmlOut) DisplayCapsTable(Dictionary<string, List<CapsRecord>> capsScores)
-        {
-            StringBuilder textOut = new StringBuilder();
-            StringBuilder htmlOut = new StringBuilder();
-
-            textOut.AppendLine("");
-            textOut.AppendLine(Helpers.GetDisplaySection("CAPS Scoring (Month Average > 4 Games)", false));
-
-            SortedList<string, (double, double, double, double, double, double)> capsTable = new SortedList<string, (double, double, double, double, double, double)>();
-            SortedList<string, string[]> capsTableReformat = new SortedList<string, string[]>();
-
-            foreach (KeyValuePair<string, List<CapsRecord>> capsScore in capsScores)
-            {
-                foreach (var extractedScore in capsScore.Value.GroupBy(t => new { Id = t.GameYearMonth })
-                                                    .Where(i => i.Count() > 4)
-                                                    .Select(g => new
-                                                    {
-                                                        Average = $"{Math.Round(g.Average(p => p.Caps), 2):00.00}",
-                                                        Month = g.Key.Id,
-                                                        Control = capsScore.Key.Split()[0],
-                                                        Side = capsScore.Key.Split()[1],
-                                                        Id = $"{capsScore.Key} {g.Key.Id}"
-                                                    }))
-                {
-
-                    if (!capsTableReformat.ContainsKey(extractedScore.Month))
-                    {
-                        capsTableReformat.Add(extractedScore.Month, new string[] { "  -  ", "  -  ", "  -  ", "  -  ", "  -  ", "  -  " });
-                    }
-
-                    capsTableReformat[extractedScore.Month][extractedScore.Control switch
-                    {
-                        "bullet" => extractedScore.Side == "white" ? 0 : 1,
-                        "blitz" => extractedScore.Side == "white" ? 2 : 3,
-                        _ => extractedScore.Side == "white" ? 4 : 5,
-                    }] = extractedScore.Average;
-                }
-            }
-
-            textOut.AppendLine($"                  |      Bullet     |     Blitz     |     Rapid     ");
-            textOut.AppendLine($"Month             |   White | Black | White | Black | White | Black ");
-            textOut.AppendLine($"------------------+---------+-------+-------+-------+-------+-------");
-
-            htmlOut.AppendLine("<table class='capsByMonthTable'><thead><tr><td>Month</td><td>Bullet White</td><td>Bullet Black</td><td>Blitz White</td><td>Blitz Black</td><td>Rapid White</td><td>Rapid Black</td></thead><tbody>");
-
-            foreach (KeyValuePair<string, string[]> line in capsTableReformat)
-            {
-                textOut.AppendLine($"{ line.Key,-17 } |   {string.Join(" | ", line.Value)}");
-                htmlOut.AppendLine($"<tr><td>{line.Key}</td><td>{string.Join("</td><td>", line.Value)}</td></tr>");
-            }
-
-            htmlOut.AppendLine("</tbody></table>");
-
-            return (textOut.ToString(), htmlOut.ToString());
-        }
-
         private static (string textOut, string htmlOut, Dictionary<string, double[]> capsAverageOut) DisplayCapsRollingAverage(int averageOver, Dictionary<string, List<CapsRecord>> capsScores)
         {
             StringBuilder textOut = new StringBuilder();
@@ -936,7 +854,7 @@ namespace ChessStats
             textOut.AppendLine("Control/Side      |   <-Newest                                                             Oldest-> ");
             textOut.AppendLine("------------------+---------------------------------------------------------------------------------");
 
-            htmlOut.AppendLine("<table class='capsRollingTable'><thead><tr><td>Control/Side</td><td colspan='9'>Newest</td><td>Oldest</td></thead><tbody>");
+            htmlOut.AppendLine("<table class='capsRollingTable'><thead><tr><td>Playing As..</td><td colspan='6'>New->Old</td></tr></thead><tbody>");
 
             foreach (KeyValuePair<string, List<CapsRecord>> capsScore in capsScores)
             {

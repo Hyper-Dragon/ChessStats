@@ -31,16 +31,8 @@ namespace ChessStats.Data
 
             Dictionary<string, List<CapsRecord>> capsScores = new Dictionary<string, List<CapsRecord>>
             {
-
-                //foreach (string control in new string[] { "bullet", "blitz", "rapid" })
-                //{
-                //foreach (string colour in new string[] { "white", "black" })
-                //{
-                //string iterationKey = $"{control} {colour}";
-                //capsScores.Add(iterationKey, new List<CapsRecord>());
-
-                { $"rapid white", new List<CapsRecord>() },
-                { $"rapid black", new List<CapsRecord>() }
+                { $"White", new List<CapsRecord>() },
+                { $"Black", new List<CapsRecord>() }
             };
 
             foreach (var record in deserializedArchiveRecords)
@@ -59,7 +51,7 @@ namespace ChessStats.Data
                         };
 
                         Helpers.ProcessedDisplay(".");
-                        capsScores[$"rapid {((record.User1.Id == chessdotcomPlayerId) ? "white" : "black")}"].Add(capsRecord);
+                        capsScores[$"{((record.User1.Id == chessdotcomPlayerId) ? "White" : "Black")}"].Add(capsRecord);
                     }
                 }
                 catch (System.NullReferenceException)
