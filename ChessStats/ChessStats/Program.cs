@@ -40,6 +40,7 @@ namespace ChessStats
         private const int GRAPH_HEIGHT_AVERAGE = 200;
 
         private static string bkgImageBase64 = "";
+        private static string favIconBase64 = "";
         private static string userLogoBase64 = "";
         private static string indexPageLogoFragment = "";
         private static string pawnFragment = "";
@@ -94,6 +95,7 @@ namespace ChessStats
 
             //Load Embeded Resources
             bkgImageBase64 = Helpers.EncodeResourceImageAsHtmlFragment("SeamlessBkg01.png");
+            favIconBase64 = Helpers.EncodeResourceImageAsHtmlFragment("FavIcon.png");
 
             while (args.Length != 1 || string.IsNullOrWhiteSpace(args[0]))
             {
@@ -385,7 +387,7 @@ namespace ChessStats
             }
 
             StringBuilder htmlOut = new StringBuilder();
-            _ = htmlOut.Append(Helpers.GetHtmlTop($"ChessStats Index", bkgImageBase64, font700Fragment, font800Fragment))
+            _ = htmlOut.Append(Helpers.GetHtmlTop($"ChessStats Index", bkgImageBase64, favIconBase64, font700Fragment, font800Fragment))
                        .AppendLine($"<div class='headRow'>")
                        .AppendLine($"<div class='headBox priority-2'>")
                        .AppendLine($"{indexPageLogoFragment}")
@@ -445,7 +447,7 @@ namespace ChessStats
             {
                 var htmlOut = new StringBuilder();
 
-                _ = htmlOut.Append(Helpers.GetHtmlTop($"ChessStats for {chessdotcomUsername}", bkgImageBase64, font700Fragment, font800Fragment))
+                _ = htmlOut.Append(Helpers.GetHtmlTop($"ChessStats for {chessdotcomUsername}", bkgImageBase64, favIconBase64, font700Fragment, font800Fragment))
                            .AppendLine($"<br/><div class='headRow'>")
                            .AppendLine($"<div class='headBox priority-2'>")
                            .AppendLine($"<a href='{userRecord.Url}'><img width='200px' height='200px' alt='logo' src='data:image/png;base64,{userLogoBase64}'/></a>")

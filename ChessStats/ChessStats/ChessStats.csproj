@@ -7,10 +7,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="Images\FavIcon.png" />
     <None Remove="Images\SeamlessBkg01.png" />
   </ItemGroup>
 
   <ItemGroup>
+    <EmbeddedResource Include="Images\FavIcon.png" />
     <EmbeddedResource Include="Images\SeamlessBkg01.png" />
   </ItemGroup>
 
