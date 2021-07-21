@@ -10,6 +10,7 @@ Download the latest version from the [Releases](https://github.com/Hyper-Dragon/
 ### Version 0.7 
 * CAPS scores, limited to the last 20 games, now included
 * Html improvements including:
+  * Fav icon added to pages
   * Background image
   * Embeded fonts
   * Dark tables
