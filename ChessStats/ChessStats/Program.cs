@@ -874,7 +874,7 @@ namespace ChessStats
 
                     for (int loop = 0; loop < scoreList.Length; loop++)
                     {
-                        htmlOut.AppendLine($"<td>{((loop < avList.Length) ? avList[loop] : "&nbsp;")}</td>");
+                        htmlOut.AppendLine($"<td>{((loop < avList.Length) ? avList[loop] : "0.00")}</td>");
                         scoreList[loop] = ((loop < avList.Length) ? double.Parse(avList[loop], CultureInfo.InvariantCulture) : 0);
                     }
 
