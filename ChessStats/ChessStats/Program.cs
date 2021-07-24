@@ -261,7 +261,7 @@ namespace ChessStats
                 string blitzAvStatsraphHtmlFragment = graphT5.Result;
                 string rapidAvStatsraphHtmlFragment = graphT6.Result;
 
-                string rapidFiveAvCaps = graphT9.Result;
+                string rapidThreeAvCaps = graphT9.Result;
 
                 Helpers.EndTimedSection($">>Finished Rendering Graphs");
 
@@ -279,7 +279,7 @@ namespace ChessStats
                                                         userLogoBase64, pawnFragment,
                                                         bulletGraphHtmlFragment, blitzGraphHtmlFragment, rapidGraphHtmlFragment,
                                                         bulletAvStatsGraphHtmlFragment, blitzAvStatsraphHtmlFragment, rapidAvStatsraphHtmlFragment,
-                                                        rapidFiveAvCaps);
+                                                        rapidThreeAvCaps);
 
                 _ = await Task.WhenAll(reportT1, reportT2).ConfigureAwait(false);
                 string textReport = reportT1.Result;
@@ -337,7 +337,7 @@ namespace ChessStats
                 graphData = null;
                 graphT1 = graphT2 = graphT3 = graphT4 = graphT5 = graphT6 = graphT9 = reportT1 = reportT2 = null;
                 bulletGraphHtmlFragment = blitzGraphHtmlFragment = rapidGraphHtmlFragment = bulletAvStatsGraphHtmlFragment = blitzAvStatsraphHtmlFragment = rapidAvStatsraphHtmlFragment = null;
-                rapidFiveAvCaps = null;
+                rapidThreeAvCaps = null;
 
                 GC.Collect();
                 GC.WaitForPendingFinalizers();
@@ -451,7 +451,7 @@ namespace ChessStats
                            .AppendLine($"</div></div>")
                            .AppendLine($"</div>")
                            .AppendLine($"<div class='onerow'><div class='onecolumn'>")
-                           .AppendLine($"<br/><h2>{pawnFragment}Recent Openings</h2>")
+                           .AppendLine($"<br/><h2>{pawnFragment}Last 40 Openings</h2>")
                            .AppendLine($"{whiteOpeningsRecenthtmlOut}")
                            .AppendLine($"{blackOpeningsRecenthtmlOut}")
                            .AppendLine($"<br/><h2>{pawnFragment}All Openings (Max 15)</h2>")
@@ -475,7 +475,7 @@ namespace ChessStats
                 }
 
                 _ = htmlOut.AppendLine($"<div class='priority-2'>")
-                           .AppendLine($"<br/><h2>{pawnFragment}Ratings/Win Loss Avg. by Time Ctrl/Mth</h2>")
+                           .AppendLine($"<br/><h2>{pawnFragment}Ratings/Win Loss Avg.</h2>")
                            .AppendLine($"<div class='graphRow'>")
                            .AppendLine($"<div class='graphBox'>{bulletGraphHtmlFragment}</div>")
                            .AppendLine($"<div class='graphBox'>{blitzGraphHtmlFragment}</div>")
@@ -489,12 +489,14 @@ namespace ChessStats
                            .AppendLine($"<div class='graphBox'>{rapidAvStatsGraphHtmlFragment}</div>")
                            .AppendLine($"</div>")
                            .AppendLine($"</div>")
-                           .AppendLine($"<br/><h2>{pawnFragment}Time Played by Time Ctrl/Mth</h2>")
+                           .AppendLine($"<br/><h2>{pawnFragment}Stats by Time Control/Month</h2>")
                            .AppendLine(playingStatshtmlOut)
-                           .AppendLine($"<br/><h2>{pawnFragment}Time Played by Mth (All Time Ctrls)</h2>")
+                           .AppendLine($"<br/><h2>{pawnFragment}Time Played by Month</h2>")
                            .AppendLine(timePlayedByMonthhtmlOut)
                            .AppendLine(Helpers.GetHtmlTail(new Uri(CHESSCOM_URL), VERSION_NUMBER, PROJECT_LINK))
-                           .AppendLine("</div></div></body></html>");
+                           .AppendLine("</div></div>")
+                           .AppendLine("  </body>")
+                           .AppendLine("</html>");
 
                 return htmlOut.ToString();
             }).ConfigureAwait(false);
@@ -600,7 +602,7 @@ namespace ChessStats
                 }
 
 
-                int stepWidth = GRAPH_WIDTH / 6;
+                int stepWidth = (int) Math.Ceiling(((double)GRAPH_WIDTH)/6d);
 
                 using GraphHelper graphHelper = new(GRAPH_WIDTH - stepWidth,
                                                     0,
