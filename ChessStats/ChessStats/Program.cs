@@ -261,7 +261,7 @@ namespace ChessStats
                 string blitzAvStatsraphHtmlFragment = graphT5.Result;
                 string rapidAvStatsraphHtmlFragment = graphT6.Result;
 
-                string rapidFiveAvCaps = graphT9.Result;
+                string rapidThreeAvCaps = graphT9.Result;
 
                 Helpers.EndTimedSection($">>Finished Rendering Graphs");
 
@@ -279,7 +279,7 @@ namespace ChessStats
                                                         userLogoBase64, pawnFragment,
                                                         bulletGraphHtmlFragment, blitzGraphHtmlFragment, rapidGraphHtmlFragment,
                                                         bulletAvStatsGraphHtmlFragment, blitzAvStatsraphHtmlFragment, rapidAvStatsraphHtmlFragment,
-                                                        rapidFiveAvCaps);
+                                                        rapidThreeAvCaps);
 
                 _ = await Task.WhenAll(reportT1, reportT2).ConfigureAwait(false);
                 string textReport = reportT1.Result;
@@ -337,7 +337,7 @@ namespace ChessStats
                 graphData = null;
                 graphT1 = graphT2 = graphT3 = graphT4 = graphT5 = graphT6 = graphT9 = reportT1 = reportT2 = null;
                 bulletGraphHtmlFragment = blitzGraphHtmlFragment = rapidGraphHtmlFragment = bulletAvStatsGraphHtmlFragment = blitzAvStatsraphHtmlFragment = rapidAvStatsraphHtmlFragment = null;
-                rapidFiveAvCaps = null;
+                rapidThreeAvCaps = null;
 
                 GC.Collect();
                 GC.WaitForPendingFinalizers();
@@ -451,7 +451,7 @@ namespace ChessStats
                            .AppendLine($"</div></div>")
                            .AppendLine($"</div>")
                            .AppendLine($"<div class='onerow'><div class='onecolumn'>")
-                           .AppendLine($"<br/><h2>{pawnFragment}Recent Openings</h2>")
+                           .AppendLine($"<br/><h2>{pawnFragment}Last 40 Openings</h2>")
                            .AppendLine($"{whiteOpeningsRecenthtmlOut}")
                            .AppendLine($"{blackOpeningsRecenthtmlOut}")
                            .AppendLine($"<br/><h2>{pawnFragment}All Openings (Max 15)</h2>")
@@ -475,7 +475,7 @@ namespace ChessStats
                 }
 
                 _ = htmlOut.AppendLine($"<div class='priority-2'>")
-                           .AppendLine($"<br/><h2>{pawnFragment}Ratings/Win Loss Avg. by Time Ctrl/Mth</h2>")
+                           .AppendLine($"<br/><h2>{pawnFragment}Ratings/Win Loss Avg.</h2>")
                            .AppendLine($"<div class='graphRow'>")
                            .AppendLine($"<div class='graphBox'>{bulletGraphHtmlFragment}</div>")
                            .AppendLine($"<div class='graphBox'>{blitzGraphHtmlFragment}</div>")
@@ -489,12 +489,14 @@ namespace ChessStats
                            .AppendLine($"<div class='graphBox'>{rapidAvStatsGraphHtmlFragment}</div>")
                            .AppendLine($"</div>")
                            .AppendLine($"</div>")
-                           .AppendLine($"<br/><h2>{pawnFragment}Time Played by Time Ctrl/Mth</h2>")
+                           .AppendLine($"<br/><h2>{pawnFragment}Stats by Time Control/Month</h2>")
                            .AppendLine(playingStatshtmlOut)
-                           .AppendLine($"<br/><h2>{pawnFragment}Time Played by Mth (All Time Ctrls)</h2>")
+                           .AppendLine($"<br/><h2>{pawnFragment}Time Played by Month</h2>")
                            .AppendLine(timePlayedByMonthhtmlOut)
                            .AppendLine(Helpers.GetHtmlTail(new Uri(CHESSCOM_URL), VERSION_NUMBER, PROJECT_LINK))
-                           .AppendLine("</div></div></body></html>");
+                           .AppendLine("</div></div>")
+                           .AppendLine("  </body>")
+                           .AppendLine("</html>");
 
                 return htmlOut.ToString();
             }).ConfigureAwait(false);
@@ -600,7 +602,7 @@ namespace ChessStats
                 }
 
 
-                int stepWidth = GRAPH_WIDTH / 6;
+                int stepWidth = (int) Math.Ceiling(((double)GRAPH_WIDTH)/6d);
 
                 using GraphHelper graphHelper = new(GRAPH_WIDTH - stepWidth,
                                                     0,
@@ -1091,7 +1093,7 @@ namespace ChessStats
                 if (lastLine != rolledUp.Key.Substring(0, 10))
                 {
                     textOut.AppendLine("------------------+-----------+--------------------+--------------------+------+------+------+------");
-                    htmlOut.AppendLine($"{((string.IsNullOrEmpty(lastLine)) ? "" : "</tbody></table>")}<table class='playingStatsTable'><thead><tr><td>Time Control</td><td>Time</td><td>Min</td><td>Max</td><td>Rng +-</td><td class='priority-4'>Vs.Min</td><td class='priority-2'>Worst</td><td class='priority-2'>LossAv</td><td class='priority-2'>DrawAv</td><td class='priority-2'>WinAv</td><td class='priority-2'>Best</td><td class='priority-4'>Vs.Max</td><td class='priority-3'>Win</td><td class='priority-3'>Draw</td><td class='priority-3'>Loss</td><td class='priority-4'>Total</td></tr></thead><tbody>");
+                    htmlOut.AppendLine($"{((string.IsNullOrEmpty(lastLine)) ? "" : "</tbody></table>")}<table class='playingStatsTable'><thead><tr><td>{rolledUp.Key.Substring(0, 10)}</td><td>Time</td><td>Min</td><td>Max</td><td>Rng +-</td><td class='priority-4'>Vs.Min</td><td class='priority-2'>Worst</td><td class='priority-2'>LossAv</td><td class='priority-2'>DrawAv</td><td class='priority-2'>WinAv</td><td class='priority-2'>Best</td><td class='priority-4'>Vs.Max</td><td class='priority-3'>Win</td><td class='priority-3'>Draw</td><td class='priority-3'>Loss</td><td class='priority-4'>Total</td></tr></thead><tbody>");
                 }
 
                 lastLine = rolledUp.Key.Substring(0, 10);
@@ -1110,7 +1112,7 @@ namespace ChessStats
                                    $"{rolledUp.Value.GameCount.ToString(CultureInfo.CurrentCulture).PadLeft(4).Replace("   0", "   -", true, CultureInfo.InvariantCulture)}"
                                    );
 
-                htmlOut.AppendLine($"<tr><td>{rolledUp.Key}</td>" +
+                htmlOut.AppendLine($"<tr><td>{rolledUp.Key.Substring(rolledUp.Key.LastIndexOf(" "))}</td>" +
                                    $"<td>{((int)timeMonth.TotalHours).ToString(CultureInfo.CurrentCulture).PadLeft(4, '$').Replace("$", "&nbsp;", true, CultureInfo.InvariantCulture)}:{ timeMonth.Minutes.ToString(CultureInfo.CurrentCulture).PadLeft(2, '0')}</td>" +
                                    $"<td{((ratingComparison == 0) ? "" : ((ratingComparison < rolledUp.Value.MinRating) ? " class='lower'" : " class='higher'"))}>{rolledUp.Value.MinRating.ToString(CultureInfo.CurrentCulture).PadLeft(4, '$').Replace("$$$0", "$$$-", true, CultureInfo.InvariantCulture).Replace("$", "&nbsp;", true, CultureInfo.InvariantCulture)}</td>" +
                                    $"<td{((ratingComparison == 0) ? "" : ((ratingComparison < rolledUp.Value.MaxRating) ? " class='lower'" : " class='higher'"))}>{rolledUp.Value.MaxRating.ToString(CultureInfo.CurrentCulture).PadLeft(4, '$').Replace("$$$0", "$$$-", true, CultureInfo.InvariantCulture).Replace("$", "&nbsp;", true, CultureInfo.InvariantCulture)}</td>" +
