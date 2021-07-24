@@ -3,13 +3,30 @@
 ## About
 ChessStats is a console app used to retrieve monthly play time, ratings and top openings for any chess.com user. Note that variant game types are not included in the stats (displayed as 'X' during game retrieval) and unrated game ('NR') information is time only. 
 
-__Version 0.6__ 
+## Installation
+Download the latest version from the [Releases](https://github.com/Hyper-Dragon/ChessStats/releases) page, extract _ChessStats.exe_ and put it where you want it to go.  Note that the cache and reporting directories are created relative to the executable's location. 
+
+## Version History
+### Version 0.7 
+* CAPS scores, limited to the last 20 games, now included
+* Openings for the last 40 games table added
+* Various Html improvements including:
+  * Fav icon added to pages
+  * Image used for the background
+  * Embeded fonts
+  * Dark tables
+* The index file is only generated once per run
+* Fixed v0.6 missing assembly issue
+* Removed Microsoft.CodeAnalysis.FxCopAnalyzers (depricated)
+* Switched to .Net 6.0
+
+### Version 0.6 
 * Graphs for ratings and monthly win/loss averages (included in Html Reports)
 * Html index file generation _([location of executable]/ChessStatsResults/index.html)_
 * Several minor fixes
 * CAPS scores removed due to chess.com site changes
  
-__Version 0.5__ is a major release with numerous improvements over v0.4 including:
+### Version 0.5
 
 * Output files written to a reporting directory _([location of executable]/ChessStatsResults/[Username]/)_ containing:
   * A full (self-contained) HTML Report
@@ -21,13 +38,9 @@ __Version 0.5__ is a major release with numerous improvements over v0.4 includin
 * Error handling improvements
 * Several minor display fixes
 
-The __version 0.4__ update included CAPS averages broken down by time control.  These are available for games that have been analysed on the chess.com website (games with no analysis are marked with '-' on ingest). 
-
-## Installation
-Download the latest version from the [Releases](https://github.com/Hyper-Dragon/ChessStats/releases) page, extract _ChessStats.exe_ and put it where you want it to go.  Note that the cache and reporting directories are created relative to the executable's location. 
-
-## Saying Thank You
-If you find this useful and want to say thanks just send me a fun trophy over on chess.com :smiley:
+### Version 0.4 
+* CAPS averages broken down by time control.  
+    * These are available for games that have been analysed on the chess.com website (games with no analysis are marked with '-' on ingest). 
 
 ## Usage
 ```
@@ -40,8 +53,33 @@ chessstats -refresh
 or 
 just double click the _exe_ and you will be prompted for a chess.com username.
 
+## Known Issues
+* Version 0.7
+    * None (yet)
+* Version 0.6
+    * CAPS scores are not available due to Chess.com site changes
+    * Error: An assembly specified in the application dependencies manifest (ChessStats.deps.json) was not found 
+        * Delete the folder C:\Users\<username>\AppData\Local\Temp\ .net\ and rerun
+    * Error: Unable to write index.html 
+        * Make sure that index.html is not in use and rerun
+
+## Dependencies
+* [ChessDotComSharp](https://github.com/nullablebool/ChessDotComSharp) @nullablebool
+* Chess.com Api
+* ~~Chess.com website HTML for CAPs extraction (broken)~~
+* Chess.com undocumented endpoint for CAPs extraction (last 20 games only)
+
+## Acknowledgements
+* [Chess.Com](https://github.com/ChessCom) @ChessCom
+* Covid-19 & Social Isolation
+* Thanks to chess.com users _BaronVonChickenpants_ and _maxmlynek2_ for bug spotting
+* Thanks to chess.com user _NefariousNebula_ for highlighting the (undocumented) CAPS endpoint
+
+## Saying Thank You
+If you find this useful and want to say thanks [just send me a fun trophy or two or three](https://www.chess.com/member/hyper-dragon) over on chess.com :smiley:
+
 ## Example Output (HTML)
-![Sample Report](./HtmlReportExample2.png)
+![Sample Report](./HtmlReportExample3.png)
 
 ## Example Output Fragments (Text)
 
@@ -62,7 +100,6 @@ just double click the _exe_ and you will be prompted for a chess.com username.
   (______)                                                                                          
  (________)   Hyper-Dragon :: Version 0.7 :: 07/2021 :: https://github.com/Hyper-Dragon/ChessStats  
                                                                                                     
-
 ===================== Live Chess Report for GothamChess : 24/07/2021@18:29 UTC =====================
 
 ================== All Openings (Max 15) ===================
@@ -385,21 +422,3 @@ Time Played (hh:mm:ss):   1492:11:56
 
 ========================================== End of Report ===========================================
 </pre>
-
-## Known Issues
-- CAPS scores are not available due to Chess.com site changes
-- Error: An assembly specified in the application dependencies manifest (ChessStats.deps.json) was not found
--- Delete the folder C:\Users\<username>\AppData\Local\Temp\.net and rerun
-
-## Dependencies
-
-- [ChessDotComSharp](https://github.com/nullablebool/ChessDotComSharp) @nullablebool
-- Chess.com Api
-- Chess.com website HTML for CAPs extraction (broken)
-
-## Acknowledgements
-
-- [Chess.Com](https://github.com/ChessCom) @ChessCom
-- Covid-19 & Social Isolation
-- Thanks to chess.com users _BaronVonChickenpants_ and _maxmlynek2_ for bug spotting
-
