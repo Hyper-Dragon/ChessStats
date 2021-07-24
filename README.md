@@ -9,14 +9,15 @@ Download the latest version from the [Releases](https://github.com/Hyper-Dragon/
 ## Version History
 ### Version 0.7 
 * CAPS scores, limited to the last 20 games, now included
-* Html improvements including:
+* Openings for the last 40 games table added
+* Various Html improvements including:
   * Fav icon added to pages
-  * Background image
+  * Image used for the background
   * Embeded fonts
   * Dark tables
-* Openings for last ??? games table added
 * Fixed v0.6 missing assembly issue
-* Migrated from Microsoft.CodeAnalysis.FxCopAnalyzers (depricated) to Microsoft.CodeAnalysis.NetAnalyzers
+* Removed Microsoft.CodeAnalysis.FxCopAnalyzers (depricated)
+* Switched to .Net 6.0
 
 ### Version 0.6 
 * Graphs for ratings and monthly win/loss averages (included in Html Reports)
