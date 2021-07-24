@@ -53,6 +53,31 @@ chessstats -refresh
 or 
 just double click the _exe_ and you will be prompted for a chess.com username.
 
+## Known Issues
+* Version 0.7
+    * None (yet)
+* Version 0.6
+    * CAPS scores are not available due to Chess.com site changes
+    * Error: An assembly specified in the application dependencies manifest (ChessStats.deps.json) was not found 
+        * Delete the folder C:\Users\<username>\AppData\Local\Temp\ .net\ and rerun
+    * Error: Unable to write index.html 
+        * Make sure that index.html is not in use and rerun
+
+## Dependencies
+* [ChessDotComSharp](https://github.com/nullablebool/ChessDotComSharp) @nullablebool
+* Chess.com Api
+* ~~Chess.com website HTML for CAPs extraction (broken)~~
+* Chess.com undocumented endpoint for CAPs extraction (last 20 games only)
+
+## Acknowledgements
+* [Chess.Com](https://github.com/ChessCom) @ChessCom
+* Covid-19 & Social Isolation
+* Thanks to chess.com users _BaronVonChickenpants_ and _maxmlynek2_ for bug spotting
+* Thanks to chess.com user _NefariousNebula_ for highlighting the (undocumented) CAPS endpoint
+
+## Saying Thank You
+If you find this useful and want to say thanks [just send me a fun trophy or two or three](https://www.chess.com/member/hyper-dragon) over on chess.com :smiley:
+
 ## Example Output (HTML)
 ![Sample Report](./HtmlReportExample3.png)
 
@@ -398,28 +423,3 @@ Time Played (hh:mm:ss):   1492:11:56
 
 ========================================== End of Report ===========================================
 </pre>
-
-## Known Issues
-* Version 0.7
-    * None (yet)
-* Version 0.6
-    * CAPS scores are not available due to Chess.com site changes
-    * Error: An assembly specified in the application dependencies manifest (ChessStats.deps.json) was not found 
-        * Delete the folder C:\Users\<username>\AppData\Local\Temp\ .net\ and rerun
-    * Error: Unable to write index.html 
-        * Make sure that index.html is not in use and rerun
-
-## Dependencies
-* [ChessDotComSharp](https://github.com/nullablebool/ChessDotComSharp) @nullablebool
-* Chess.com Api
-* ~~Chess.com website HTML for CAPs extraction (broken)~~
-* Chess.com undocumented endpoint for CAPs extraction (last 20 games only)
-
-## Acknowledgements
-* [Chess.Com](https://github.com/ChessCom) @ChessCom
-* Covid-19 & Social Isolation
-* Thanks to chess.com users _BaronVonChickenpants_ and _maxmlynek2_ for bug spotting
-* Thanks to chess.com user _NefariousNebula_ for highlighting the (undocumented) CAPS endpoint
-
-## Saying Thank You
-If you find this useful and want to say thanks [just send me a fun trophy or two or three](https://www.chess.com/member/hyper-dragon) over on chess.com :smiley:
