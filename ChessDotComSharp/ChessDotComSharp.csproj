@@ -1,7 +1,7 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netcoreapp3.0</TargetFramework>
+    <TargetFramework>net6.0</TargetFramework>
     <Description>A .NET wrapper for Chess.com's API</Description>
     <Company>Ambersoft Labs</Company>
     <Authors>Kurt Gooding</Authors>
@@ -10,6 +10,7 @@
     <RepositoryType>git</RepositoryType>
     <PackageTags>chess, chess.com, .net</PackageTags>
     <PackageProjectUrl>https://github.com/nullablebool/ChessDotComSharp</PackageProjectUrl>
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
   </PropertyGroup>
   
   <ItemGroup>

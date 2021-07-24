@@ -100,7 +100,6 @@ If you find this useful and want to say thanks [just send me a fun trophy or two
   (______)                                                                                          
  (________)   Hyper-Dragon :: Version 0.7 :: 07/2021 :: https://github.com/Hyper-Dragon/ChessStats  
                                                                                                     
-
 ===================== Live Chess Report for GothamChess : 24/07/2021@18:29 UTC =====================
 
 ================== All Openings (Max 15) ===================
