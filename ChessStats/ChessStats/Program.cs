@@ -462,7 +462,7 @@ namespace ChessStats
                 {
                     _ = htmlOut.AppendLine($"<div class='priority-2'>")
                                .AppendLine($"  <br/>")
-                               .AppendLine($"  <h2>{pawnFragment}CAPS Rolling 3 Game Avg.</h2>")
+                               .AppendLine($"  <h2>{pawnFragment}CAPs Rolling 3 Game Avg.</h2>")
                                .AppendLine($"  <div class='priority-2'>")
                                .AppendLine($"    <div class='graphCapsRow'>           ")
                                .AppendLine($"      {capsRollingAverageFivehtmlOut}")
@@ -603,9 +603,9 @@ namespace ChessStats
                 int stepWidth = GRAPH_WIDTH / 6;
 
                 using GraphHelper graphHelper = new(GRAPH_WIDTH - stepWidth,
-                                                                0,
-                                                                100,
-                                                                GraphHelper.GraphLine.PERCENTAGE);
+                                                    0,
+                                                    100,
+                                                    GraphHelper.GraphLine.PERCENTAGE);
 
                 //Draw Graph
                 foreach (var graphItem in graphData)
@@ -630,7 +630,7 @@ namespace ChessStats
 
                 //Add ratings
                 using Graphics resizedSurface = Graphics.FromImage(bitmapOut);
-                resizedSurface.DrawString($"CAPs (New to Old)", new Font(FontFamily.GenericSansSerif, 14f), GraphHelper.TextBrush, 1, bitmapOut.Height - 30);
+                resizedSurface.DrawString($"CAPs (New->Old)", new Font(FontFamily.GenericSansSerif, 14f), GraphHelper.TextBrush, 1, bitmapOut.Height - 30);
 
                 return Helpers.GetImageAsHtmlFragment(bitmapOut);
 

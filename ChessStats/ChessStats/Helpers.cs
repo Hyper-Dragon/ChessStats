@@ -67,7 +67,7 @@ namespace ChessStats
                     DrawingSurface.DrawLine(GraphHelper.WhitePen, 0, loop, Width, loop);
                 }
 
-                for (int loop = 70; loop < Width; loop += 70)
+                for (int loop = (Width / 5); loop < (Width-(Width/5)); loop += (Width/5))
                 {
                     DrawingSurface.DrawLine(GraphHelper.WhitePen, loop, lowVal, loop, highVal);
                 }
