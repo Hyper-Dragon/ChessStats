@@ -130,6 +130,22 @@ namespace ChessStats
         }
 
 
+        public static string EncodeResourceImageAsHtmlFragment(string imageName)
+        {
+            string base64Img = "";
+
+            using (var reader = (new EmbeddedFileProvider(Assembly.GetExecutingAssembly())).GetFileInfo($"Images.{imageName}").CreateReadStream())
+            {
+                var bitmapOut = new Bitmap(reader);
+                using MemoryStream stream = new MemoryStream();
+                bitmapOut.Save(stream, System.Drawing.Imaging.ImageFormat.Png);
+                base64Img = Convert.ToBase64String(stream.ToArray());
+            }
+
+            return $"'data:image/png;base64,{base64Img}'";
+        }
+
+
         public static void StartTimedSection(string msg, bool newLineFirst = false, bool newLineAfter = false)
         {
             stopwatch.Reset();

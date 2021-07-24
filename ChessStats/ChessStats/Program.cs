@@ -366,7 +366,7 @@ namespace ChessStats
                                         ));
                 }
             }
-
+          
             StringBuilder htmlOut = new();
             _ = htmlOut.Append(Helpers.GetHtmlTop($"ChessStats Index", bkgImageBase64, favIconBase64, font700Fragment, font800Fragment))
                        .AppendLine($"<div class='headRow'>")
