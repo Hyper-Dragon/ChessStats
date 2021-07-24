@@ -2,7 +2,7 @@
   "profiles": {
     "ChessStats": {
       "commandName": "Project",
-      "commandLineArgs": "SLAINPOWER"
+      "commandLineArgs": "hyper-dragon"
     }
   }
 }

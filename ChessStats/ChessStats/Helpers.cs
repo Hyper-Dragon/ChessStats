@@ -14,10 +14,10 @@ namespace ChessStats
     public class GraphHelper : IDisposable
     {
         private bool disposedValue;
-        public static Pen OrangePen => new Pen(Color.FromArgb(255, 229, 139, 9), 1);
-        public static Pen DarkOrangePen => new Pen(Color.FromArgb(255, 222, 132, 9), 1);
-        public static Pen RedPen => new Pen(Color.FromArgb(255, 200, 9, 9), 3);
-        public static Pen WhitePen => new Pen(Color.FromArgb(255, 255, 255, 255), 1) { DashStyle = DashStyle.Dash };
+        public static Pen OrangePen => new(Color.FromArgb(255, 229, 139, 9), 1);
+        public static Pen DarkOrangePen => new(Color.FromArgb(255, 222, 132, 9), 1);
+        public static Pen RedPen => new(Color.FromArgb(255, 200, 9, 9), 3);
+        public static Pen WhitePen => new(Color.FromArgb(255, 255, 255, 255), 1) { DashStyle = DashStyle.Dash };
         public static Brush TextBrush => Brushes.Yellow;
         public Bitmap GraphSurface { get; private set; }
         public Graphics DrawingSurface { get; private set; }
@@ -110,9 +110,9 @@ namespace ChessStats
 
     public static class Helpers
     {
-        private static readonly Stopwatch stopwatch = new Stopwatch();
+        private static readonly Stopwatch stopwatch = new();
         private static int gameCount = 0;
-        private static readonly object displayLock = new object();
+        private static readonly object displayLock = new();
 
         public static string EncodeResourceImageAsHtmlFragment(string imageName)
         {
@@ -121,7 +121,7 @@ namespace ChessStats
             using (var reader = (new EmbeddedFileProvider(Assembly.GetExecutingAssembly())).GetFileInfo($"Images.{imageName}").CreateReadStream())
             {
                 var bitmapOut = new Bitmap(reader);
-                using MemoryStream stream = new MemoryStream();
+                using MemoryStream stream = new();
                 bitmapOut.Save(stream, System.Drawing.Imaging.ImageFormat.Png);
                 base64Img = Convert.ToBase64String(stream.ToArray());
             }
@@ -161,8 +161,8 @@ namespace ChessStats
         {
             if (image == null) { throw new ArgumentNullException(nameof(image)); }
 
-            Rectangle destRect = new Rectangle(0, 0, width, height);
-            Bitmap destImage = new Bitmap(width, height);
+            Rectangle destRect = new(0, 0, width, height);
+            Bitmap destImage = new(width, height);
 
             destImage.SetResolution(image.HorizontalResolution, image.VerticalResolution);
 
@@ -174,7 +174,7 @@ namespace ChessStats
                 graphics.SmoothingMode = SmoothingMode.HighQuality;
                 graphics.PixelOffsetMode = PixelOffsetMode.HighQuality;
 
-                using ImageAttributes wrapMode = new ImageAttributes();
+                using ImageAttributes wrapMode = new();
                 wrapMode.SetWrapMode(WrapMode.Clamp);
                 graphics.DrawImage(image, destRect, 0, 0, image.Width, image.Height, GraphicsUnit.Pixel, wrapMode);
             }
@@ -212,7 +212,7 @@ namespace ChessStats
             int midRowLength = (isHeader) ? HEAD_LEN : FOOT_LEN;
             double spacerLength = (title.Length + 2d) / 2d;
 
-            StringBuilder sb = new StringBuilder();
+            StringBuilder sb = new();
 
             sb.Append('=', midRowLength - (int)Math.Ceiling(spacerLength));
             sb.Append($" {title} ");
@@ -250,7 +250,7 @@ namespace ChessStats
 
         public static string GetDisplayLogo(string versionNo)
         {
-            StringBuilder textOut = new StringBuilder();
+            StringBuilder textOut = new();
 
             textOut.AppendLine(@$"                                                                                                    ");
             textOut.AppendLine(@$"     ()                                                                                             ");
@@ -272,7 +272,7 @@ namespace ChessStats
         {
             if (bitmapOut == null) { throw new ArgumentNullException(nameof(bitmapOut)); }
 
-            using MemoryStream stream = new MemoryStream();
+            using MemoryStream stream = new();
             bitmapOut.Save(stream, System.Drawing.Imaging.ImageFormat.Png);
             string base64Img = Convert.ToBase64String(stream.ToArray());
 
@@ -288,7 +288,7 @@ namespace ChessStats
 
         public static string GetHtmlTop(string pageTitle, string backgroundImage, string favIconImage, string font700Fragment, string font800Fragment)
         {
-            StringBuilder htmlReport = new StringBuilder();
+            StringBuilder htmlReport = new ();
             _ = htmlReport.AppendLine("<!DOCTYPE html>")
                           .AppendLine("<html lang='en'><head>")
                           .AppendLine($"<title>{pageTitle}</title>")

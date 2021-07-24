@@ -23,13 +23,13 @@ namespace ChessStats.Data
         {
             Helpers.ResetDisplayCounter();
 
-            using HttpClient client2 = new HttpClient();
+            using HttpClient client2 = new();
             HttpResponseMessage response2 = await client2.GetAsync(new Uri($"{capsUrl}{chessdotcomPlayerId}")).ConfigureAwait(false);
             string pageContents2 = await response2.Content.ReadAsStringAsync().ConfigureAwait(false);
 
-            List<Root> deserializedArchiveRecords = JsonSerializer.Deserialize<List<Root>>(pageContents2, new JsonSerializerOptions() { IgnoreNullValues = true });
+            List<Root> deserializedArchiveRecords = JsonSerializer.Deserialize<List<Root>>(pageContents2);
 
-            Dictionary<string, List<CapsRecord>> capsScores = new Dictionary<string, List<CapsRecord>>
+            Dictionary<string, List<CapsRecord>> capsScores = new()
             {
                 { $"White", new List<CapsRecord>() },
                 { $"Black", new List<CapsRecord>() }
@@ -37,14 +37,14 @@ namespace ChessStats.Data
 
             foreach (var record in deserializedArchiveRecords)
             {
-                List<double> capsScoreWhite = new List<double>();
-                List<double> capsScoreBlack = new List<double>();
+                List<double> capsScoreWhite = new();
+                List<double> capsScoreBlack = new();
 
                 try
                 {
                     if (record.User1Accuracy.HasValue && record.User2Accuracy.HasValue) 
                     {
-                        CapsRecord capsRecord = new CapsRecord()
+                        CapsRecord capsRecord = new()
                         {
                             Caps = record.User1.Id == chessdotcomPlayerId ? record.User1Accuracy.Value : record.User2Accuracy.Value,
                             GameDate = DateTime.Parse(record.GameEndTime),
