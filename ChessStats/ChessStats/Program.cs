@@ -881,6 +881,15 @@ namespace ChessStats
                     htmlOut.AppendLine($"</tr>");
                     capsAverageOut.Add(CultureInfo.InvariantCulture.TextInfo.ToTitleCase(capsScore.Key), scoreList);
                 }
+                else
+                {
+                    htmlOut.Append($"<tr><td>-</td>");
+                    for (int loop = 0; loop < 6; loop++)
+                    {
+                        htmlOut.AppendLine($"<td>0.00</td>");
+                    }
+                    htmlOut.AppendLine($"</tr>");
+                }
             }
 
             htmlOut.AppendLine("</tbody></table>");
