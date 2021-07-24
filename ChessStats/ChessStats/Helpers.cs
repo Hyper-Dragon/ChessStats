@@ -114,6 +114,7 @@ namespace ChessStats
         private static int gameCount = 0;
         private static readonly object displayLock = new();
 
+   
         public static string EncodeResourceImageAsHtmlFragment(string imageName)
         {
             string base64Img = "";
@@ -122,22 +123,6 @@ namespace ChessStats
             {
                 var bitmapOut = new Bitmap(reader);
                 using MemoryStream stream = new();
-                bitmapOut.Save(stream, System.Drawing.Imaging.ImageFormat.Png);
-                base64Img = Convert.ToBase64String(stream.ToArray());
-            }
-
-            return $"'data:image/png;base64,{base64Img}'";
-        }
-
-
-        public static string EncodeResourceImageAsHtmlFragment(string imageName)
-        {
-            string base64Img = "";
-
-            using (var reader = (new EmbeddedFileProvider(Assembly.GetExecutingAssembly())).GetFileInfo($"Images.{imageName}").CreateReadStream())
-            {
-                var bitmapOut = new Bitmap(reader);
-                using MemoryStream stream = new MemoryStream();
                 bitmapOut.Save(stream, System.Drawing.Imaging.ImageFormat.Png);
                 base64Img = Convert.ToBase64String(stream.ToArray());
             }
@@ -309,8 +294,8 @@ namespace ChessStats
                           .AppendLine("<html lang='en'>")
                           .AppendLine("  <head>")
                           .AppendLine("    <meta charset='utf-8'>")
-                          .AppendLine($"   <title>{pageTitle}</title>")
-                          .AppendLine($"   <link rel='shortcut icon' type='image/png' href={favIconImage}/>")
+                          .AppendLine($"    <title>{pageTitle}</title>")
+                          .AppendLine($"    <link rel='shortcut icon' type='image/png' href={favIconImage}/>")
                           .AppendLine("    <meta name='generator' content='ChessStats'> ")
                           .AppendLine("    <meta name='viewport' content='width=device-width, initial-scale=1.0'>")
                           .AppendLine("    <style>")
@@ -332,7 +317,7 @@ namespace ChessStats
                           .AppendLine("      table                                                         {width: 100%;table-layout: fixed ;border-collapse: collapse; overflow-x:auto; }")
                           .AppendLine("      thead                                                         {font-family: Montserrat; font-weight: 800;text-align: center;background: #769656;color: white;font-size: 15px; font-weight: bold;}")
                           .AppendLine("      thead tr                                                      {height:27px} ")
-                          .AppendLine("      tbody                                                         {font-family: -apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif; text-align: center;font-size: 14px;}")
+                          .AppendLine("      tbody                                                         {font-family: monospace; text-align: center;font-size: 14px;}")
                           .AppendLine("      td                                                            {padding-right: 0px;}")
                           .AppendLine("      td:nth-child(1)                                               {padding-left:10px; text-align: left; width: 105px ; font-weight: bold;}")
                           .AppendLine("      tbody tr:nth-child(odd)                                       {background-color:  rgba(255,255,255,0.25); color: rgb(245,245,245);}")
@@ -352,14 +337,14 @@ namespace ChessStats
                           .AppendLine("      .yearSplit                                                    {border-top: thin dotted; border-color: #1583b7;}")
                           .AppendLine("      .higher                                                       {background-color: hsla(120, 100%, 50%, 0.25);}")
                           .AppendLine("      .lower                                                        {background-color: hsla(0, 100%, 70%, 0.4);}")
-                          .AppendLine("      .whiteOpeningsTable thead td:nth-child(1)                     {font-family: Montserrat; font-weight: 800;font-weight: bold;}")
-                          .AppendLine("      .blackOpeningsTable thead td:nth-child(1)                     {font-family: Montserrat; font-weight: 800;font-weight: bold;}")
-                          .AppendLine("      .whiteOpeningsTable td:nth-child(1)                           {padding-left:10px; text-align: left; width:50%; font-weight: normal;}")
-                          .AppendLine("      .blackOpeningsTable td:nth-child(1)                           {padding-left:10px; text-align: left; width:50%; font-weight: normal;}")
+                          .AppendLine("      .whiteOpeningsTable thead td:nth-child(1)                     {font-family: Montserrat; font-weight: 800;font-weight: bold; font-size:14px; }")
+                          .AppendLine("      .blackOpeningsTable thead td:nth-child(1)                     {font-family: Montserrat; font-weight: 800;font-weight: bold; font-size:14px; }")
+                          .AppendLine("      .whiteOpeningsTable td:nth-child(1)                           {padding-left:10px; text-align: left; width:50%; font-family: Montserrat; font-weight: 700; font-weight: normal; font-size:11px; }")
+                          .AppendLine("      .blackOpeningsTable td:nth-child(1)                           {padding-left:10px; text-align: left; width:50%; font-family: Montserrat; font-weight: 700; font-weight: normal; font-size:11px; }")
                           .AppendLine("      .capsRollingTable thead td:nth-child(2)                       {text-align: left;}")
-                          .AppendLine("      .capsRollingTable tbody td:nth-child(1)                       {font-size: 12px;font-weight: bold;}")
-                          .AppendLine("      .playingStatsTable tbody td:nth-child(1)                      {font-size: 12px;font-weight: bold;}")
-                          .AppendLine("      .playingStatsMonthTable tbody td:nth-child(1)                 {font-size: 12px;font-weight: bold;}")
+                          .AppendLine("      .capsRollingTable tbody td:nth-child(1)                       {font-size: 14px;font-weight: bold;}")
+                          .AppendLine("      .playingStatsTable tbody td:nth-child(1)                      {font-size: 14px;font-weight: bold;}")
+                          .AppendLine("      .playingStatsMonthTable tbody td:nth-child(1)                 {font-size: 14px;font-weight: bold;}")
                           .AppendLine("      .graphCapsRow                                                 {display: grid;grid-template-columns: 60% auto;grid-gap: 10px;padding: 5px;}")
                           .AppendLine("      .graphCapsRow>div                                             {font-family: Montserrat;font-weight: 700;text-align: center;padding: 0px;color: whitesmoke;font-size: 15px;font-weight: bold;}")
                           .AppendLine("      .graphCapsBox img                                             {max-width: 100%; width: auto;height: auto;}")

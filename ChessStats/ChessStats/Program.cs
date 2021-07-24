@@ -1093,7 +1093,7 @@ namespace ChessStats
                 if (lastLine != rolledUp.Key.Substring(0, 10))
                 {
                     textOut.AppendLine("------------------+-----------+--------------------+--------------------+------+------+------+------");
-                    htmlOut.AppendLine($"{((string.IsNullOrEmpty(lastLine)) ? "" : "</tbody></table>")}<table class='playingStatsTable'><thead><tr><td>Time Control</td><td>Time</td><td>Min</td><td>Max</td><td>Rng +-</td><td class='priority-4'>Vs.Min</td><td class='priority-2'>Worst</td><td class='priority-2'>LossAv</td><td class='priority-2'>DrawAv</td><td class='priority-2'>WinAv</td><td class='priority-2'>Best</td><td class='priority-4'>Vs.Max</td><td class='priority-3'>Win</td><td class='priority-3'>Draw</td><td class='priority-3'>Loss</td><td class='priority-4'>Total</td></tr></thead><tbody>");
+                    htmlOut.AppendLine($"{((string.IsNullOrEmpty(lastLine)) ? "" : "</tbody></table>")}<table class='playingStatsTable'><thead><tr><td>{rolledUp.Key.Substring(0, 10)}</td><td>Time</td><td>Min</td><td>Max</td><td>Rng +-</td><td class='priority-4'>Vs.Min</td><td class='priority-2'>Worst</td><td class='priority-2'>LossAv</td><td class='priority-2'>DrawAv</td><td class='priority-2'>WinAv</td><td class='priority-2'>Best</td><td class='priority-4'>Vs.Max</td><td class='priority-3'>Win</td><td class='priority-3'>Draw</td><td class='priority-3'>Loss</td><td class='priority-4'>Total</td></tr></thead><tbody>");
                 }
 
                 lastLine = rolledUp.Key.Substring(0, 10);
@@ -1112,7 +1112,7 @@ namespace ChessStats
                                    $"{rolledUp.Value.GameCount.ToString(CultureInfo.CurrentCulture).PadLeft(4).Replace("   0", "   -", true, CultureInfo.InvariantCulture)}"
                                    );
 
-                htmlOut.AppendLine($"<tr><td>{rolledUp.Key}</td>" +
+                htmlOut.AppendLine($"<tr><td>{rolledUp.Key.Substring(rolledUp.Key.LastIndexOf(" "))}</td>" +
                                    $"<td>{((int)timeMonth.TotalHours).ToString(CultureInfo.CurrentCulture).PadLeft(4, '$').Replace("$", "&nbsp;", true, CultureInfo.InvariantCulture)}:{ timeMonth.Minutes.ToString(CultureInfo.CurrentCulture).PadLeft(2, '0')}</td>" +
                                    $"<td{((ratingComparison == 0) ? "" : ((ratingComparison < rolledUp.Value.MinRating) ? " class='lower'" : " class='higher'"))}>{rolledUp.Value.MinRating.ToString(CultureInfo.CurrentCulture).PadLeft(4, '$').Replace("$$$0", "$$$-", true, CultureInfo.InvariantCulture).Replace("$", "&nbsp;", true, CultureInfo.InvariantCulture)}</td>" +
                                    $"<td{((ratingComparison == 0) ? "" : ((ratingComparison < rolledUp.Value.MaxRating) ? " class='lower'" : " class='higher'"))}>{rolledUp.Value.MaxRating.ToString(CultureInfo.CurrentCulture).PadLeft(4, '$').Replace("$$$0", "$$$-", true, CultureInfo.InvariantCulture).Replace("$", "&nbsp;", true, CultureInfo.InvariantCulture)}</td>" +
