@@ -15,6 +15,7 @@ Download the latest version from the [Releases](https://github.com/Hyper-Dragon/
   * Image used for the background
   * Embeded fonts
   * Dark tables
+* The index file is only generated once per run
 * Fixed v0.6 missing assembly issue
 * Removed Microsoft.CodeAnalysis.FxCopAnalyzers (depricated)
 * Switched to .Net 6.0
