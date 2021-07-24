@@ -290,7 +290,7 @@ namespace ChessStats
         {
             StringBuilder htmlReport = new ();
             _ = htmlReport.AppendLine("<!DOCTYPE html>")
-                          .AppendLine("<html lang='en'><head>")
+                          .AppendLine("<html lang='en'><head><meta charset='utf-8'>")
                           .AppendLine($"<title>{pageTitle}</title>")
                           .AppendLine($"<link rel='shortcut icon' type='image/png' href={favIconImage}/>")
                           .AppendLine("<meta charset='UTF-8'>")
@@ -314,6 +314,7 @@ namespace ChessStats
                           .AppendLine("     h2                                           {font-family: Montserrat; font-weight: 800;clear:left;padding: 5px;text-align: left;font-size: 20px;background-color: rgba(0,0,0,.13);color: hsla(0,0%,100%,.65);}")
                           .AppendLine("     table                                        {width: 100%;table-layout: fixed ;border-collapse: collapse; overflow-x:auto; }")
                           .AppendLine("     thead                                        {font-family: Montserrat; font-weight: 800;text-align: center;background: #769656;color: white;font-size: 15px; font-weight: bold;}")
+                          .AppendLine("     thead tr                                     {height:27px} ")
                           .AppendLine("     tbody                                        {font-family: -apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif; text-align: center;font-size: 14px;}")
                           .AppendLine("     td                                           {padding-right: 0px;}")
                           .AppendLine("     td:nth-child(1)                              {padding-left:10px; text-align: left; width: 105px ; font-weight: bold;}")
