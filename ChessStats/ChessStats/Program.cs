@@ -594,6 +594,8 @@ namespace ChessStats
                 if (graphData == null || graphData.Count < 2)
                 {
                     using GraphHelper graphHelperBlank = new(GRAPH_WIDTH, highVal: 150);
+                    graphHelperBlank.DrawingSurface.DrawString($"Not enough data", new Font(FontFamily.GenericSansSerif, 9f, FontStyle.Italic), GraphHelper.TextBrush, 1, graphHelperBlank.Height - 30);
+
                     return Helpers.GetImageAsHtmlFragment(graphHelperBlank.GraphSurface);
                 }
 
@@ -628,7 +630,7 @@ namespace ChessStats
 
                 //Add ratings
                 using Graphics resizedSurface = Graphics.FromImage(bitmapOut);
-                resizedSurface.DrawString($"CAPs (Newest to Oldest)", new Font(FontFamily.GenericSansSerif, 14f), GraphHelper.TextBrush, 1, bitmapOut.Height - 30);
+                resizedSurface.DrawString($"CAPs (New to Old)", new Font(FontFamily.GenericSansSerif, 14f), GraphHelper.TextBrush, 1, bitmapOut.Height - 30);
 
                 return Helpers.GetImageAsHtmlFragment(bitmapOut);
 
@@ -643,6 +645,8 @@ namespace ChessStats
                 if (ratingsPostGame.Count < 10)
                 {
                     using GraphHelper graphHelperBlank = new(GRAPH_WIDTH, highVal: GRAPH_HEIGHT_STATS);
+                    graphHelperBlank.DrawingSurface.DrawString($"Not enough data", new Font(FontFamily.GenericSansSerif, 10f, FontStyle.Italic), GraphHelper.TextBrush, 1, graphHelperBlank.Height - 30);
+
                     return Helpers.GetImageAsHtmlFragment(graphHelperBlank.GraphSurface);
                 }
 
@@ -731,6 +735,7 @@ namespace ChessStats
                 if (!isGraphRequired)
                 {
                     using GraphHelper graphHelperBlank = new(GRAPH_WIDTH, highVal: GRAPH_HEIGHT_AVERAGE);
+                    graphHelperBlank.DrawingSurface.DrawString($"Not enough data", new Font(FontFamily.GenericSansSerif, 10f,FontStyle.Italic), GraphHelper.TextBrush, 1, graphHelperBlank.Height - 30);
 
                     return Helpers.GetImageAsHtmlFragment(graphHelperBlank.GraphSurface);
                 }
