@@ -11,13 +11,13 @@ Download the latest version from the [Releases](https://github.com/Hyper-Dragon/
 * CAPS scores, limited to the last 20 games, now included
 * Openings for the last 40 games table added
 * Various Html improvements including:
-  * Fav icon added to pages
+  * Favicon added to pages
   * Image used for the background
-  * Embeded fonts
+  * Embedded fonts
   * Dark tables
 * The index file is only generated once per run
 * Fixed v0.6 missing assembly issue
-* Removed Microsoft.CodeAnalysis.FxCopAnalyzers (depricated)
+* Removed Microsoft.CodeAnalysis.FxCopAnalyzers (deprecated)
 * Switched to .Net 6.0
 
 ### Version 0.6 
@@ -39,7 +39,7 @@ Download the latest version from the [Releases](https://github.com/Hyper-Dragon/
 * Several minor display fixes
 
 ### Version 0.4 
-* CAPS averages broken down by time control.  
+* CAPS averages are broken down by time control.  
     * These are available for games that have been analysed on the chess.com website (games with no analysis are marked with '-' on ingest). 
 
 ## Usage
