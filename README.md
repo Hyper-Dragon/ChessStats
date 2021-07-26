@@ -84,7 +84,7 @@ If you find this useful and want to say thanks [just send me a fun trophy or two
 ## Example Output Fragments (Text)
 
 ```
-> chessstats fabianocaruana
+> chessstats GothamChess
 ```
 
 <pre>
