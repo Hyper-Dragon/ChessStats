@@ -114,6 +114,7 @@ namespace ChessStats
         private static int gameCount = 0;
         private static readonly object displayLock = new();
 
+   
         public static string EncodeResourceImageAsHtmlFragment(string imageName)
         {
             string base64Img = "";
