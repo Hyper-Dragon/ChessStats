@@ -379,7 +379,7 @@ namespace ChessStats
                        .AppendLine($"</div><br/>")
                        .AppendLine($"<div class='onerow'><div class='onecolumn'>")
                        .AppendLine($"<h2>{pawnFragment}Available Files</h2>")
-                       .AppendLine("<table><thead>")
+                       .AppendLine("<table class='indextab'><thead>")
                        .AppendLine("<tr><td>User</td><td>Html</td><td class='priority-2'>Text</td><td>Bullet</td><td>Blitz</td><td>Rapid</td><td class='priority-2'>CAPs</td><td class='priority-3'>Updated (UTC)</td></tr>")
                        .AppendLine("</thead><tbody>");
 
@@ -388,14 +388,14 @@ namespace ChessStats
                 int daysFromLastUpdate = (DateTime.UtcNow - userRecords.Value.lastUpdate).Days;
 
                 _ = htmlOut.AppendLine("<tr>")
-                           .Append($"<td style='white-space:nowrap'>{userRecords.Key}</td>")
-                           .Append($"<td style='width: auto' {((userRecords.Value.hasHtml) ? "" : " class='lower'")}>{((userRecords.Value.hasHtml) ? $"<a href='./{userRecords.Key}/{userRecords.Key}-Summary.html'>Report" : "&nbsp;")}</td>")
-                           .Append($"<td style='width: auto' class='priority-2{((userRecords.Value.hasTxt) ? "'" : " lower'")}>{((userRecords.Value.hasTxt) ? $"<a href='./{userRecords.Key}/{userRecords.Key}-Summary.txt'>TXT" : "&nbsp;")}</td>")
-                           .Append($"<td style='width: auto'>{((userRecords.Value.hasBulletPgn) ? $"<a href='./{userRecords.Key}/{userRecords.Key}-Pgn-Bullet.pgn'>PGN" : "&nbsp;")}</td>")
-                           .Append($"<td style='width: auto'>{((userRecords.Value.hasBlitzPgn) ? $"<a href='./{userRecords.Key}/{userRecords.Key}-Pgn-Blitz.pgn'>PGN" : "&nbsp;")}</td>")
-                           .Append($"<td style='width: auto'>{((userRecords.Value.hasRapidPgn) ? $"<a href='./{userRecords.Key}/{userRecords.Key}-Pgn-Rapid.pgn'>PGN" : "&nbsp;")}</td>")
-                           .Append($"<td style='width: auto' class='priority-2{((userRecords.Value.hasCaps) ? "'" : " lower'")}>{((userRecords.Value.hasCaps) ? $"<a href='./{userRecords.Key}/{userRecords.Key}-Caps-All.tsv'>TSV" : "&nbsp;")}</td>")
-                           .Append($"<td style='width: auto' class='priority-3{((daysFromLastUpdate < 1) ? " higher'" : ((daysFromLastUpdate >= 3) ? "'" : " lower'"))}>{userRecords.Value.lastUpdate.ToShortDateString()}@{userRecords.Value.lastUpdate.ToShortTimeString()}</td>")
+                           .Append($"<td style='width:25%;'>{userRecords.Key}</td>")
+                           .Append($"<td {((userRecords.Value.hasHtml) ? "" : " class='lower'")}>{((userRecords.Value.hasHtml) ? $"<a href='./{userRecords.Key}/{userRecords.Key}-Summary.html'>Report" : "&nbsp;")}</td>")
+                           .Append($"<td class='priority-2{((userRecords.Value.hasTxt) ? "'" : " lower'")}>{((userRecords.Value.hasTxt) ? $"<a href='./{userRecords.Key}/{userRecords.Key}-Summary.txt'>TXT" : "&nbsp;")}</td>")
+                           .Append($"<td>{((userRecords.Value.hasBulletPgn) ? $"<a href='./{userRecords.Key}/{userRecords.Key}-Pgn-Bullet.pgn'>PGN" : "&nbsp;")}</td>")
+                           .Append($"<td>{((userRecords.Value.hasBlitzPgn) ? $"<a href='./{userRecords.Key}/{userRecords.Key}-Pgn-Blitz.pgn'>PGN" : "&nbsp;")}</td>")
+                           .Append($"<td>{((userRecords.Value.hasRapidPgn) ? $"<a href='./{userRecords.Key}/{userRecords.Key}-Pgn-Rapid.pgn'>PGN" : "&nbsp;")}</td>")
+                           .Append($"<td class='priority-2{((userRecords.Value.hasCaps) ? "'" : " lower'")}>{((userRecords.Value.hasCaps) ? $"<a href='./{userRecords.Key}/{userRecords.Key}-Caps-All.tsv'>TSV" : "&nbsp;")}</td>")
+                           .Append($"<td class='priority-3{((daysFromLastUpdate < 1) ? " higher'" : ((daysFromLastUpdate >= 3) ? "'" : " lower'"))}>{userRecords.Value.lastUpdate.ToShortDateString()}@{userRecords.Value.lastUpdate.ToShortTimeString()}</td>")
                            .AppendLine("</tr>");
             }
             htmlOut.AppendLine("</tbody></table>")
@@ -1112,7 +1112,7 @@ namespace ChessStats
                                    $"{rolledUp.Value.GameCount.ToString(CultureInfo.CurrentCulture).PadLeft(4).Replace("   0", "   -", true, CultureInfo.InvariantCulture)}"
                                    );
 
-                htmlOut.AppendLine($"<tr><td>{rolledUp.Key.Substring(rolledUp.Key.LastIndexOf(" "))}</td>" +
+                htmlOut.AppendLine($"<tr><td>{rolledUp.Key[rolledUp.Key.LastIndexOf(" ")..]}</td>" +
                                    $"<td>{((int)timeMonth.TotalHours).ToString(CultureInfo.CurrentCulture).PadLeft(4, '$').Replace("$", "&nbsp;", true, CultureInfo.InvariantCulture)}:{ timeMonth.Minutes.ToString(CultureInfo.CurrentCulture).PadLeft(2, '0')}</td>" +
                                    $"<td{((ratingComparison == 0) ? "" : ((ratingComparison < rolledUp.Value.MinRating) ? " class='lower'" : " class='higher'"))}>{rolledUp.Value.MinRating.ToString(CultureInfo.CurrentCulture).PadLeft(4, '$').Replace("$$$0", "$$$-", true, CultureInfo.InvariantCulture).Replace("$", "&nbsp;", true, CultureInfo.InvariantCulture)}</td>" +
                                    $"<td{((ratingComparison == 0) ? "" : ((ratingComparison < rolledUp.Value.MaxRating) ? " class='lower'" : " class='higher'"))}>{rolledUp.Value.MaxRating.ToString(CultureInfo.CurrentCulture).PadLeft(4, '$').Replace("$$$0", "$$$-", true, CultureInfo.InvariantCulture).Replace("$", "&nbsp;", true, CultureInfo.InvariantCulture)}</td>" +
