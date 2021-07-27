@@ -6,6 +6,17 @@ ChessStats is a console app used to retrieve monthly play time, ratings and top 
 ## Installation
 Download the latest version from the [Releases](https://github.com/Hyper-Dragon/ChessStats/releases) page, extract _ChessStats.exe_ and put it where you want it to go.  Note that the cache and reporting directories are created relative to the executable's location. 
 
+## Usage
+```
+chessstats [chessdotcom username]
+```
+or 
+```
+chessstats -refresh
+```
+or 
+just double click the _exe_ and you will be prompted for a chess.com username.
+
 ## Version History
 ### Version 0.7 
 * CAPS scores, limited to the last 20 games, now included
@@ -42,17 +53,6 @@ Download the latest version from the [Releases](https://github.com/Hyper-Dragon/
 * CAPS averages are broken down by time control.  
     * These are available for games that have been analysed on the chess.com website (games with no analysis are marked with '-' on ingest). 
 
-## Usage
-```
-chessstats [chessdotcom username]
-```
-or 
-```
-chessstats -refresh
-```
-or 
-just double click the _exe_ and you will be prompted for a chess.com username.
-
 ## Known Issues
 * Version 0.7
     * None (yet)
@@ -68,6 +68,7 @@ just double click the _exe_ and you will be prompted for a chess.com username.
 * Chess.com Api
 * ~~Chess.com website HTML for CAPs extraction (broken)~~
 * Chess.com undocumented endpoint for CAPs extraction (last 20 games only)
+* [Project Site](https://hyper-dragon.github.io/ChessStats/) 
 
 ## Acknowledgements
 * [Chess.Com](https://github.com/ChessCom) @ChessCom
@@ -84,7 +85,7 @@ If you find this useful and want to say thanks [just send me a fun trophy or two
 ## Example Output Fragments (Text)
 
 ```
-> chessstats fabianocaruana
+> chessstats GothamChess
 ```
 
 <pre>
