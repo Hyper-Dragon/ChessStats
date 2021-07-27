@@ -67,7 +67,7 @@ To resolve run the following:
     
 ## Known Issues
 * Version 0.7.x
-    * None (yet)
+    * The 'Last 40 Openings' section only displays the top 15 for black and white...so the totals may not add up to 40!
 * Version 0.6
     * CAPS scores are not available due to Chess.com site changes
     * Error: An assembly specified in the application dependencies manifest (ChessStats.deps.json) was not found 
