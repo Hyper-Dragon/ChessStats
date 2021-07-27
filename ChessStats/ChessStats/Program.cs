@@ -37,6 +37,7 @@ namespace ChessStats
         private const int GRAPH_WIDTH = 700;
         private const int GRAPH_HEIGHT_STATS = 300;
         private const int GRAPH_HEIGHT_AVERAGE = 200;
+        private const float GRAPH_DPI = 96f;
 
         private static string bkgImageBase64 = "";
         private static string favIconBase64 = "";
@@ -52,7 +53,17 @@ namespace ChessStats
 
             try
             {
-                (bool hasRunErrors, bool hasCmdLineOptionSet) = await RunChessStats(args).ConfigureAwait(false);
+#nullable enable
+                string? defaultParamValue = System.Environment.GetEnvironmentVariable("CHESSSTATS_DEFAULT_PARAMS");
+                Console.WriteLine($">>CHESSSTATS_DEFAULT_PARAMS:{ (defaultParamValue ?? "NOT SET") }");
+
+                (bool hasRunErrors, bool hasCmdLineOptionSet) = await RunChessStats(
+                    ((args == null || args.Length == 0) && !string.IsNullOrEmpty(defaultParamValue))?
+                    new string[] { defaultParamValue } :
+                    args).ConfigureAwait(false);
+#nullable disable
+
+
 
                 if (hasRunErrors)
                 {
@@ -595,7 +606,7 @@ namespace ChessStats
             {
                 if (graphData == null || graphData.Count < 2)
                 {
-                    using GraphHelper graphHelperBlank = new(GRAPH_WIDTH, highVal: 150);
+                    using GraphHelper graphHelperBlank = new(GRAPH_WIDTH, GRAPH_DPI, highVal: 150);
                     graphHelperBlank.DrawingSurface.DrawString($"Not enough data", new Font(FontFamily.GenericSansSerif, 9f, FontStyle.Italic), GraphHelper.TextBrush, 1, graphHelperBlank.Height - 30);
 
                     return Helpers.GetImageAsHtmlFragment(graphHelperBlank.GraphSurface);
@@ -605,6 +616,7 @@ namespace ChessStats
                 int stepWidth = (int) Math.Ceiling(((double)GRAPH_WIDTH)/6d);
 
                 using GraphHelper graphHelper = new(GRAPH_WIDTH - stepWidth,
+                                                    GRAPH_DPI,
                                                     0,
                                                     100,
                                                     GraphHelper.GraphLine.PERCENTAGE);
@@ -646,7 +658,7 @@ namespace ChessStats
                 //If less than 10 games don't graph
                 if (ratingsPostGame.Count < 10)
                 {
-                    using GraphHelper graphHelperBlank = new(GRAPH_WIDTH, highVal: GRAPH_HEIGHT_STATS);
+                    using GraphHelper graphHelperBlank = new(GRAPH_WIDTH, GRAPH_DPI, highVal: GRAPH_HEIGHT_STATS);
                     graphHelperBlank.DrawingSurface.DrawString($"Not enough data", new Font(FontFamily.GenericSansSerif, 10f, FontStyle.Italic), GraphHelper.TextBrush, 1, graphHelperBlank.Height - 30);
 
                     return Helpers.GetImageAsHtmlFragment(graphHelperBlank.GraphSurface);
@@ -657,9 +669,10 @@ namespace ChessStats
                 int stepWidth = Math.Max(GRAPH_WIDTH / ratingsPostGameOrdered.Length, 1);
 
                 using GraphHelper graphHelper = new(Math.Max(ratingsPostGameOrdered.Length, ratingsPostGameOrdered.Length * stepWidth),
-                                                                ratingsPostGame.Select(x => x.rating).Min(),
-                                                                ratingsPostGame.Select(x => x.rating).Max(),
-                                                                GraphHelper.GraphLine.RATING);
+                                                             GRAPH_DPI,
+                                                             ratingsPostGame.Select(x => x.rating).Min(),
+                                                             ratingsPostGame.Select(x => x.rating).Max(),
+                                                             GraphHelper.GraphLine.RATING);
 
                 //Draw Graph
                 int graphX = 0;
@@ -736,7 +749,7 @@ namespace ChessStats
                 //If less than 10 games don't graph
                 if (!isGraphRequired)
                 {
-                    using GraphHelper graphHelperBlank = new(GRAPH_WIDTH, highVal: GRAPH_HEIGHT_AVERAGE);
+                    using GraphHelper graphHelperBlank = new(GRAPH_WIDTH, GRAPH_DPI, highVal: GRAPH_HEIGHT_AVERAGE);
                     graphHelperBlank.DrawingSurface.DrawString($"Not enough data", new Font(FontFamily.GenericSansSerif, 10f,FontStyle.Italic), GraphHelper.TextBrush, 1, graphHelperBlank.Height - 30);
 
                     return Helpers.GetImageAsHtmlFragment(graphHelperBlank.GraphSurface);
@@ -745,6 +758,7 @@ namespace ChessStats
                 int stepWidth = Math.Max(GRAPH_WIDTH / graphData.Count, 1);
 
                 using GraphHelper graphHelper = new(Math.Max(graphData.Count, graphData.Count * stepWidth),
+                                                             GRAPH_DPI,
                                                              graphMin,
                                                              graphMax,
                                                              GraphHelper.GraphLine.RATING);

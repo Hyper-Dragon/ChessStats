@@ -8,6 +8,7 @@ using System.Linq;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using static ChessStats.Data.GameHeader;
 
 namespace ChessStats.Data
 {
@@ -26,7 +27,7 @@ namespace ChessStats.Data
         public static async Task<List<ChessGame>> FetchGameRecordsForUser(string username, DirectoryInfo cacheDir)
         {
             Helpers.ResetDisplayCounter();
-            ConcurrentBag<ChessGame> PgnList = new ConcurrentBag<ChessGame>();
+            ConcurrentBag<ChessGame> PgnList = new();
 
             ArchivedGamesList monthlyArchive = await GetPlayerMonthlyArchive(username).ConfigureAwait(false);
 
@@ -69,7 +70,9 @@ namespace ChessStats.Data
                 }
             });
 
-            return PgnList.ToList();
+            // Make sure the list is sorted...
+            // This matters for the Last 40 Openings table
+            return PgnList.OrderByDescending(o => o.GameAttributes.GetAttributeAsNullOrDateTime(SupportedAttribute.EndDate, SupportedAttribute.EndTime)).ToList();
         }
 
         private static async System.Threading.Tasks.Task<ArchivedGamesList> GetPlayerMonthlyArchive(string username)

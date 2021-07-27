@@ -3,6 +3,13 @@
     "ChessStats": {
       "commandName": "Project",
       "commandLineArgs": "Hyper-Dragon"
+    },
+    "Docker": {
+      "commandName": "Docker"
+    },
+    "WSL 2": {
+      "commandName": "Project",
+      "commandLineArgs": "Hyper-Dragon"
     }
   }
 }

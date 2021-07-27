@@ -30,7 +30,7 @@ namespace ChessStats
         public int BaseLine => Height;
         public int Range => HighVal - LowVal;
         public enum GraphLine { NONE, RATING, PERCENTAGE }
-        public GraphHelper(int width, int lowVal = 0, int highVal = 0, GraphLine graphLines = GraphLine.NONE)
+        public GraphHelper(int width, float graphDpi, int lowVal = 0, int highVal = 0, GraphLine graphLines = GraphLine.NONE)
         {
             LowVal = lowVal;
             HighVal = highVal;
@@ -44,6 +44,9 @@ namespace ChessStats
             BackgroundPen = new Pen(LinGrBrush);
 
             GraphSurface = new System.Drawing.Bitmap(width, Range);
+            
+            //FIX: Explicitly set the DPI or getResolution fails on linux
+            GraphSurface.SetResolution(graphDpi, graphDpi);
 
             DrawingSurface = Graphics.FromImage(GraphSurface);
             DrawingSurface.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
@@ -165,6 +168,7 @@ namespace ChessStats
             Rectangle destRect = new(0, 0, width, height);
             Bitmap destImage = new(width, height);
 
+            
             destImage.SetResolution(image.HorizontalResolution, image.VerticalResolution);
 
             using (Graphics graphics = Graphics.FromImage(destImage))
