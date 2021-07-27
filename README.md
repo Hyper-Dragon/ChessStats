@@ -4,7 +4,7 @@
 ChessStats is a console app used to retrieve monthly play time, ratings and top openings for any chess.com user. Note that variant game types are not included in the stats (displayed as 'X' during game retrieval) and unrated game ('NR') information is time only. 
 
 ## Installation
-Download the latest version from the [Releases](https://github.com/Hyper-Dragon/ChessStats/releases) page, extract _ChessStats.exe_ and put it where you want it to go.  Note that the cache and reporting directories are created relative to the executable's location. 
+Download the latest version from the [Releases](https://github.com/Hyper-Dragon/ChessStats/releases) page, extract _ChessStats.exe_ (or _ChessStats_ if you are on Linux) and put it where you want it to go.  Note that the cache and reporting directories are created relative to the executable's location. 
 
 ## Usage
 ```
@@ -15,7 +15,19 @@ or
 chessstats -refresh
 ```
 or 
-just double click the _exe_ and you will be prompted for a chess.com username.
+just double click the _exe_ and you will be prompted for a chess.com username unless the CHESSSTATS_DEFAULT_PARAMS environment veriable is set in which case that will be taken as the default.
+
+### (Linux Only)
+
+If you receive the following error you are missing 'libgdiplus'.
+<pre>
+The type initializer for 'Gdip' threw an `exception.`
+</pre>
+To resolve run the following:
+<pre>
+> apt-get update
+> apt-get install -y libgdiplus
+</pre>
 
 ## Version History
 ### Version 0.7 
@@ -52,9 +64,9 @@ just double click the _exe_ and you will be prompted for a chess.com username.
 ### Version 0.4 
 * CAPS averages are broken down by time control.  
     * These are available for games that have been analysed on the chess.com website (games with no analysis are marked with '-' on ingest). 
-
+    
 ## Known Issues
-* Version 0.7
+* Version 0.7.x
     * None (yet)
 * Version 0.6
     * CAPS scores are not available due to Chess.com site changes
