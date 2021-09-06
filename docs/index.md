@@ -6,7 +6,7 @@ ChessStats is a console app used to retrieve monthly play time, ratings and top 
 
 The HTML reports generated are standalone with all assets (images/fonts) embedded in the page.  This means they can be sent to others, or indeed just opened as a document.  
 
-I sync my ChessStats folder with dropbox so I can read the reports directly on my tablet from the Dropbox app.
+Personally, I sync my ChessStats folder with dropbox so I can read the reports directly on my tablet from the Dropbox app.
 
 ## Installation
 
@@ -25,6 +25,8 @@ chessstats -refresh
 ```
 
 or just double click the _exe_ and you will be prompted for a Chess.com username.
+
+![Sample Run](assets/images/RunningConsole.gif)
 
 ## Version History
 
