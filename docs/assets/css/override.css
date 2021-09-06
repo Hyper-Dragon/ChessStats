@@ -53,13 +53,13 @@ pre {
 .page-header {
   z-index: 20;
   background-color: #0d1117;
-  background-image: url("/DgtAngel/assets/images/BoardBackground.png"),
-    url("/DgtAngel/assets/images/GlowBackground.png"),
+  background-image: url("/ChessStats/assets/images/BoardBackground.png"),
+    url("/ChessStats/assets/images/GlowBackground.png"),
     linear-gradient(120deg, #0d1117 0%, #2e537d 100%);
   background-repeat: no-repeat;
   background-size: contain;
   min-width: 325px;
-  max-height: 300px;
+  max-height: 500px;
   color: rgb(255, 255, 255);
   border: 0px;
   margin: 0px;
