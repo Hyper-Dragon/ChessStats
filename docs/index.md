@@ -2,11 +2,15 @@
 
 ## About
 
-ChessStats is a console app used to retrieve monthly play time, ratings and top openings for any chess.com user. Note that variant game types are not included in the stats (displayed as 'X' during game retrieval) and unrated game ('NR') information is time only. 
+ChessStats is a console app used to retrieve monthly play time, ratings and top openings for any Chess.com user. Note that variant game types are not included in the stats (displayed as 'X' during game retrieval) and unrated game ('NR') information is time only.
+
+The HTML reports generated are standalone with all assets (images/fonts) embedded in the page.  This means they can be sent to others, or indeed just opened as a document.  
+
+I sync my ChessStats folder with dropbox so I can read the reports directly on my tablet from the Dropbox app.
 
 ## Installation
 
-Download the latest version from the [Releases](https://github.com/Hyper-Dragon/ChessStats/releases) page, extract _ChessStats.exe_ and put it where you want it to go.  Note that the cache and reporting directories are created relative to the executable's location. 
+Download the latest version from the [Releases](https://github.com/Hyper-Dragon/ChessStats/releases) page, extract _ChessStats.exe_ and put it where you want it to go.  **Note that the cache and reporting directories are created relative to the executable's location**.
 
 ## Usage
 
@@ -20,7 +24,7 @@ or
 chessstats -refresh
 ```
 
-or just double click the _exe_ and you will be prompted for a chess.com username.
+or just double click the _exe_ and you will be prompted for a Chess.com username.
 
 ## Version History
 
@@ -43,7 +47,7 @@ or just double click the _exe_ and you will be prompted for a chess.com username
 * Graphs for ratings and monthly win/loss averages (included in Html Reports)
 * Html index file generation _([location of executable]/ChessStatsResults/index.html)_
 * Several minor fixes
-* CAPS scores removed due to chess.com site changes
+* CAPS scores removed due to Chess.com site changes
 
 ### Version 0.5
 
@@ -57,10 +61,10 @@ or just double click the _exe_ and you will be prompted for a chess.com username
 * Error handling improvements
 * Several minor display fixes
 
-### Version 0.4 
+### Version 0.4
 
 * CAPS averages are broken down by time control.  
-  * These are available for games that have been analysed on the chess.com website (games with no analysis are marked with '-' on ingest). 
+  * These are available for games that have been analysed on the Chess.com website (games with no analysis are marked with '-' on ingest).
 
 ## Known Issues
 
@@ -73,9 +77,19 @@ or just double click the _exe_ and you will be prompted for a chess.com username
   * Error: Unable to write index.html 
     * Make sure that index.html is not in use and rerun
 
+## License
+
+This is free and unencumbered software released into the public domain.
+
+Anyone is free to copy, modify, publish, use, compile, sell, or distribute this software, either in source code form or as a compiled binary, for any purpose, commercial or non-commercial, and by any means.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+For more information, please refer to [unlicense.org](https://unlicense.org).
+
 ## Saying Thank You
 
-If you find this useful and want to say thanks [just send me a fun trophy or two or three](https://www.chess.com/member/hyper-dragon) over on chess.com :smiley:
+If you find this useful and want to say thanks [just send me a fun trophy or two or three](https://www.chess.com/member/hyper-dragon) over on chess.com.  If you find it really useful then consider hitting the donate button at the top of the page.
 
 ## Example Output (HTML)
 
