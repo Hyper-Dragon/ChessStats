@@ -22,7 +22,7 @@ namespace ChessStats
         private const string VERSION_NUMBER = "0.7.1";
         private const string RESULTS_DIR_NAME = "ChessStatsResults";
         private const string CACHE_DIR_NAME = "ChessStatsCache";
-        private const string CACHE_VERSION_NUMBER = "1";
+        private const string CACHE_VERSION_NUMBER = "2";
         private const string CHESSCOM_URL = "https://chess.com";
         private const string MEMBER_URL = "https://www.chess.com/member/";
         private const string OPENING_URL = "https://www.chess.com/openings/";

@@ -28,7 +28,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\ChessDotComSharp\ChessDotComSharp.csproj" />
+    <ProjectReference Include="..\..\..\..\HyperDragon-Forks\ChessDotComSharp\ChessDotComSharp\ChessDotComSharp.csproj" />
   </ItemGroup>
 
 </Project>
