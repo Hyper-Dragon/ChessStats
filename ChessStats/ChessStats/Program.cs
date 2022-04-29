@@ -16,9 +16,7 @@ namespace ChessStats
 {
     internal class Program
     {
-        private const int MAX_CAPS_PAGES = 50;
-        private const int MAX_CAPS_PAGES_WITH_CACHE = 3;
-        private const string VERSION_NUMBER = "0.7.1";
+        private const string VERSION_NUMBER = "0.8.0";
         private const string RESULTS_DIR_NAME = "ChessStatsResults";
         private const string CACHE_DIR_NAME = "ChessStatsCache";
         private const string CACHE_VERSION_NUMBER = "2";
@@ -32,7 +30,6 @@ namespace ChessStats
         private const string REPORT_HEADING_ICON = "https://www.chess.com/bundles/web/favicons/favicon-16x16.31f99381.png";
         private const string FONT_700_WOFF2_URL = "https://www.chess.com/bundles/web/fonts/montserrat-700.5e7b9b6f.woff2";
         private const string FONT_800_WOFF2_URL = "https://www.chess.com/bundles/web/fonts/montserrat-800.92157f3f.woff2";
-        private const string CAPS_URL = "https://www.chess.com/callback/user/daily/archive?all=1&userId=";
         private const int GRAPH_WIDTH = 700;
         private const int GRAPH_HEIGHT_STATS = 300;
         private const int GRAPH_HEIGHT_AVERAGE = 200;
@@ -95,7 +92,6 @@ namespace ChessStats
         {
             bool hasRunErrors = false;
             bool hasCmdLineOptionSet = true;
-            bool isCapsIncluded = true;
 
             //Set up data directories
             DirectoryInfo applicationPath = new(Path.GetDirectoryName(Environment.ProcessPath));
@@ -187,20 +183,6 @@ namespace ChessStats
 
                 Helpers.EndTimedSection(">>Download complete");
 
-                Dictionary<string, List<CapsRecord>> capsScores = new();
-
-                if (isCapsIncluded)
-                {
-                    Helpers.StartTimedSection($">>Fetching and Processing Available CAPS Scores");
-                    capsScores = await CapsFromChessDotCom.GetCapsScoresJson(chessdotcomPlayerId, CAPS_URL).ConfigureAwait(false);
-                    Helpers.EndTimedSection(">>Finished Fetching and Processing Available CAPS Scores", true);
-                }
-                else
-                {
-                    Helpers.StartTimedSection($">>Skipping CAPS Processing due to Chess.Com site changes");
-                    Helpers.EndTimedSection(">>Skipped", false);
-                }
-
                 List<ChessGame> gameList = new();
                 Helpers.StartTimedSection($">>Fetching Games From Chess.Com");
 
@@ -233,6 +215,13 @@ namespace ChessStats
                                 out double totalSecondsPlayed);
 
                 Helpers.EndTimedSection($">>Finished Processing Games");
+
+
+                Helpers.StartTimedSection($">>Fetching and Processing Available CAPS Scores");
+                Dictionary<string, List<CapsRecord>> capsScores = new();
+                capsScores = await CapsFromChessDotCom.GetCapsScoresJson(chessdotcomUsername, gameList).ConfigureAwait(false);
+                Helpers.EndTimedSection(">>Finished Fetching and Processing Available CAPS Scores", true);
+
 
                 Helpers.StartTimedSection($">>Compiling Report Data");
 
@@ -277,6 +266,8 @@ namespace ChessStats
 
                 Helpers.StartTimedSection($">>Building Reports");
                 //Build the text report
+                bool isCapsIncluded = true;
+
                 Task<string> reportT1 = BuildTextReport(isCapsIncluded, chessdotcomUsername, whiteOpeningstextOut, blackOpeningstextOut, playingStatstextOut,
                                                           timePlayedByMonthtextOut, "", "",
                                                           totalSecondsPlayedtextOut);
