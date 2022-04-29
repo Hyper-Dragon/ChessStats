@@ -1,8 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
-using System.IO;
-using System.Linq;
 using System.Net.Http;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -35,14 +33,14 @@ namespace ChessStats.Data
                 { $"Black", new List<CapsRecord>() }
             };
 
-            foreach (var record in deserializedArchiveRecords)
+            foreach (Root record in deserializedArchiveRecords)
             {
                 List<double> capsScoreWhite = new();
                 List<double> capsScoreBlack = new();
 
                 try
                 {
-                    if (record.User1Accuracy.HasValue && record.User2Accuracy.HasValue) 
+                    if (record.User1Accuracy.HasValue && record.User2Accuracy.HasValue)
                     {
                         CapsRecord capsRecord = new()
                         {
@@ -71,7 +69,7 @@ namespace ChessStats.Data
             return capsScores;
         }
     }
-    
+
     public class GameType
     {
         [JsonPropertyName("name")]

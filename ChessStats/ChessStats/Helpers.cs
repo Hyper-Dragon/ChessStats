@@ -44,7 +44,7 @@ namespace ChessStats
             BackgroundPen = new Pen(LinGrBrush);
 
             GraphSurface = new System.Drawing.Bitmap(width, Range);
-            
+
             //FIX: Explicitly set the DPI or getResolution fails on linux
             GraphSurface.SetResolution(graphDpi, graphDpi);
 
@@ -70,7 +70,7 @@ namespace ChessStats
                     DrawingSurface.DrawLine(GraphHelper.WhitePen, 0, loop, Width, loop);
                 }
 
-                for (int loop = (Width / 5); loop < (Width-(Width/5)); loop += (Width/5))
+                for (int loop = Width / 5; loop < (Width - (Width / 5)); loop += Width / 5)
                 {
                     DrawingSurface.DrawLine(GraphHelper.WhitePen, loop, lowVal, loop, highVal);
                 }
@@ -117,14 +117,14 @@ namespace ChessStats
         private static int gameCount = 0;
         private static readonly object displayLock = new();
 
-   
+
         public static string EncodeResourceImageAsHtmlFragment(string imageName)
         {
             string base64Img = "";
 
-            using (var reader = (new EmbeddedFileProvider(Assembly.GetExecutingAssembly())).GetFileInfo($"Images.{imageName}").CreateReadStream())
+            using (Stream reader = new EmbeddedFileProvider(Assembly.GetExecutingAssembly()).GetFileInfo($"Images.{imageName}").CreateReadStream())
             {
-                var bitmapOut = new Bitmap(reader);
+                Bitmap bitmapOut = new(reader);
                 using MemoryStream stream = new();
                 bitmapOut.Save(stream, System.Drawing.Imaging.ImageFormat.Png);
                 base64Img = Convert.ToBase64String(stream.ToArray());
@@ -168,7 +168,7 @@ namespace ChessStats
             Rectangle destRect = new(0, 0, width, height);
             Bitmap destImage = new(width, height);
 
-            
+
             destImage.SetResolution(image.HorizontalResolution, image.VerticalResolution);
 
             using (Graphics graphics = Graphics.FromImage(destImage))
@@ -197,14 +197,7 @@ namespace ChessStats
 
         public static string ValueOrDash(int? valueIn)
         {
-            if (!valueIn.HasValue || valueIn.Value == 0)
-            {
-                return "-";
-            }
-            else
-            {
-                return valueIn.ToString();
-            }
+            return !valueIn.HasValue || valueIn.Value == 0 ? "-" : valueIn.ToString();
         }
 
         public static string GetDisplaySection(string title, bool isHeader)
@@ -214,18 +207,18 @@ namespace ChessStats
             const int HEAD_LEN = 50;
             const int FOOT_LEN = 30;
 
-            int midRowLength = (isHeader) ? HEAD_LEN : FOOT_LEN;
+            int midRowLength = isHeader ? HEAD_LEN : FOOT_LEN;
             double spacerLength = (title.Length + 2d) / 2d;
 
             StringBuilder sb = new();
 
-            sb.Append('=', midRowLength - (int)Math.Ceiling(spacerLength));
-            sb.Append($" {title} ");
-            sb.Append('=', midRowLength - (int)Math.Floor(spacerLength));
+            _ = sb.Append('=', midRowLength - (int)Math.Ceiling(spacerLength));
+            _ = sb.Append($" {title} ");
+            _ = sb.Append('=', midRowLength - (int)Math.Floor(spacerLength));
 
             if (!isHeader)
             {
-                sb.AppendLine("");
+                _ = sb.AppendLine("");
             }
 
             return sb.ToString();
@@ -245,7 +238,7 @@ namespace ChessStats
         {
             Console.Beep();
             Console.WriteLine("<Press a Key>");
-            Console.ReadKey();
+            _ = Console.ReadKey();
         }
 
         public static void DisplayLogo(string versionNo)
@@ -257,18 +250,18 @@ namespace ChessStats
         {
             StringBuilder textOut = new();
 
-            textOut.AppendLine(@$"                                                                                                    ");
-            textOut.AppendLine(@$"     ()                                                                                             ");
-            textOut.AppendLine(@$"   <~~~~>  _________  .__                                   _________  __             __            ");
-            textOut.AppendLine(@$"    \__/   \_   ___ \ |  |__    ____    ______  ______     /   _____/_/  |_ _____   _/  |_   ______ ");
-            textOut.AppendLine(@$"   (____)  /    \  \/ |  |  \ _/ __ \  /  ___/ /  ___/     \_____  \ \   __\\__  \  \   __\ /  ___/ ");
-            textOut.AppendLine(@$"    |  |   \     \____|   Y  \\  ___/  \___ \  \___ \      /        \ |  |   / __ \_ |  |   \___ \  ");
-            textOut.AppendLine(@$"    |  |    \______  /|___|  / \___  >/____  >/____  >    /_______  / |__|  (____  / |__|  /____  > ");
-            textOut.AppendLine(@$"    |__|           \/      \/      \/      \/      \/             \/             \/for Chess.com\/  ");
-            textOut.AppendLine(@$"   /____\                                                                                           ");
-            textOut.AppendLine(@$"  (______)                                                                                          ");
-            textOut.AppendLine(@$" (________) Hyper-Dragon :: Version {versionNo} :: 07/2021 :: https://github.com/Hyper-Dragon/ChessStats  ");
-            textOut.AppendLine(@$"                                                                                                    ");
+            _ = textOut.AppendLine(@$"                                                                                                    ");
+            _ = textOut.AppendLine(@$"     ()                                                                                             ");
+            _ = textOut.AppendLine(@$"   <~~~~>  _________  .__                                   _________  __             __            ");
+            _ = textOut.AppendLine(@$"    \__/   \_   ___ \ |  |__    ____    ______  ______     /   _____/_/  |_ _____   _/  |_   ______ ");
+            _ = textOut.AppendLine(@$"   (____)  /    \  \/ |  |  \ _/ __ \  /  ___/ /  ___/     \_____  \ \   __\\__  \  \   __\ /  ___/ ");
+            _ = textOut.AppendLine(@$"    |  |   \     \____|   Y  \\  ___/  \___ \  \___ \      /        \ |  |   / __ \_ |  |   \___ \  ");
+            _ = textOut.AppendLine(@$"    |  |    \______  /|___|  / \___  >/____  >/____  >    /_______  / |__|  (____  / |__|  /____  > ");
+            _ = textOut.AppendLine(@$"    |__|           \/      \/      \/      \/      \/             \/             \/for Chess.com\/  ");
+            _ = textOut.AppendLine(@$"   /____\                                                                                           ");
+            _ = textOut.AppendLine(@$"  (______)                                                                                          ");
+            _ = textOut.AppendLine(@$" (________) Hyper-Dragon :: Version {versionNo} :: 07/2021 :: https://github.com/Hyper-Dragon/ChessStats  ");
+            _ = textOut.AppendLine(@$"                                                                                                    ");
 
             return textOut.ToString();
         }
@@ -286,14 +279,14 @@ namespace ChessStats
 
         public static string GetHtmlTail(Uri chessdotcomUrl, string versionNumber, string projectLink)
         {
-            if (chessdotcomUrl == null) { throw new ArgumentNullException(nameof(chessdotcomUrl)); }
-
-            return ($"<div class='footer'><br/><hr/><i>Generated by ChessStats (for <a href='{chessdotcomUrl.OriginalString}'>Chess.com</a>)&nbsp;ver. {versionNumber}<br/><a href='{projectLink}'>{projectLink}</a></i><br/><br/><br/></div>");
+            return chessdotcomUrl == null
+                ? throw new ArgumentNullException(nameof(chessdotcomUrl))
+                : $"<div class='footer'><br/><hr/><i>Generated by ChessStats (for <a href='{chessdotcomUrl.OriginalString}'>Chess.com</a>)&nbsp;ver. {versionNumber}<br/><a href='{projectLink}'>{projectLink}</a></i><br/><br/><br/></div>";
         }
 
         public static string GetHtmlTop(string pageTitle, string backgroundImage, string favIconImage, string font700Fragment, string font800Fragment)
         {
-            StringBuilder htmlReport = new ();
+            StringBuilder htmlReport = new();
             _ = htmlReport.AppendLine("<!DOCTYPE html>")
                           .AppendLine("<html lang='en'>")
                           .AppendLine("  <head>")
@@ -328,7 +321,7 @@ namespace ChessStats
                           .AppendLine("      tbody tr:nth-child(even)                                      {background-color:  rgba(255,255,255,0.15); color: rgb(245,245,245);}")
                           .AppendLine("      .active                                                       {background-color: rgba(118,150,86, 0.6)}")
                           .AppendLine("      .inactive                                                     {background-color: rgba(167,166,162, 0.6)}")
-                          .AppendLine("      .headBox                                                      {background-color: rgba(0,0,0,.13)}") 
+                          .AppendLine("      .headBox                                                      {background-color: rgba(0,0,0,.13)}")
                           .AppendLine("      .headRow                                                      {display: grid; grid-template-columns: 200px auto; grid-gap: 0px; border:0px; height: auto; padding: 0px; }")
                           .AppendLine("      .headRow > div                                                {padding: 0px; }")
                           .AppendLine("      .headBox img                                                  {vertical-align: middle}")

@@ -41,12 +41,11 @@ namespace ChessStats.Data
             return Attributes.ContainsKey(attributeName.ToString()) ? Attributes[attributeName.ToString()] : null;
         }
 
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "<Pending>")]
         public Nullable<short> GetAttributeAsNullOrShort(SupportedAttribute attributeName)
         {
             try
             {
-                return Attributes.ContainsKey(attributeName.ToString()) ? (short?)short.Parse(Attributes[attributeName.ToString()], CultureInfo.InvariantCulture) : null;
+                return Attributes.ContainsKey(attributeName.ToString()) ? short.Parse(Attributes[attributeName.ToString()], CultureInfo.InvariantCulture) : null;
             }
             catch
             {
@@ -54,24 +53,16 @@ namespace ChessStats.Data
             }
         }
 
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "<Pending>")]
         public DateTime? GetAttributeAsNullOrDateTime(SupportedAttribute attributeNameDate, SupportedAttribute attributeNameTime)
         {
             try
             {
                 //if we have a date and time join them/if there is only a date return that/return null if there is only a time
-                if (Attributes.ContainsKey(attributeNameDate.ToString()) && Attributes.ContainsKey(attributeNameTime.ToString()))
-                {
-                    return (DateTime?)DateTime.Parse($"{Attributes[attributeNameDate.ToString()]} {Attributes[attributeNameTime.ToString()]}", CultureInfo.InvariantCulture);
-                }
-                else if (Attributes.ContainsKey(attributeNameDate.ToString()))
-                {
-                    return DateTime.Parse($"{Attributes[attributeNameDate.ToString()]}", CultureInfo.InvariantCulture);
-                }
-                else
-                {
-                    return null;
-                }
+                return Attributes.ContainsKey(attributeNameDate.ToString()) && Attributes.ContainsKey(attributeNameTime.ToString())
+                    ? (DateTime?)DateTime.Parse($"{Attributes[attributeNameDate.ToString()]} {Attributes[attributeNameTime.ToString()]}", CultureInfo.InvariantCulture)
+                    : Attributes.ContainsKey(attributeNameDate.ToString())
+                        ? DateTime.Parse($"{Attributes[attributeNameDate.ToString()]}", CultureInfo.InvariantCulture)
+                        : null;
             }
             catch
             {
@@ -81,7 +72,7 @@ namespace ChessStats.Data
 
         public static GameHeader GetHeaderAttributesFromPgn(string gameText)
         {
-            GameHeader pgnHeader = new GameHeader();
+            GameHeader pgnHeader = new();
 
             foreach (string attribute in Regex.Split(gameText, @"^\[(.*?)\]", RegexOptions.Multiline))
             {

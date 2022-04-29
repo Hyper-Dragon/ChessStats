@@ -16,14 +16,13 @@ namespace ChessStats.Data
     {
         public static async Task<(PlayerProfile userRecord, PlayerStats userStats)> FetchUserData(string username)
         {
-            using ChessDotComSharp.ChessDotComClient client = new ChessDotComSharp.ChessDotComClient();
+            using ChessDotComSharp.ChessDotComClient client = new();
             PlayerProfile userRecord = await client.GetPlayerProfileAsync(username).ConfigureAwait(false);
             PlayerStats userStats = await client.GetPlayerStatsAsync(username).ConfigureAwait(false);
 
             return (userRecord, userStats);
         }
 
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Ignore (and show in the console) any corrupt records from chess.com")]
         public static async Task<List<ChessGame>> FetchGameRecordsForUser(string username, DirectoryInfo cacheDir)
         {
             Helpers.ResetDisplayCounter();
@@ -31,7 +30,7 @@ namespace ChessStats.Data
 
             ArchivedGamesList monthlyArchive = await GetPlayerMonthlyArchive(username).ConfigureAwait(false);
 
-            Parallel.ForEach(monthlyArchive.Archives, new ParallelOptions { MaxDegreeOfParallelism = 4 }, (dataForMonth) =>
+            _ = Parallel.ForEach(monthlyArchive.Archives, new ParallelOptions { MaxDegreeOfParallelism = 4 }, (dataForMonth) =>
             {
                 string[] urlSplit = dataForMonth.Split('/');
                 Task<PlayerArchivedGames> t2 = GetAllPlayerMonthlyGames(cacheDir, username, int.Parse(urlSplit[7], CultureInfo.InvariantCulture), int.Parse(urlSplit[8], CultureInfo.InvariantCulture));
@@ -77,13 +76,13 @@ namespace ChessStats.Data
 
         private static async System.Threading.Tasks.Task<ArchivedGamesList> GetPlayerMonthlyArchive(string username)
         {
-            using ChessDotComSharp.ChessDotComClient client = new ChessDotComSharp.ChessDotComClient();
+            using ChessDotComSharp.ChessDotComClient client = new();
             ArchivedGamesList myGames = await client.GetPlayerGameArchivesAsync(username).ConfigureAwait(true);
             return myGames;
         }
 
         //Api lock
-        private static readonly SemaphoreSlim apiSemaphore = new SemaphoreSlim(1, 1);
+        private static readonly SemaphoreSlim apiSemaphore = new(1, 1);
 
         private static async System.Threading.Tasks.Task<PlayerArchivedGames> GetAllPlayerMonthlyGames(DirectoryInfo cache, string username, int year, int month)
         {
@@ -101,7 +100,7 @@ namespace ChessStats.Data
                 await apiSemaphore.WaitAsync().ConfigureAwait(false);
                 try
                 {
-                    using ChessDotComSharp.ChessDotComClient client = new ChessDotComSharp.ChessDotComClient();
+                    using ChessDotComSharp.ChessDotComClient client = new();
                     myGames = await client.GetPlayerGameMonthlyArchiveAsync(username, year, month).ConfigureAwait(true);
 
                     // Never cache data for this month
@@ -113,7 +112,7 @@ namespace ChessStats.Data
                 }
                 finally
                 {
-                    apiSemaphore.Release();
+                    _ = apiSemaphore.Release();
                 }
             }
 
