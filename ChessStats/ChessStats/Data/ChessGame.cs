@@ -7,6 +7,8 @@
         public bool IsRatedGame { get; set; }
         public int BlackRating { get; set; }
         public int WhiteRating { get; set; }
+        public float BlackCaps { get; set; }
+        public float WhiteCaps { get; set; }
         public string Rules { get; set; }
         public string TimeClass { get; set; }
         public string TimeControl { get; set; }
