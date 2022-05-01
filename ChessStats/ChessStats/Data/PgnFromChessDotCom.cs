@@ -105,8 +105,12 @@ namespace ChessStats.Data
                     using ChessDotComSharp.ChessDotComClient client = new();
                     myGames = await client.GetPlayerGameMonthlyArchiveAsync(username, year, month).ConfigureAwait(true);
 
-                    // Never cache data for this month
-                    if (!(DateTime.UtcNow.Year == year && DateTime.UtcNow.Month == month))
+                                       
+                    // Never cache data for this or the previous month since we may have new CAPS scores generated
+                    // (there may of course be older scores we don't have but that will be upto the user to clear the
+                    //  cache if these are required)
+                    if (!(DateTime.UtcNow.Year == year && DateTime.UtcNow.Month == month ||
+                          DateTime.UtcNow.AddMonths(-1).Year == year && DateTime.UtcNow.AddMonths(-1).Month == month))
                     {
                         using FileStream gameFileOutStream = File.Create(cacheFileName);
                         await JsonSerializer.SerializeAsync(gameFileOutStream, myGames).ConfigureAwait(false);

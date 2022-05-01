@@ -17,56 +17,48 @@ namespace ChessStats.Data
 
     public static class CapsFromChessDotCom
     {
-        public static async Task<Dictionary<string, List<CapsRecord>>> GetCapsScoresJson(int chessdotcomPlayerId, string capsUrl)
+        public static async Task<Dictionary<string, List<CapsRecord>>> GetCapsScoresJson(string chessdotcomUsername, List<ChessGame> gameList)
         {
-            Helpers.ResetDisplayCounter();
-
-            using HttpClient client2 = new();
-            HttpResponseMessage response2 = await client2.GetAsync(new Uri($"{capsUrl}{chessdotcomPlayerId}")).ConfigureAwait(false);
-            string pageContents2 = await response2.Content.ReadAsStringAsync().ConfigureAwait(false);
-
-            List<Root> deserializedArchiveRecords = JsonSerializer.Deserialize<List<Root>>(pageContents2);
-
-            Dictionary<string, List<CapsRecord>> capsScores = new()
+            return await Task.Run<Dictionary<string, List<CapsRecord>>>(() =>
             {
-                { $"White", new List<CapsRecord>() },
-                { $"Black", new List<CapsRecord>() }
-            };
+                Helpers.ResetDisplayCounter();
 
-            foreach (Root record in deserializedArchiveRecords)
-            {
-                List<double> capsScoreWhite = new();
-                List<double> capsScoreBlack = new();
+                Dictionary<string, List<CapsRecord>> capsScores = new() {
+                                                                            { $"White", new List<CapsRecord>() },
+                                                                            { $"Black", new List<CapsRecord>() }
+                                                                        };
 
-                try
+                foreach (var game in gameList)
                 {
-                    if (record.User1Accuracy.HasValue && record.User2Accuracy.HasValue)
+                    try
                     {
-                        CapsRecord capsRecord = new()
+                        if (game.WhiteCaps > 0 && game.BlackCaps > 0 && game.IsRatedGame)
                         {
-                            Caps = record.User1.Id == chessdotcomPlayerId ? record.User1Accuracy.Value : record.User2Accuracy.Value,
-                            GameDate = DateTime.Parse(record.GameEndTime),
-                        };
+                            var dateSplit = game.GameAttributes.Attributes["Date"].Split('.');
 
-                        Helpers.ProcessedDisplay(".");
-                        capsScores[$"{((record.User1.Id == chessdotcomPlayerId) ? "White" : "Black")}"].Add(capsRecord);
+                            capsScores[$"{((game.GameAttributes.Attributes["White"] == chessdotcomUsername) ? "White" : "Black")}"]
+                                .Add(new CapsRecord()
+                                {
+                                    Caps = (game.GameAttributes.Attributes["White"] == chessdotcomUsername) ? game.WhiteCaps : game.BlackCaps,
+                                    GameDate = new DateTime(int.Parse(dateSplit[0]), int.Parse(dateSplit[1]), int.Parse(dateSplit[2]))
+                                });
+
+                            Helpers.ProcessedDisplay(".");
+                        }
+                    }
+                    catch (System.NullReferenceException)
+                    {
+                        //Value missing
+                        Helpers.ProcessedDisplay("-");
+                    }
+                    catch
+                    {
+                        Helpers.ProcessedDisplay("E");
                     }
                 }
-                catch (System.NullReferenceException)
-                {
-                    //Value missing
-                    Helpers.ProcessedDisplay("-");
-                }
-                catch
-                {
-                    Helpers.ProcessedDisplay("E");
-                }
-            }
 
-            //}
-            //}
-
-            return capsScores;
+                return capsScores;
+            });
         }
     }
 
