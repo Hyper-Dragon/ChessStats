@@ -1,5 +1,6 @@
 using Microsoft.Extensions.FileProviders;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Drawing2D;
@@ -8,6 +9,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using VectSharp.SVG;
 
 namespace ChessStats
 {
@@ -107,6 +109,59 @@ namespace ChessStats
         {
             Dispose(disposing: true);
             GC.SuppressFinalize(this);
+        }
+    }
+
+    public class SimpleMovingAverage
+    {
+        private readonly int _k;
+        private readonly double[] _values;
+
+        private int _index = 0;
+        private double _sum = 0;
+
+        public SimpleMovingAverage(int k)
+        {
+            if (k <= 0) throw new ArgumentOutOfRangeException(nameof(k), "Must be greater than 0");
+
+            _k = k;
+            _values = new double[k];
+        }
+
+        public double Update(double nextInput)
+        {
+            // calculate the new sum
+            _sum = _sum - _values[_index] + nextInput;
+
+            // overwrite the old value with the new one
+            _values[_index] = nextInput;
+
+            // increment the index (wrapping back to 0)
+            _index = (_index + 1) % _k;
+
+            // calculate the average
+            return ((double)_sum) / _k;
+        }
+
+
+        public static double[] CalculateMovingAv(List<double> values, int k)
+        {
+            var movingAv = new SimpleMovingAverage(k);
+            List<double> movingAvOut = new();
+            
+            for (int i = 0; i < values.Count; i++)
+            {
+                if (i < k)
+                {
+                    movingAv.Update(values[i]);
+                }
+                else
+                {
+                    movingAvOut.Add(movingAv.Update(values[i]));
+                }
+            }
+
+            return movingAvOut.ToArray();
         }
     }
 
@@ -265,6 +320,19 @@ namespace ChessStats
 
             return textOut.ToString();
         }
+
+
+        public static string GetImageAsHtmlFragment(VectSharp.Page pageOut) 
+        {
+            if (pageOut == null) { throw new ArgumentNullException(nameof(pageOut)); }
+
+            using MemoryStream stream = new();
+            pageOut.SaveAsSVG(stream);
+            string base64Img = Convert.ToBase64String(stream.ToArray());
+
+            return $"<img src='data:image/svg+xml;base64,{base64Img}'/>";
+        }
+
 
         public static string GetImageAsHtmlFragment(Bitmap bitmapOut)
         {

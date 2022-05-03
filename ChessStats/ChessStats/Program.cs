@@ -11,6 +11,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using static ChessStats.Data.GameHeader;
+using VectSharp.SVG;
 
 namespace ChessStats
 {
@@ -223,6 +224,82 @@ namespace ChessStats
                 Helpers.EndTimedSection(">>Finished Fetching and Processing Available CAPS Scores", true);
 
 
+
+
+
+
+                
+                // **** Test Section *****************************************
+
+                int MAX_CAPS_GAMES = 100;
+                int CAPS_ROLLING_GAMES = 1;
+                int CAPS_X_STEP = 5;
+                int CAPS_Y_SCALE = 4;                
+                SimpleMovingAverage whiteCalculator = new(k: CAPS_ROLLING_GAMES);
+
+                var whiteMovingAv = SimpleMovingAverage.CalculateMovingAv(capsScores["White"].Select(item => item.Caps).ToList<double>(), CAPS_ROLLING_GAMES);
+                var blackMovingAv = SimpleMovingAverage.CalculateMovingAv(capsScores["Black"].Select(item => item.Caps).ToList<double>(), CAPS_ROLLING_GAMES);
+                var maxDataPoints = Math.Min(MAX_CAPS_GAMES, Math.Max(whiteMovingAv.Length, blackMovingAv.Length));
+
+                VectSharp.Document doc = new();
+                doc.Pages.Add(new((maxDataPoints - 2)* CAPS_X_STEP, 100* CAPS_Y_SCALE));
+
+                VectSharp.Graphics gpr = doc.Pages[0].Graphics;
+
+                VectSharp.LinearGradientBrush bkgBrush = new(new VectSharp.Point(0, 0),
+                                                             new VectSharp.Point((maxDataPoints - 2) * CAPS_X_STEP, 100 * CAPS_Y_SCALE),
+                                                             new VectSharp.GradientStop(VectSharp.Colour.FromRgba(0, 0, 0, 0),0),
+                                                             new VectSharp.GradientStop(VectSharp.Colour.FromRgba(255, 255, 255, 25),1));
+                
+                gpr.FillRectangle(0, 0, (maxDataPoints - 2) * CAPS_X_STEP, 100* CAPS_Y_SCALE, bkgBrush);
+
+                for (int i = 10*CAPS_Y_SCALE; i < 100 * CAPS_Y_SCALE; i += 10* CAPS_Y_SCALE)
+                {
+                    gpr.FillRectangle(0, i, (maxDataPoints - 2) * CAPS_X_STEP, 1, VectSharp.Colour.FromRgba(75, 0, 0, 255));
+                }
+
+                gpr.FillRectangle(0, 99,  (maxDataPoints - 2) * CAPS_X_STEP, 3, VectSharp.Colour.FromRgb(128, 0, 0));
+                gpr.FillRectangle(0, 199, (maxDataPoints - 2) * CAPS_X_STEP, 3, VectSharp.Colour.FromRgb(128, 0, 0));
+                gpr.FillRectangle(0, 299, (maxDataPoints - 2) * CAPS_X_STEP, 3, VectSharp.Colour.FromRgb(128, 0, 0));
+
+                VectSharp.GraphicsPath gpWhite = new();
+                VectSharp.GraphicsPath gpBlack = new();
+                List<VectSharp.Point> gpWhitePoints = new();
+                List<VectSharp.Point> gpBlackPoints = new();                
+
+                gpWhite.MoveTo(0, (100* CAPS_Y_SCALE) - (whiteMovingAv[0]* CAPS_Y_SCALE));
+                gpBlack.MoveTo(0, (100 * CAPS_Y_SCALE) - (blackMovingAv[0] * CAPS_Y_SCALE));
+                gpWhitePoints.Add(new(0, (100* CAPS_Y_SCALE) - (whiteMovingAv[0])* CAPS_Y_SCALE));
+                gpBlackPoints.Add(new(0, (100 * CAPS_Y_SCALE) - (blackMovingAv[0]) * CAPS_Y_SCALE));
+
+                for (int i = 1; i < maxDataPoints - 1; i++)
+                {
+                    if (i < whiteMovingAv.Length - 1)
+                    {
+                        gpWhite.LineTo(i * CAPS_X_STEP, (100 * CAPS_Y_SCALE) - (whiteMovingAv[i] * CAPS_Y_SCALE));
+                        gpWhitePoints.Add(new(i * CAPS_X_STEP, (100 * CAPS_Y_SCALE) - (whiteMovingAv[i]) * CAPS_Y_SCALE));
+                    }
+
+                    if (i < blackMovingAv.Length - 1)
+                    {
+                        gpBlack.LineTo(i * CAPS_X_STEP, (100 * CAPS_Y_SCALE) - (blackMovingAv[i] * CAPS_Y_SCALE));
+                        gpBlackPoints.Add(new(i * CAPS_X_STEP, (100 * CAPS_Y_SCALE) - (blackMovingAv[i]) * CAPS_Y_SCALE));
+                    }
+                }
+
+                VectSharp.GraphicsPath gpWhiteSmooth = new();
+                gpWhiteSmooth.AddSmoothSpline(gpWhitePoints.ToArray());
+                gpr.StrokePath(gpWhite, VectSharp.Colour.FromRgba(200, 200, 200,200), lineWidth: 3);
+                
+
+                VectSharp.GraphicsPath gpBlackSmooth = new();
+                gpBlackSmooth.AddSmoothSpline(gpBlackPoints.ToArray());
+                gpr.StrokePath(gpBlackSmooth, VectSharp.Colour.FromRgba(255, 127, 39,175), lineWidth: 3);                
+                
+                string test = Helpers.GetImageAsHtmlFragment(doc.Pages.First());
+
+                // **** END ************************************************** 
+
                 Helpers.StartTimedSection($">>Compiling Report Data");
 
                 //Extract reporting data
@@ -280,7 +357,8 @@ namespace ChessStats
                                                         userLogoBase64, pawnFragment,
                                                         bulletGraphHtmlFragment, blitzGraphHtmlFragment, rapidGraphHtmlFragment,
                                                         bulletAvStatsGraphHtmlFragment, blitzAvStatsraphHtmlFragment, rapidAvStatsraphHtmlFragment,
-                                                        rapidThreeAvCaps);
+                                                        test);
+                                                        //rapidThreeAvCaps);
 
                 _ = await Task.WhenAll(reportT1, reportT2).ConfigureAwait(false);
                 string textReport = reportT1.Result;
@@ -461,6 +539,7 @@ namespace ChessStats
 
                 if (isCapsIncluded)
                 {
+                    /*
                     _ = htmlOut.AppendLine($"<div class='priority-2'>")
                                .AppendLine($"  <br/>")
                                .AppendLine($"  <h2>{pawnFragment}CAPs Rolling 3 Game Avg.</h2>")
@@ -473,6 +552,33 @@ namespace ChessStats
                                .AppendLine($"    </div>")
                                .AppendLine($"  </div>")
                                .AppendLine($"</div>");
+                    */
+
+                    _ = htmlOut.AppendLine($"<div class='priority-2'>")
+           .AppendLine($"  <br/>")
+           .AppendLine($"  <h2>{pawnFragment}CAPs Rolling TEST Game Avg.</h2>")
+           .AppendLine($"  <div class='priority-2'>")
+
+
+                                      .AppendLine($"<div class='graphRow'>")
+                           .AppendLine($"<div class='graphBox'>{rapidFiveAvCaps}</div>")
+                           .AppendLine($"<div class='graphBox'>{rapidFiveAvCaps}</div>")
+                           .AppendLine($"<div class='graphBox'>{rapidFiveAvCaps}</div>")
+                           .AppendLine($"</div>")
+
+
+
+
+           .AppendLine($"</div>");
+
+
+
+
+
+
+
+
+
                 }
 
                 _ = htmlOut.AppendLine($"<div class='priority-2'>")
