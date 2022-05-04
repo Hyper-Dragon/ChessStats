@@ -430,8 +430,8 @@ namespace ChessStats
         private static async Task<string> RenderCapsGraph(List<CapsRecord> capsScoresWhite, List<CapsRecord> capsScoresBlack, int RollingAv)
         {
             const double WIDTH = 1000;
-            const double HEIGHT = 400;
-            const double MAX_CAPS_GAMES = 100;
+            const double HEIGHT = 200;
+            const double MAX_CAPS_GAMES = 5000;
 
             return await Task<string>.Run(() =>
             {
@@ -470,11 +470,18 @@ namespace ChessStats
                     List<VectSharp.Point> gpWhitePoints = new();
                     List<VectSharp.Point> gpBlackPoints = new();
 
-                    gpWhite.MoveTo(0, HEIGHT - (whiteMovingAv[0] * CapsStepY));
-                    gpBlack.MoveTo(0, HEIGHT - (blackMovingAv[0] * CapsStepY));
-                    gpWhitePoints.Add(new(0, HEIGHT - (whiteMovingAv[0]) * CapsStepY));
-                    gpBlackPoints.Add(new(0, HEIGHT - (blackMovingAv[0]) * CapsStepY));
+                    if (whiteMovingAv.Length > 1)
+                    {
+                        gpWhite.MoveTo(0, HEIGHT - (whiteMovingAv[0] * CapsStepY));
+                        gpWhitePoints.Add(new(0, HEIGHT - (whiteMovingAv[0]) * CapsStepY));
+                    }
 
+                    if (blackMovingAv.Length > 1)
+                    {
+                        gpBlack.MoveTo(0, HEIGHT - (blackMovingAv[0] * CapsStepY));
+                        gpBlackPoints.Add(new(0, HEIGHT - (blackMovingAv[0]) * CapsStepY));
+                    }
+                    
                     for (int i = 1; i < maxDataPoints - 1; i++)
                     {
                         if (i < whiteMovingAv.Length - 1)
