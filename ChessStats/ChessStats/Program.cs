@@ -788,12 +788,17 @@ namespace ChessStats
 
         private static async Task<string> RenderAverageStatsGraph(List<(string TimeControl, int VsMin, int Worst, int LossAv, int DrawAv, int WinAv, int Best, int VsMax)> graphData)
         {
+            const double WIDTH = 1000;
+            const double HEIGHT = 300;            
+            
             return await Task<string>.Run(() =>
             {
                 bool isGraphRequired = true;
                 int graphMin = 0;
                 int graphMax = 0;
-
+                var font = new VectSharp.Font(VectSharp.FontFamily.ResolveFontFamily(VectSharp.FontFamily.StandardFontFamilies.TimesRoman), HEIGHT / 10);
+                var fontMessage = new VectSharp.Font(VectSharp.FontFamily.ResolveFontFamily(VectSharp.FontFamily.StandardFontFamilies.TimesItalic), HEIGHT / 14);
+                
                 if (graphData == null || graphData.Count < 2)
                 {
                     isGraphRequired = false;
@@ -809,59 +814,56 @@ namespace ChessStats
                     }
                 }
 
+
+                VectSharp.Document doc = new();
+
+                double CapsStepX = WIDTH / graphData.Count;
+                double CapsStepY = HEIGHT / (graphMax-graphMin);
+
+                doc.Pages.Add(new(WIDTH, HEIGHT));
+
+                VectSharp.Graphics gpr = doc.Pages[0].Graphics;
+                VectSharp.LinearGradientBrush bkgBrush = new(new VectSharp.Point(0, 0),
+                                                             new VectSharp.Point(WIDTH, HEIGHT),
+                                                             new VectSharp.GradientStop(VectSharp.Colour.FromRgba(0, 0, 0, 0), 0),
+                                                             new VectSharp.GradientStop(VectSharp.Colour.FromRgba(255, 255, 255, 25), 1));
+
+                gpr.FillRectangle(0, 0, WIDTH, HEIGHT, bkgBrush);
+
+
                 //If less than 10 games don't graph
                 if (!isGraphRequired)
                 {
-                    using GraphHelper graphHelperBlank = new(GRAPH_WIDTH, GRAPH_DPI, highVal: GRAPH_HEIGHT_AVERAGE);
-                    graphHelperBlank.DrawingSurface.DrawString($"Not enough data", new Font(FontFamily.GenericSansSerif, 10f, FontStyle.Italic), GraphHelper.TextBrush, 1, graphHelperBlank.Height - 30);
-
-                    return Helpers.GetImageAsHtmlFragment(graphHelperBlank.GraphSurface);
+                    gpr.FillText(new VectSharp.Point(2, HEIGHT - (font.MeasureText($"Not enough data").Height)), $"Not enough data", fontMessage, VectSharp.Colour.FromRgba(225, 225, 85, 255));
+                    return Helpers.GetImageAsHtmlFragment(doc.Pages.First());
                 }
 
-                int stepWidth = Math.Max(GRAPH_WIDTH / graphData.Count, 1);
-
-                using GraphHelper graphHelper = new(Math.Max(graphData.Count, graphData.Count * stepWidth),
-                                                             GRAPH_DPI,
-                                                             graphMin,
-                                                             graphMax,
-                                                             GraphHelper.GraphLine.RATING);
-
-                //Draw Graph
-                Pen currentPen = GraphHelper.OrangePen;
-                int graphX = 0;
+                for (double i = graphMax % 100; i < HEIGHT; i += 100)
+                {
+                    gpr.FillRectangle(0,
+                                      i*CapsStepY,
+                                      WIDTH, 
+                                      3, 
+                                      VectSharp.Colour.FromRgba(102, 102, 102, 255));
+                }
 
                 for (int loop = 0; loop < graphData.Count; loop++)
                 {
-                    for (int innerLoop = 0; innerLoop < stepWidth; innerLoop++)
+                    if (graphData[loop].WinAv != 0 &&
+                        graphData[loop].LossAv != 0)
                     {
-                        if (graphData[loop].WinAv != 0 &&
-                            graphData[loop].LossAv != 0)
-                        {
-                            graphHelper.DrawingSurface.
-                                        DrawLine(currentPen,
-                                                 graphX,
-                                                 graphHelper.GetYAxisPoint(graphData[loop].WinAv),
-                                                 graphX,
-                                                 graphHelper.GetYAxisPoint(graphData[loop].LossAv));
-                        }
-
-                        graphX++;
+                        gpr.FillRectangle(loop * CapsStepX,
+                                          (graphMax - graphData[loop].LossAv) * CapsStepY,
+                                          CapsStepX,
+                                          (graphData[loop].LossAv - graphData[loop].WinAv)*CapsStepY, 
+                                          VectSharp.Colour.FromRgba(215, 141, 58, 200));
                     }
-
-                    currentPen = (currentPen.Color.Name == GraphHelper.OrangePen.Color.Name) ? GraphHelper.DarkOrangePen : GraphHelper.OrangePen;
                 }
 
-
-                //Resize graph for output
-                using Bitmap bitmapOut = Helpers.ResizeImage(graphHelper.GraphSurface, GRAPH_WIDTH, GRAPH_HEIGHT_AVERAGE);
-
-                //Add ratings
-                using Graphics resizedSurface = Graphics.FromImage(bitmapOut);
-                resizedSurface.DrawString($"{graphHelper.HighVal} (Av Loss)", new Font(FontFamily.GenericSansSerif, 18f), GraphHelper.TextBrush, 1, 1);
-                resizedSurface.DrawString($"{graphHelper.LowVal} (Av Win)", new Font(FontFamily.GenericSansSerif, 18f), GraphHelper.TextBrush, 1, bitmapOut.Height - 30);
-
-                return Helpers.GetImageAsHtmlFragment(bitmapOut);
-
+                gpr.FillText(new VectSharp.Point(2, 2), $"{graphMax}", font, VectSharp.Colour.FromRgba(225, 225, 85, 255));
+                gpr.FillText(new VectSharp.Point(2, HEIGHT-(font.MeasureText($"{graphMin}").Height)), $"{graphMin}", font, VectSharp.Colour.FromRgba(225, 225, 85, 255));
+                
+                return Helpers.GetImageAsHtmlFragment(doc.Pages.First());
             }).ConfigureAwait(false);
         }
 
