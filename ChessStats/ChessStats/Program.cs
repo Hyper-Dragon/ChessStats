@@ -223,83 +223,6 @@ namespace ChessStats
                 capsScores = await CapsFromChessDotCom.GetCapsScoresJson(chessdotcomUsername, gameList).ConfigureAwait(false);
                 Helpers.EndTimedSection(">>Finished Fetching and Processing Available CAPS Scores", true);
 
-
-
-
-
-
-                
-                // **** Test Section *****************************************
-
-                int MAX_CAPS_GAMES = 100;
-                int CAPS_ROLLING_GAMES = 1;
-                int CAPS_X_STEP = 5;
-                int CAPS_Y_SCALE = 4;                
-                SimpleMovingAverage whiteCalculator = new(k: CAPS_ROLLING_GAMES);
-
-                var whiteMovingAv = SimpleMovingAverage.CalculateMovingAv(capsScores["White"].Select(item => item.Caps).ToList<double>(), CAPS_ROLLING_GAMES);
-                var blackMovingAv = SimpleMovingAverage.CalculateMovingAv(capsScores["Black"].Select(item => item.Caps).ToList<double>(), CAPS_ROLLING_GAMES);
-                var maxDataPoints = Math.Min(MAX_CAPS_GAMES, Math.Max(whiteMovingAv.Length, blackMovingAv.Length));
-
-                VectSharp.Document doc = new();
-                doc.Pages.Add(new((maxDataPoints - 2)* CAPS_X_STEP, 100* CAPS_Y_SCALE));
-
-                VectSharp.Graphics gpr = doc.Pages[0].Graphics;
-
-                VectSharp.LinearGradientBrush bkgBrush = new(new VectSharp.Point(0, 0),
-                                                             new VectSharp.Point((maxDataPoints - 2) * CAPS_X_STEP, 100 * CAPS_Y_SCALE),
-                                                             new VectSharp.GradientStop(VectSharp.Colour.FromRgba(0, 0, 0, 0),0),
-                                                             new VectSharp.GradientStop(VectSharp.Colour.FromRgba(255, 255, 255, 25),1));
-                
-                gpr.FillRectangle(0, 0, (maxDataPoints - 2) * CAPS_X_STEP, 100* CAPS_Y_SCALE, bkgBrush);
-
-                for (int i = 10*CAPS_Y_SCALE; i < 100 * CAPS_Y_SCALE; i += 10* CAPS_Y_SCALE)
-                {
-                    gpr.FillRectangle(0, i, (maxDataPoints - 2) * CAPS_X_STEP, 1, VectSharp.Colour.FromRgba(75, 0, 0, 255));
-                }
-
-                gpr.FillRectangle(0, 99,  (maxDataPoints - 2) * CAPS_X_STEP, 3, VectSharp.Colour.FromRgb(128, 0, 0));
-                gpr.FillRectangle(0, 199, (maxDataPoints - 2) * CAPS_X_STEP, 3, VectSharp.Colour.FromRgb(128, 0, 0));
-                gpr.FillRectangle(0, 299, (maxDataPoints - 2) * CAPS_X_STEP, 3, VectSharp.Colour.FromRgb(128, 0, 0));
-
-                VectSharp.GraphicsPath gpWhite = new();
-                VectSharp.GraphicsPath gpBlack = new();
-                List<VectSharp.Point> gpWhitePoints = new();
-                List<VectSharp.Point> gpBlackPoints = new();                
-
-                gpWhite.MoveTo(0, (100* CAPS_Y_SCALE) - (whiteMovingAv[0]* CAPS_Y_SCALE));
-                gpBlack.MoveTo(0, (100 * CAPS_Y_SCALE) - (blackMovingAv[0] * CAPS_Y_SCALE));
-                gpWhitePoints.Add(new(0, (100* CAPS_Y_SCALE) - (whiteMovingAv[0])* CAPS_Y_SCALE));
-                gpBlackPoints.Add(new(0, (100 * CAPS_Y_SCALE) - (blackMovingAv[0]) * CAPS_Y_SCALE));
-
-                for (int i = 1; i < maxDataPoints - 1; i++)
-                {
-                    if (i < whiteMovingAv.Length - 1)
-                    {
-                        gpWhite.LineTo(i * CAPS_X_STEP, (100 * CAPS_Y_SCALE) - (whiteMovingAv[i] * CAPS_Y_SCALE));
-                        gpWhitePoints.Add(new(i * CAPS_X_STEP, (100 * CAPS_Y_SCALE) - (whiteMovingAv[i]) * CAPS_Y_SCALE));
-                    }
-
-                    if (i < blackMovingAv.Length - 1)
-                    {
-                        gpBlack.LineTo(i * CAPS_X_STEP, (100 * CAPS_Y_SCALE) - (blackMovingAv[i] * CAPS_Y_SCALE));
-                        gpBlackPoints.Add(new(i * CAPS_X_STEP, (100 * CAPS_Y_SCALE) - (blackMovingAv[i]) * CAPS_Y_SCALE));
-                    }
-                }
-
-                VectSharp.GraphicsPath gpWhiteSmooth = new();
-                gpWhiteSmooth.AddSmoothSpline(gpWhitePoints.ToArray());
-                gpr.StrokePath(gpWhite, VectSharp.Colour.FromRgba(200, 200, 200,200), lineWidth: 3);
-                
-
-                VectSharp.GraphicsPath gpBlackSmooth = new();
-                gpBlackSmooth.AddSmoothSpline(gpBlackPoints.ToArray());
-                gpr.StrokePath(gpBlackSmooth, VectSharp.Colour.FromRgba(255, 127, 39,175), lineWidth: 3);                
-                
-                string test = Helpers.GetImageAsHtmlFragment(doc.Pages.First());
-
-                // **** END ************************************************** 
-
                 Helpers.StartTimedSection($">>Compiling Report Data");
 
                 //Extract reporting data
@@ -315,6 +238,7 @@ namespace ChessStats
                 Helpers.EndTimedSection($">>Finished Compiling Report Data");
 
                 Helpers.StartTimedSection($">>Rendering Graphs");
+
                 Task<string> graphT1 = RenderRatingGraph(userStats?.ChessBullet?.Last?.Rating, ratingsPostGame.Where(x => x.gameType == "Bullet").ToList());
                 Task<string> graphT2 = RenderRatingGraph(userStats?.ChessBlitz?.Last?.Rating, ratingsPostGame.Where(x => x.gameType == "Blitz").ToList());
                 Task<string> graphT3 = RenderRatingGraph(userStats?.ChessRapid?.Last?.Rating, ratingsPostGame.Where(x => x.gameType == "Rapid").ToList());
@@ -323,11 +247,17 @@ namespace ChessStats
                 Task<string> graphT5 = RenderAverageStatsGraph(graphData.Where(x => x.TimeControl.Contains("Blitz", StringComparison.InvariantCultureIgnoreCase)).OrderBy(x => x.TimeControl).ToList());
                 Task<string> graphT6 = RenderAverageStatsGraph(graphData.Where(x => x.TimeControl.Contains("Rapid", StringComparison.InvariantCultureIgnoreCase)).OrderBy(x => x.TimeControl).ToList());
 
-                Task<string> graphT9 = RenderCapsAverageGraph(capsAverageFiveOut.ToDictionary(x => x.Key, x => x.Value));
+                Task<string> graphT10 = RenderCapsGraph(capsScores["White"].Where(x => x.TimeClass == "Bullet").ToList(), capsScores["Black"].Where(x => x.TimeClass == "Bullet").ToList(), 3);
+                Task<string> graphT11 = RenderCapsGraph(capsScores["White"].Where(x => x.TimeClass == "Blitz").ToList(), capsScores["Black"].Where(x => x.TimeClass == "Blitz").ToList(), 3);
+                Task<string> graphT12 = RenderCapsGraph(capsScores["White"].Where(x => x.TimeClass == "Rapid").ToList(), capsScores["Black"].Where(x => x.TimeClass == "Rapid").ToList(), 3);
+                Task<string> graphT13 = RenderCapsGraph(capsScores["White"].Where(x => x.TimeClass == "Bullet").ToList(), capsScores["Black"].Where(x => x.TimeClass == "Bullet").ToList(), 10);
+                Task<string> graphT14 = RenderCapsGraph(capsScores["White"].Where(x => x.TimeClass == "Blitz").ToList(), capsScores["Black"].Where(x => x.TimeClass == "Blitz").ToList(), 10);
+                Task<string> graphT15 = RenderCapsGraph(capsScores["White"].Where(x => x.TimeClass == "Rapid").ToList(), capsScores["Black"].Where(x => x.TimeClass == "Rapid").ToList(), 10);
 
                 _ = await Task.WhenAll(graphT1, graphT2, graphT3,
                                        graphT4, graphT5, graphT6,
-                                       graphT9).ConfigureAwait(false);
+                                       graphT10, graphT11, graphT12,
+                                       graphT13, graphT14, graphT15).ConfigureAwait(false);
 
                 string bulletGraphHtmlFragment = graphT1.Result;
                 string blitzGraphHtmlFragment = graphT2.Result;
@@ -337,7 +267,12 @@ namespace ChessStats
                 string blitzAvStatsraphHtmlFragment = graphT5.Result;
                 string rapidAvStatsraphHtmlFragment = graphT6.Result;
 
-                string rapidThreeAvCaps = graphT9.Result;
+                string capsGraphRollingShortBullet = graphT10.Result;
+                string capsGraphRollingShortBlitz = graphT11.Result;
+                string capsGraphRollingShortRapid = graphT12.Result;
+                string capsGraphRollingLongBullet = graphT13.Result;
+                string capsGraphRollingLongBlitz = graphT14.Result;
+                string capsGraphRollingLongRapid = graphT15.Result;
 
                 Helpers.EndTimedSection($">>Finished Rendering Graphs");
 
@@ -353,12 +288,11 @@ namespace ChessStats
                 Task<string> reportT2 = BuildHtmlReport(isCapsIncluded, VERSION_NUMBER, userRecord, userStats, chessdotcomUsername, whiteOpeningshtmlOut,
                                                         blackOpeningshtmlOut,
                                                         whiteOpeningsRecenthtmlOut, blackOpeningsRecenthtmlOut,
-                                                        playingStatshtmlOut, timePlayedByMonthhtmlOut, capsRollingAverageFivehtmlOut,
-                                                        userLogoBase64, pawnFragment,
+                                                        playingStatshtmlOut, timePlayedByMonthhtmlOut, userLogoBase64, pawnFragment,
                                                         bulletGraphHtmlFragment, blitzGraphHtmlFragment, rapidGraphHtmlFragment,
                                                         bulletAvStatsGraphHtmlFragment, blitzAvStatsraphHtmlFragment, rapidAvStatsraphHtmlFragment,
-                                                        test);
-                                                        //rapidThreeAvCaps);
+                                                        capsGraphRollingShortBullet, capsGraphRollingShortBlitz, capsGraphRollingShortRapid,
+                                                        capsGraphRollingLongBullet, capsGraphRollingLongBlitz, capsGraphRollingLongRapid);
 
                 _ = await Task.WhenAll(reportT1, reportT2).ConfigureAwait(false);
                 string textReport = reportT1.Result;
@@ -414,9 +348,9 @@ namespace ChessStats
                 ecoPlayedRollupWhite = ecoPlayedRollupBlack = null;
                 ratingsPostGame = null;
                 graphData = null;
-                graphT1 = graphT2 = graphT3 = graphT4 = graphT5 = graphT6 = graphT9 = reportT1 = reportT2 = null;
+                graphT1 = graphT2 = graphT3 = graphT4 = graphT5 = graphT6 = reportT1 = reportT2 = null;
+                graphT10 = graphT11 = graphT12 = graphT13 = graphT14 = graphT15 = null;
                 bulletGraphHtmlFragment = blitzGraphHtmlFragment = rapidGraphHtmlFragment = bulletAvStatsGraphHtmlFragment = blitzAvStatsraphHtmlFragment = rapidAvStatsraphHtmlFragment = null;
-                rapidThreeAvCaps = null;
 
                 GC.Collect();
                 GC.WaitForPendingFinalizers();
@@ -490,18 +424,98 @@ namespace ChessStats
             Helpers.EndTimedSection($">>Finished Rebuilding HTML Index", newLineAfter: true);
 
             return (hasRunErrors, hasCmdLineOptionSet);
+
+        }
+
+        private static async Task<string> RenderCapsGraph(List<CapsRecord> capsScoresWhite, List<CapsRecord> capsScoresBlack, int RollingAv)
+        {
+            const double WIDTH = 1000;
+            const double HEIGHT = 400;
+            const double MAX_CAPS_GAMES = 100;
+
+            return await Task<string>.Run(() =>
+            {
+                var whiteMovingAv = SimpleMovingAverage.CalculateMovingAv(capsScoresWhite.Select(item => item.Caps).ToList<double>(), RollingAv);
+                var blackMovingAv = SimpleMovingAverage.CalculateMovingAv(capsScoresBlack.Select(item => item.Caps).ToList<double>(), RollingAv);
+                var maxDataPoints = Math.Min(MAX_CAPS_GAMES, Math.Max(whiteMovingAv.Length, blackMovingAv.Length));
+    
+                VectSharp.Document doc = new();
+
+                double CapsStepX = WIDTH / (maxDataPoints - 2);
+                double CapsStepY = HEIGHT / 100;
+
+                doc.Pages.Add(new(WIDTH, HEIGHT));
+
+                VectSharp.Graphics gpr = doc.Pages[0].Graphics;
+                VectSharp.LinearGradientBrush bkgBrush = new(new VectSharp.Point(0, 0),
+                                                             new VectSharp.Point(WIDTH, HEIGHT),
+                                                             new VectSharp.GradientStop(VectSharp.Colour.FromRgba(0, 0, 0, 0), 0),
+                                                             new VectSharp.GradientStop(VectSharp.Colour.FromRgba(255, 255, 255, 25), 1));
+
+                gpr.FillRectangle(0, 0, WIDTH, HEIGHT, bkgBrush);
+
+                for (double i = (HEIGHT/10); i < HEIGHT; i += (HEIGHT/10))
+                {
+                    gpr.FillRectangle(0, i, WIDTH, 1, VectSharp.Colour.FromRgba(75, 0, 0, 255));
+                }
+
+                gpr.FillRectangle(0, (HEIGHT/4)*1 , WIDTH, 3, VectSharp.Colour.FromRgb(128, 0, 0));
+                gpr.FillRectangle(0, (HEIGHT/4)*2 , WIDTH, 3, VectSharp.Colour.FromRgb(128, 0, 0));
+                gpr.FillRectangle(0, (HEIGHT/4)*3 , WIDTH, 3, VectSharp.Colour.FromRgb(128, 0, 0));
+
+                if (maxDataPoints > 2)
+                {
+                    VectSharp.GraphicsPath gpWhite = new();
+                    VectSharp.GraphicsPath gpBlack = new();
+                    List<VectSharp.Point> gpWhitePoints = new();
+                    List<VectSharp.Point> gpBlackPoints = new();
+
+                    gpWhite.MoveTo(0, HEIGHT - (whiteMovingAv[0] * CapsStepY));
+                    gpBlack.MoveTo(0, HEIGHT - (blackMovingAv[0] * CapsStepY));
+                    gpWhitePoints.Add(new(0, HEIGHT - (whiteMovingAv[0]) * CapsStepY));
+                    gpBlackPoints.Add(new(0, HEIGHT - (blackMovingAv[0]) * CapsStepY));
+
+                    for (int i = 1; i < maxDataPoints - 1; i++)
+                    {
+                        if (i < whiteMovingAv.Length - 1)
+                        {
+                            gpWhite.LineTo(i * CapsStepX, HEIGHT - (whiteMovingAv[i] * CapsStepY));
+                            gpWhitePoints.Add(new(i * CapsStepX, HEIGHT - (whiteMovingAv[i]) * CapsStepY));
+                        }
+
+                        if (i < blackMovingAv.Length - 1)
+                        {
+                            gpBlack.LineTo(i * CapsStepX, HEIGHT - (blackMovingAv[i] * CapsStepY));
+                            gpBlackPoints.Add(new(i * CapsStepX, HEIGHT - (blackMovingAv[i]) * CapsStepY));
+                        }
+                    }
+
+                    VectSharp.GraphicsPath gpWhiteSmooth = new();
+                    gpWhiteSmooth.AddSmoothSpline(gpWhitePoints.ToArray());
+                    gpr.StrokePath(gpWhite, VectSharp.Colour.FromRgba(200, 200, 200, 200), lineWidth: 3);
+
+
+                    VectSharp.GraphicsPath gpBlackSmooth = new();
+                    gpBlackSmooth.AddSmoothSpline(gpBlackPoints.ToArray());
+                    gpr.StrokePath(gpBlackSmooth, VectSharp.Colour.FromRgba(255, 127, 39, 175), lineWidth: 3);
+                }
+                
+                return Helpers.GetImageAsHtmlFragment(doc.Pages.First());
+            }).ConfigureAwait(false);
         }
 
         private static async Task<string> BuildHtmlReport(bool isCapsIncluded, string VERSION_NUMBER, PlayerProfile userRecord, PlayerStats userStats,
                                                           string chessdotcomUsername, string whiteOpeningshtmlOut, string blackOpeningshtmlOut,
                                                           string whiteOpeningsRecenthtmlOut, string blackOpeningsRecenthtmlOut,
                                                           string playingStatshtmlOut, string timePlayedByMonthhtmlOut,
-                                                          string capsRollingAverageFivehtmlOut,
                                                           string userLogoBase64, string pawnFragment, string bulletGraphHtmlFragment,
                                                           string blitzGraphHtmlFragment, string rapidGraphHtmlFragment,
                                                           string bulletAvStatsGraphHtmlFragment, string blitzAvStatsGraphHtmlFragment,
-                                                          string rapidAvStatsGraphHtmlFragment, string rapidFiveAvCaps)
+                                                          string rapidAvStatsGraphHtmlFragment,
+                                                          string capsGraphRollingShortBullet, string capsGraphRollingShortBlitz, string capsGraphRollingShortRapid,
+                                                          string capsGraphRollingLongBullet, string capsGraphRollingLongBlitz, string capsGraphRollingLongRapid)
         {
+
             return await Task<string>.Run(() =>
             {
                 StringBuilder htmlOut = new();
@@ -555,30 +569,26 @@ namespace ChessStats
                     */
 
                     _ = htmlOut.AppendLine($"<div class='priority-2'>")
+                               .AppendLine($"  <br/>")
+                               .AppendLine($"  <h2>{pawnFragment}CAPs Rolling TEST Game Avg.</h2>")
+                               .AppendLine($"  <div class='priority-2'>")
+                               .AppendLine($"<div class='graphRow'>")
+                               .AppendLine($"<div class='graphBox'>{capsGraphRollingShortBullet}</div>")
+                               .AppendLine($"<div class='graphBox'>{capsGraphRollingShortBlitz}</div>")
+                               .AppendLine($"<div class='graphBox'>{capsGraphRollingShortRapid}</div>")
+                               .AppendLine($"</div>")
+                               .AppendLine($"</div>");
+
+                    _ = htmlOut.AppendLine($"<div class='priority-2'>")
            .AppendLine($"  <br/>")
-           .AppendLine($"  <h2>{pawnFragment}CAPs Rolling TEST Game Avg.</h2>")
+           .AppendLine($"  <h2>{pawnFragment}CAPs Rolling TEST2 Game Avg.</h2>")
            .AppendLine($"  <div class='priority-2'>")
-
-
-                                      .AppendLine($"<div class='graphRow'>")
-                           .AppendLine($"<div class='graphBox'>{rapidFiveAvCaps}</div>")
-                           .AppendLine($"<div class='graphBox'>{rapidFiveAvCaps}</div>")
-                           .AppendLine($"<div class='graphBox'>{rapidFiveAvCaps}</div>")
-                           .AppendLine($"</div>")
-
-
-
-
+           .AppendLine($"<div class='graphRow'>")
+           .AppendLine($"<div class='graphBox'>{capsGraphRollingLongBullet}</div>")
+           .AppendLine($"<div class='graphBox'>{capsGraphRollingLongBlitz}</div>")
+           .AppendLine($"<div class='graphBox'>{capsGraphRollingLongRapid}</div>")
+           .AppendLine($"</div>")
            .AppendLine($"</div>");
-
-
-
-
-
-
-
-
-
                 }
 
                 _ = htmlOut.AppendLine($"<div class='priority-2'>")
@@ -696,56 +706,6 @@ namespace ChessStats
             }).ConfigureAwait(false);
         }
 
-        private static async Task<string> RenderCapsAverageGraph(Dictionary<string, double[]> graphData)
-        {
-            return await Task<string>.Run(() =>
-            {
-                if (graphData == null || graphData.Count < 2)
-                {
-                    using GraphHelper graphHelperBlank = new(GRAPH_WIDTH, GRAPH_DPI, highVal: 150);
-                    graphHelperBlank.DrawingSurface.DrawString($"Not enough data", new Font(FontFamily.GenericSansSerif, 9f, FontStyle.Italic), GraphHelper.TextBrush, 1, graphHelperBlank.Height - 30);
-
-                    return Helpers.GetImageAsHtmlFragment(graphHelperBlank.GraphSurface);
-                }
-
-
-                int stepWidth = (int)Math.Ceiling(GRAPH_WIDTH / 6d);
-
-                using GraphHelper graphHelper = new(GRAPH_WIDTH - stepWidth,
-                                                    GRAPH_DPI,
-                                                    0,
-                                                    100,
-                                                    GraphHelper.GraphLine.PERCENTAGE);
-
-                //Draw Graph
-                foreach (KeyValuePair<string, double[]> graphItem in graphData)
-                {
-                    Pen sidePen = graphItem.Key.Contains("White", StringComparison.InvariantCultureIgnoreCase) ?
-                                                                new Pen(Color.Yellow, 3f) : new Pen(Color.Red, 3f);
-
-                    for (int loop = 1; loop < graphItem.Value.Length; loop++)
-                    {
-                        graphHelper.DrawingSurface.
-                                    DrawLine(sidePen,
-                                             (loop - 1) * stepWidth,
-                                             graphHelper.GetYAxisPoint((int)graphItem.Value[loop - 1]),
-                                             loop * stepWidth,
-                                             graphHelper.GetYAxisPoint((int)graphItem.Value[loop])
-                                             );
-                    }
-                }
-
-                //Resize graph for output
-                using Bitmap bitmapOut = Helpers.ResizeImage(graphHelper.GraphSurface, GRAPH_WIDTH, 150);
-
-                //Add ratings
-                using Graphics resizedSurface = Graphics.FromImage(bitmapOut);
-                resizedSurface.DrawString($"CAPs (New->Old)", new Font(FontFamily.GenericSansSerif, 14f), GraphHelper.TextBrush, 1, bitmapOut.Height - 30);
-
-                return Helpers.GetImageAsHtmlFragment(bitmapOut);
-
-            }).ConfigureAwait(false);
-        }
 
         private static async Task<string> RenderRatingGraph(int? currentRating, List<(DateTime gameDate, int rating, string gameType)> ratingsPostGame)
         {
