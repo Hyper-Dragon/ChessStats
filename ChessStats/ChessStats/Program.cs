@@ -211,10 +211,10 @@ namespace ChessStats
                 Helpers.StatsConsole.EndTimedSection($">>Finished Processing Games");
 
 
-                Helpers.StatsConsole.StartTimedSection($">>Fetching and Processing Available CAPS Scores");
+                Helpers.StatsConsole.StartTimedSection($">>Processing Available CAPS Scores");
                 Dictionary<string, List<CapsRecord>> capsScores = new();
                 capsScores = await CapsFromChessDotCom.GetCapsScoresJson(chessdotcomUsername, gameList).ConfigureAwait(false);
-                Helpers.StatsConsole.EndTimedSection(">>Finished Fetching and Processing Available CAPS Scores", true);
+                Helpers.StatsConsole.EndTimedSection(">>Finished Processing Available CAPS Scores", false);
 
                 // **********************
                 // Extract Reporting Data
@@ -234,21 +234,29 @@ namespace ChessStats
                 // Render Graphs
                 // *************
                 Helpers.StatsConsole.StartTimedSection($">>Rendering Graphs");
-                
-                Task<string> graphT1 = RenderRatingGraph(ratingsPostGame.Where(x => x.gameType == "Bullet").ToList());
-                Task<string> graphT2 = RenderRatingGraph(ratingsPostGame.Where(x => x.gameType == "Blitz").ToList());
-                Task<string> graphT3 = RenderRatingGraph(ratingsPostGame.Where(x => x.gameType == "Rapid").ToList());
 
-                Task<string> graphT4 = RenderAverageStatsGraph(graphData.Where(x => x.TimeControl.Contains("Bullet", StringComparison.InvariantCultureIgnoreCase)).OrderBy(x => x.TimeControl).ToList());
-                Task<string> graphT5 = RenderAverageStatsGraph(graphData.Where(x => x.TimeControl.Contains("Blitz", StringComparison.InvariantCultureIgnoreCase)).OrderBy(x => x.TimeControl).ToList());
-                Task<string> graphT6 = RenderAverageStatsGraph(graphData.Where(x => x.TimeControl.Contains("Rapid", StringComparison.InvariantCultureIgnoreCase)).OrderBy(x => x.TimeControl).ToList());
+                StatsGraph statsGraph = new();
 
-                Task<string> graphT10 = RenderCapsGraph(capsScores["White"].Where(x => x.TimeClass == "Bullet").ToList(), capsScores["Black"].Where(x => x.TimeClass == "Bullet").ToList(), 3);
-                Task<string> graphT11 = RenderCapsGraph(capsScores["White"].Where(x => x.TimeClass == "Blitz").ToList(), capsScores["Black"].Where(x => x.TimeClass == "Blitz").ToList(), 3);
-                Task<string> graphT12 = RenderCapsGraph(capsScores["White"].Where(x => x.TimeClass == "Rapid").ToList(), capsScores["Black"].Where(x => x.TimeClass == "Rapid").ToList(), 3);
-                Task<string> graphT13 = RenderCapsGraph(capsScores["White"].Where(x => x.TimeClass == "Bullet").ToList(), capsScores["Black"].Where(x => x.TimeClass == "Bullet").ToList(), 10);
-                Task<string> graphT14 = RenderCapsGraph(capsScores["White"].Where(x => x.TimeClass == "Blitz").ToList(), capsScores["Black"].Where(x => x.TimeClass == "Blitz").ToList(), 10);
-                Task<string> graphT15 = RenderCapsGraph(capsScores["White"].Where(x => x.TimeClass == "Rapid").ToList(), capsScores["Black"].Where(x => x.TimeClass == "Rapid").ToList(), 10);
+                Task<string> graphT1 = statsGraph.RenderRatingGraph(ratingsPostGame.Where(x => x.gameType == "Bullet").ToList());
+                Task<string> graphT2 = statsGraph.RenderRatingGraph(ratingsPostGame.Where(x => x.gameType == "Blitz").ToList());
+                Task<string> graphT3 = statsGraph.RenderRatingGraph(ratingsPostGame.Where(x => x.gameType == "Rapid").ToList());
+
+                Task<string> graphT4 = statsGraph.RenderAverageStatsGraph(graphData.Where(x => x.TimeControl.Contains("Bullet", StringComparison.InvariantCultureIgnoreCase)).OrderBy(x => x.TimeControl).ToList());
+                Task<string> graphT5 = statsGraph.RenderAverageStatsGraph(graphData.Where(x => x.TimeControl.Contains("Blitz", StringComparison.InvariantCultureIgnoreCase)).OrderBy(x => x.TimeControl).ToList());
+                Task<string> graphT6 = statsGraph.RenderAverageStatsGraph(graphData.Where(x => x.TimeControl.Contains("Rapid", StringComparison.InvariantCultureIgnoreCase)).OrderBy(x => x.TimeControl).ToList());
+
+                Task<string> graphT10 = statsGraph.RenderCapsGraph(capsScores["White"].Where(x => x.TimeClass == "Bullet").ToList(), 
+                                                                   capsScores["Black"].Where(x => x.TimeClass == "Bullet").ToList(), 3);
+                Task<string> graphT11 = statsGraph.RenderCapsGraph(capsScores["White"].Where(x => x.TimeClass == "Blitz").ToList(), 
+                                                                   capsScores["Black"].Where(x => x.TimeClass == "Blitz").ToList(), 3);
+                Task<string> graphT12 = statsGraph.RenderCapsGraph(capsScores["White"].Where(x => x.TimeClass == "Rapid").ToList(), 
+                                                                   capsScores["Black"].Where(x => x.TimeClass == "Rapid").ToList(), 3);
+                Task<string> graphT13 = statsGraph.RenderCapsGraph(capsScores["White"].Where(x => x.TimeClass == "Bullet").ToList(), 
+                                                                   capsScores["Black"].Where(x => x.TimeClass == "Bullet").ToList(), 10);
+                Task<string> graphT14 = statsGraph.RenderCapsGraph(capsScores["White"].Where(x => x.TimeClass == "Blitz").ToList(), 
+                                                                   capsScores["Black"].Where(x => x.TimeClass == "Blitz").ToList(), 10);
+                Task<string> graphT15 = statsGraph.RenderCapsGraph(capsScores["White"].Where(x => x.TimeClass == "Rapid").ToList(), 
+                                                                   capsScores["Black"].Where(x => x.TimeClass == "Rapid").ToList(), 10);
 
                 _ = await Task.WhenAll(graphT1, graphT2, graphT3,
                                        graphT4, graphT5, graphT6,
@@ -411,7 +419,7 @@ namespace ChessStats
                            .Append($"<td class='priority-3{((daysFromLastUpdate < 1) ? " higher'" : ((daysFromLastUpdate >= 3) ? "'" : " lower'"))}>{userRecords.Value.lastUpdate.ToShortDateString()}@{userRecords.Value.lastUpdate.ToShortTimeString()}</td>")
                            .AppendLine("</tr>");
             }
-            
+
             _ = htmlOut.AppendLine("</tbody></table>")
                    .AppendLine(Helpers.StatsConsole.GetHtmlTail(new Uri(CHESSCOM_URL), VERSION_NUMBER, PROJECT_LINK))
                    .AppendLine("</div></div></body></html>");
@@ -425,100 +433,6 @@ namespace ChessStats
             Helpers.StatsConsole.EndTimedSection($">>Finished Rebuilding HTML Index", newLineAfter: true);
 
             return (hasRunErrors, hasCmdLineOptionSet);
-        }
-
-        private static async Task<string> RenderCapsGraph(List<CapsRecord> capsScoresWhite, List<CapsRecord> capsScoresBlack, int RollingAv)
-        {
-            float textSizeMsg = 100;
-
-            const double WIDTH = 3840;
-            const double HEIGHT = 768;
-            const double MAX_CAPS_GAMES = 100;
-
-            return await Task<string>.Run(() =>
-            {
-                VectSharp.Font fontMessage = new(VectSharp.FontFamily.ResolveFontFamily(VectSharp.FontFamily.StandardFontFamilies.TimesItalic), textSizeMsg);
-
-                double[] whiteMovingAv = MovingAverage.CalculateMovingAv(capsScoresWhite.Select(item => item.Caps).ToList<double>(), RollingAv);
-                double[] blackMovingAv = MovingAverage.CalculateMovingAv(capsScoresBlack.Select(item => item.Caps).ToList<double>(), RollingAv);
-                double maxDataPoints = Math.Min(MAX_CAPS_GAMES, Math.Max(whiteMovingAv.Length, blackMovingAv.Length));
-
-                VectSharp.Document doc = new();
-
-                double CapsStepX = WIDTH / (maxDataPoints - 2);
-                double CapsStepY = HEIGHT / 100;
-
-                doc.Pages.Add(new(WIDTH, HEIGHT));
-
-                VectSharp.Graphics gpr = doc.Pages[0].Graphics;
-                VectSharp.LinearGradientBrush bkgBrush = new(new VectSharp.Point(0, 0),
-                                                             new VectSharp.Point(WIDTH, HEIGHT),
-                                                             new VectSharp.GradientStop(VectSharp.Colour.FromRgba(0, 0, 0, 0), 0),
-                                                             new VectSharp.GradientStop(VectSharp.Colour.FromRgba(255, 255, 255, 25), 1));
-
-                gpr.FillRectangle(0, 0, WIDTH, HEIGHT, bkgBrush);
-
-
-                if (maxDataPoints <= 2)
-                {
-                    gpr.FillText(new VectSharp.Point(2, HEIGHT - fontMessage.MeasureText($"Not enough data").Height), $"Not enough data", fontMessage, VectSharp.Colour.FromRgba(225, 225, 85, 255));
-                    return Graphics.GetImageAsHtmlFragment(doc.Pages.First());
-                }
-
-                for (double i = HEIGHT / 10; i < HEIGHT; i += HEIGHT / 10)
-                {
-                    gpr.FillRectangle(0, 3, WIDTH, 1, VectSharp.Colour.FromRgba(75, 0, 0, 255));
-                }
-
-                gpr.FillRectangle(0, HEIGHT / 4 * 1, WIDTH, 6, VectSharp.Colour.FromRgba(102, 102, 102, 255));
-                gpr.FillRectangle(0, HEIGHT / 4 * 2, WIDTH, 6, VectSharp.Colour.FromRgba(102, 102, 102, 255));
-                gpr.FillRectangle(0, HEIGHT / 4 * 3, WIDTH, 6, VectSharp.Colour.FromRgba(102, 102, 102, 255));
-
-
-                VectSharp.GraphicsPath gpWhite = new();
-                VectSharp.GraphicsPath gpBlack = new();
-                List<VectSharp.Point> gpWhitePoints = new();
-                List<VectSharp.Point> gpBlackPoints = new();
-
-                if (whiteMovingAv.Length > 1)
-                {
-                    _ = gpWhite.MoveTo(0, HEIGHT - (whiteMovingAv[0] * CapsStepY));
-                    gpWhitePoints.Add(new(0, HEIGHT - (whiteMovingAv[0] * CapsStepY)));
-                }
-
-                if (blackMovingAv.Length > 1)
-                {
-                    _ = gpBlack.MoveTo(0, HEIGHT - (blackMovingAv[0] * CapsStepY));
-                    gpBlackPoints.Add(new(0, HEIGHT - (blackMovingAv[0] * CapsStepY)));
-                }
-
-                for (int i = 1; i < maxDataPoints - 1; i++)
-                {
-                    if (i < whiteMovingAv.Length - 1)
-                    {
-                        _ = gpWhite.LineTo(i * CapsStepX, HEIGHT - (whiteMovingAv[i] * CapsStepY));
-                        gpWhitePoints.Add(new(i * CapsStepX, HEIGHT - (whiteMovingAv[i] * CapsStepY)));
-                    }
-
-                    if (i < blackMovingAv.Length - 1)
-                    {
-                        _ = gpBlack.LineTo(i * CapsStepX, HEIGHT - (blackMovingAv[i] * CapsStepY));
-                        gpBlackPoints.Add(new(i * CapsStepX, HEIGHT - (blackMovingAv[i] * CapsStepY)));
-                    }
-                }
-
-                VectSharp.GraphicsPath gpWhiteSmooth = new();
-                _ = gpWhiteSmooth.AddSmoothSpline(gpWhitePoints.ToArray());
-                gpr.StrokePath(gpWhite, VectSharp.Colour.FromRgba(200, 200, 200, 200), lineWidth: 6);
-
-
-                VectSharp.GraphicsPath gpBlackSmooth = new();
-                _ = gpBlackSmooth.AddSmoothSpline(gpBlackPoints.ToArray());
-                gpr.StrokePath(gpBlackSmooth, VectSharp.Colour.FromRgba(255, 127, 39, 175), lineWidth: 6);
-
-
-                return Graphics.GetImageAsHtmlFragment(doc.Pages.First());
-            }).ConfigureAwait(false);
         }
 
         private static async Task<string> BuildHtmlReport(string VERSION_NUMBER, PlayerProfile userRecord, PlayerStats userStats,
@@ -694,179 +608,6 @@ namespace ChessStats
                               .Append(Helpers.StatsConsole.GetDisplaySection("End of Report", true));
 
                 return textReport.ToString();
-            }).ConfigureAwait(false);
-        }
-
-        private static async Task<string> RenderRatingGraph(List<(DateTime gameDate, int rating, string gameType)> ratingsPostGame)
-        {
-            const double WIDTH = 3840;
-            const double HEIGHT = 1920;
-
-            float textSize = 140;
-            float textSizeMsg = 100;
-
-            return await Task<string>.Run(() =>
-            {
-                VectSharp.Font font = new(VectSharp.FontFamily.ResolveFontFamily(VectSharp.FontFamily.StandardFontFamilies.TimesRoman), textSize);
-                VectSharp.Font fontMessage = new(VectSharp.FontFamily.ResolveFontFamily(VectSharp.FontFamily.StandardFontFamilies.TimesItalic), textSizeMsg);
-
-                VectSharp.Document doc = new();
-                doc.Pages.Add(new(WIDTH, HEIGHT));
-
-                VectSharp.Graphics gpr = doc.Pages[0].Graphics;
-                VectSharp.LinearGradientBrush bkgBrush = new(new VectSharp.Point(0, 0),
-                                                             new VectSharp.Point(WIDTH, HEIGHT),
-                                                             new VectSharp.GradientStop(VectSharp.Colour.FromRgba(0, 0, 0, 0), 0),
-                                                             new VectSharp.GradientStop(VectSharp.Colour.FromRgba(255, 255, 255, 25), 1));
-
-                gpr.FillRectangle(0, 0, WIDTH, HEIGHT, bkgBrush);
-
-                //If less than 10 games don't graph
-                if (ratingsPostGame.Count < 10)
-                {
-                    gpr.FillText(new VectSharp.Point(2, HEIGHT - fontMessage.MeasureText($"Not enough data").Height), $"Not enough data", fontMessage, VectSharp.Colour.FromRgba(225, 225, 85, 255));
-                    return Graphics.GetImageAsHtmlFragment(doc.Pages.First());
-                }
-
-
-
-                (DateTime gameDate, int rating)[] ratingsPostGameOrdered = ratingsPostGame.OrderBy(x => x.gameDate).Select(x => (x.gameDate, x.rating)).ToArray();
-                int graphMin = ratingsPostGame.Select(x => x.rating).Min();
-                int graphMax = ratingsPostGame.Select(x => x.rating).Max();
-
-                double CapsStepX = WIDTH / ratingsPostGame.Count;
-                double CapsStepY = HEIGHT / (graphMax - graphMin);
-
-                for (double i = graphMax % 100; i < HEIGHT; i += 100)
-                {
-                    gpr.FillRectangle(0,
-                                      i * CapsStepY,
-                                      WIDTH,
-                                      3,
-                                      VectSharp.Colour.FromRgba(102, 102, 102, 255));
-                }
-
-                //Draw Graph
-                DateTime lastDate = DateTime.MinValue;
-
-                VectSharp.Colour brush01 = VectSharp.Colour.FromRgba(208, 134, 56, 230);
-                VectSharp.Colour brush02 = VectSharp.Colour.FromRgba(215, 141, 58, 230);
-
-                VectSharp.Colour currentBrush = brush01;
-
-                for (int loop = 0; loop < ratingsPostGame.Count; loop++)
-                {
-                    //Switch pen when the month changes
-                    if (ratingsPostGameOrdered[loop].gameDate.Month != lastDate.Month)
-                    {
-                        currentBrush = currentBrush == brush01 ? brush02 : brush01;
-                    }
-
-                    gpr.FillRectangle(loop * CapsStepX,
-                                      (graphMax - ratingsPostGameOrdered[loop].rating) * CapsStepY,
-                                      CapsStepX,
-                                      ratingsPostGame[loop].rating * CapsStepY,
-                                      currentBrush);
-
-                    lastDate = ratingsPostGameOrdered[loop].gameDate;
-                }
-
-                gpr.FillText(new VectSharp.Point(3, 10), $"{graphMax}", font, VectSharp.Colour.FromRgba(225, 225, 85, 255));
-                gpr.FillText(new VectSharp.Point(2, HEIGHT - font.MeasureText($"{graphMin}").Height - 10), $"{graphMin}", font, VectSharp.Colour.FromRgba(225, 225, 85, 255));
-
-
-                gpr.FillRectangle(0,
-                                  (graphMax - ratingsPostGameOrdered[^1].rating) * CapsStepY,
-                                  WIDTH,
-                                  6,
-                                  VectSharp.Colour.FromRgba(255, 0, 0, 225));
-
-
-                return Graphics.GetImageAsHtmlFragment(doc.Pages.First());
-
-            }).ConfigureAwait(false);
-        }
-
-        private static async Task<string> RenderAverageStatsGraph(List<(string TimeControl, int VsMin, int Worst, int LossAv, int DrawAv, int WinAv, int Best, int VsMax)> graphData)
-        {
-            const double WIDTH = 3840;
-            const double HEIGHT = 1280;
-
-            float textSize = 140;
-            float textSizeMsg = 100;
-
-            return await Task<string>.Run(() =>
-            {
-                bool isGraphRequired = true;
-                int graphMin = 0;
-                int graphMax = 0;
-                VectSharp.Font font = new(VectSharp.FontFamily.ResolveFontFamily(VectSharp.FontFamily.StandardFontFamilies.TimesRoman), textSize);
-                VectSharp.Font fontMessage = new(VectSharp.FontFamily.ResolveFontFamily(VectSharp.FontFamily.StandardFontFamilies.TimesItalic), textSizeMsg);
-
-                if (graphData == null || graphData.Count < 2)
-                {
-                    isGraphRequired = false;
-                }
-                else
-                {
-                    graphMin = graphData.Where(x => x.WinAv != 0 && x.LossAv != 0).Select(x => x.WinAv).DefaultIfEmpty(0).Min();
-                    graphMax = graphData.Where(x => x.WinAv != 0 && x.LossAv != 0).Select(x => x.LossAv).DefaultIfEmpty(0).Max();
-
-                    if (graphMin == 0 || graphMax == 0)
-                    {
-                        isGraphRequired = false;
-                    }
-                }
-
-                VectSharp.Document doc = new();
-
-                double CapsStepX = WIDTH / graphData.Count;
-                double CapsStepY = HEIGHT / (graphMax - graphMin);
-
-                doc.Pages.Add(new(WIDTH, HEIGHT));
-
-                VectSharp.Graphics gpr = doc.Pages[0].Graphics;
-                VectSharp.LinearGradientBrush bkgBrush = new(new VectSharp.Point(0, 0),
-                                                             new VectSharp.Point(WIDTH, HEIGHT),
-                                                             new VectSharp.GradientStop(VectSharp.Colour.FromRgba(0, 0, 0, 0), 0),
-                                                             new VectSharp.GradientStop(VectSharp.Colour.FromRgba(255, 255, 255, 25), 1));
-
-                gpr.FillRectangle(0, 0, WIDTH, HEIGHT, bkgBrush);
-
-
-                //If less than 10 games don't graph
-                if (!isGraphRequired)
-                {
-                    gpr.FillText(new VectSharp.Point(2, HEIGHT - fontMessage.MeasureText($"Not enough data").Height), $"Not enough data", fontMessage, VectSharp.Colour.FromRgba(225, 225, 85, 255));
-                    return Graphics.GetImageAsHtmlFragment(doc.Pages.First());
-                }
-
-                for (double i = graphMax % 100; i < HEIGHT; i += 100)
-                {
-                    gpr.FillRectangle(0,
-                                      i * CapsStepY,
-                                      WIDTH,
-                                      3,
-                                      VectSharp.Colour.FromRgba(102, 102, 102, 255));
-                }
-
-                for (int loop = 0; loop < graphData.Count; loop++)
-                {
-                    if (graphData[loop].WinAv != 0 &&
-                        graphData[loop].LossAv != 0)
-                    {
-                        gpr.FillRectangle(loop * CapsStepX,
-                                          (graphMax - graphData[loop].LossAv) * CapsStepY,
-                                          CapsStepX,
-                                          (graphData[loop].LossAv - graphData[loop].WinAv) * CapsStepY,
-                                          VectSharp.Colour.FromRgba(215, 141, 58, 200));
-                    }
-                }
-
-                gpr.FillText(new VectSharp.Point(3, 10), $"{graphMax}", font, VectSharp.Colour.FromRgba(225, 225, 85, 255));
-                gpr.FillText(new VectSharp.Point(3, HEIGHT - font.MeasureText($"{graphMin}").Height - 10), $"{graphMin}", font, VectSharp.Colour.FromRgba(225, 225, 85, 255));
-
-                return Graphics.GetImageAsHtmlFragment(doc.Pages.First());
             }).ConfigureAwait(false);
         }
 
