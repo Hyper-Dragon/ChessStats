@@ -422,17 +422,20 @@ namespace ChessStats
             Helpers.EndTimedSection($">>Finished Rebuilding HTML Index", newLineAfter: true);
 
             return (hasRunErrors, hasCmdLineOptionSet);
-
         }
 
         private static async Task<string> RenderCapsGraph(List<CapsRecord> capsScoresWhite, List<CapsRecord> capsScoresBlack, int RollingAv)
         {
-            const double WIDTH = 1000;
-            const double HEIGHT = 200;
-            const double MAX_CAPS_GAMES = 5000;
+            float textSizeMsg = 100;
+
+            const double WIDTH = 3840;
+            const double HEIGHT = 768;
+            const double MAX_CAPS_GAMES = 100;
 
             return await Task<string>.Run(() =>
             {
+                VectSharp.Font fontMessage = new(VectSharp.FontFamily.ResolveFontFamily(VectSharp.FontFamily.StandardFontFamilies.TimesItalic), textSizeMsg);
+
                 double[] whiteMovingAv = SimpleMovingAverage.CalculateMovingAv(capsScoresWhite.Select(item => item.Caps).ToList<double>(), RollingAv);
                 double[] blackMovingAv = SimpleMovingAverage.CalculateMovingAv(capsScoresBlack.Select(item => item.Caps).ToList<double>(), RollingAv);
                 double maxDataPoints = Math.Min(MAX_CAPS_GAMES, Math.Max(whiteMovingAv.Length, blackMovingAv.Length));
@@ -452,58 +455,64 @@ namespace ChessStats
 
                 gpr.FillRectangle(0, 0, WIDTH, HEIGHT, bkgBrush);
 
+
+                if (maxDataPoints <= 2)
+                {
+                    gpr.FillText(new VectSharp.Point(2, HEIGHT - fontMessage.MeasureText($"Not enough data").Height), $"Not enough data", fontMessage, VectSharp.Colour.FromRgba(225, 225, 85, 255));
+                    return Helpers.GetImageAsHtmlFragment(doc.Pages.First());
+                }
+
                 for (double i = HEIGHT / 10; i < HEIGHT; i += HEIGHT / 10)
                 {
-                    gpr.FillRectangle(0, i, WIDTH, 1, VectSharp.Colour.FromRgba(75, 0, 0, 255));
+                    gpr.FillRectangle(0, 3, WIDTH, 1, VectSharp.Colour.FromRgba(75, 0, 0, 255));
                 }
 
-                gpr.FillRectangle(0, HEIGHT / 4 * 1, WIDTH, 3, VectSharp.Colour.FromRgb(128, 0, 0));
-                gpr.FillRectangle(0, HEIGHT / 4 * 2, WIDTH, 3, VectSharp.Colour.FromRgb(128, 0, 0));
-                gpr.FillRectangle(0, HEIGHT / 4 * 3, WIDTH, 3, VectSharp.Colour.FromRgb(128, 0, 0));
+                gpr.FillRectangle(0, HEIGHT / 4 * 1, WIDTH, 6, VectSharp.Colour.FromRgba(102, 102, 102, 255));
+                gpr.FillRectangle(0, HEIGHT / 4 * 2, WIDTH, 6, VectSharp.Colour.FromRgba(102, 102, 102, 255));
+                gpr.FillRectangle(0, HEIGHT / 4 * 3, WIDTH, 6, VectSharp.Colour.FromRgba(102, 102, 102, 255));
 
-                if (maxDataPoints > 2)
+
+                VectSharp.GraphicsPath gpWhite = new();
+                VectSharp.GraphicsPath gpBlack = new();
+                List<VectSharp.Point> gpWhitePoints = new();
+                List<VectSharp.Point> gpBlackPoints = new();
+
+                if (whiteMovingAv.Length > 1)
                 {
-                    VectSharp.GraphicsPath gpWhite = new();
-                    VectSharp.GraphicsPath gpBlack = new();
-                    List<VectSharp.Point> gpWhitePoints = new();
-                    List<VectSharp.Point> gpBlackPoints = new();
-
-                    if (whiteMovingAv.Length > 1)
-                    {
-                        _ = gpWhite.MoveTo(0, HEIGHT - (whiteMovingAv[0] * CapsStepY));
-                        gpWhitePoints.Add(new(0, HEIGHT - (whiteMovingAv[0] * CapsStepY)));
-                    }
-
-                    if (blackMovingAv.Length > 1)
-                    {
-                        _ = gpBlack.MoveTo(0, HEIGHT - (blackMovingAv[0] * CapsStepY));
-                        gpBlackPoints.Add(new(0, HEIGHT - (blackMovingAv[0] * CapsStepY)));
-                    }
-
-                    for (int i = 1; i < maxDataPoints - 1; i++)
-                    {
-                        if (i < whiteMovingAv.Length - 1)
-                        {
-                            _ = gpWhite.LineTo(i * CapsStepX, HEIGHT - (whiteMovingAv[i] * CapsStepY));
-                            gpWhitePoints.Add(new(i * CapsStepX, HEIGHT - (whiteMovingAv[i] * CapsStepY)));
-                        }
-
-                        if (i < blackMovingAv.Length - 1)
-                        {
-                            _ = gpBlack.LineTo(i * CapsStepX, HEIGHT - (blackMovingAv[i] * CapsStepY));
-                            gpBlackPoints.Add(new(i * CapsStepX, HEIGHT - (blackMovingAv[i] * CapsStepY)));
-                        }
-                    }
-
-                    VectSharp.GraphicsPath gpWhiteSmooth = new();
-                    _ = gpWhiteSmooth.AddSmoothSpline(gpWhitePoints.ToArray());
-                    gpr.StrokePath(gpWhite, VectSharp.Colour.FromRgba(200, 200, 200, 200), lineWidth: 3);
-
-
-                    VectSharp.GraphicsPath gpBlackSmooth = new();
-                    _ = gpBlackSmooth.AddSmoothSpline(gpBlackPoints.ToArray());
-                    gpr.StrokePath(gpBlackSmooth, VectSharp.Colour.FromRgba(255, 127, 39, 175), lineWidth: 3);
+                    _ = gpWhite.MoveTo(0, HEIGHT - (whiteMovingAv[0] * CapsStepY));
+                    gpWhitePoints.Add(new(0, HEIGHT - (whiteMovingAv[0] * CapsStepY)));
                 }
+
+                if (blackMovingAv.Length > 1)
+                {
+                    _ = gpBlack.MoveTo(0, HEIGHT - (blackMovingAv[0] * CapsStepY));
+                    gpBlackPoints.Add(new(0, HEIGHT - (blackMovingAv[0] * CapsStepY)));
+                }
+
+                for (int i = 1; i < maxDataPoints - 1; i++)
+                {
+                    if (i < whiteMovingAv.Length - 1)
+                    {
+                        _ = gpWhite.LineTo(i * CapsStepX, HEIGHT - (whiteMovingAv[i] * CapsStepY));
+                        gpWhitePoints.Add(new(i * CapsStepX, HEIGHT - (whiteMovingAv[i] * CapsStepY)));
+                    }
+
+                    if (i < blackMovingAv.Length - 1)
+                    {
+                        _ = gpBlack.LineTo(i * CapsStepX, HEIGHT - (blackMovingAv[i] * CapsStepY));
+                        gpBlackPoints.Add(new(i * CapsStepX, HEIGHT - (blackMovingAv[i] * CapsStepY)));
+                    }
+                }
+
+                VectSharp.GraphicsPath gpWhiteSmooth = new();
+                _ = gpWhiteSmooth.AddSmoothSpline(gpWhitePoints.ToArray());
+                gpr.StrokePath(gpWhite, VectSharp.Colour.FromRgba(200, 200, 200, 200), lineWidth: 6);
+
+
+                VectSharp.GraphicsPath gpBlackSmooth = new();
+                _ = gpBlackSmooth.AddSmoothSpline(gpBlackPoints.ToArray());
+                gpr.StrokePath(gpBlackSmooth, VectSharp.Colour.FromRgba(255, 127, 39, 175), lineWidth: 6);
+
 
                 return Helpers.GetImageAsHtmlFragment(doc.Pages.First());
             }).ConfigureAwait(false);
@@ -558,24 +567,9 @@ namespace ChessStats
 
                 if (isCapsIncluded)
                 {
-                    /*
                     _ = htmlOut.AppendLine($"<div class='priority-2'>")
                                .AppendLine($"  <br/>")
                                .AppendLine($"  <h2>{pawnFragment}CAPs Rolling 3 Game Avg.</h2>")
-                               .AppendLine($"  <div class='priority-2'>")
-                               .AppendLine($"    <div class='graphCapsRow'>           ")
-                               .AppendLine($"      {capsRollingAverageFivehtmlOut}")
-                               .AppendLine($"      <div class='graphCapsBox'>")
-                               .AppendLine($"        {rapidFiveAvCaps}")
-                               .AppendLine($"      </div>")
-                               .AppendLine($"    </div>")
-                               .AppendLine($"  </div>")
-                               .AppendLine($"</div>");
-                    */
-
-                    _ = htmlOut.AppendLine($"<div class='priority-2'>")
-                               .AppendLine($"  <br/>")
-                               .AppendLine($"  <h2>{pawnFragment}CAPs Rolling TEST Game Avg.</h2>")
                                .AppendLine($"  <div class='priority-2'>")
                                .AppendLine($"<div class='graphRow'>")
                                .AppendLine($"<div class='graphBox'>{capsGraphRollingShortBullet}</div>")
@@ -585,15 +579,15 @@ namespace ChessStats
                                .AppendLine($"</div>");
 
                     _ = htmlOut.AppendLine($"<div class='priority-2'>")
-           .AppendLine($"  <br/>")
-           .AppendLine($"  <h2>{pawnFragment}CAPs Rolling TEST2 Game Avg.</h2>")
-           .AppendLine($"  <div class='priority-2'>")
-           .AppendLine($"<div class='graphRow'>")
-           .AppendLine($"<div class='graphBox'>{capsGraphRollingLongBullet}</div>")
-           .AppendLine($"<div class='graphBox'>{capsGraphRollingLongBlitz}</div>")
-           .AppendLine($"<div class='graphBox'>{capsGraphRollingLongRapid}</div>")
-           .AppendLine($"</div>")
-           .AppendLine($"</div>");
+                               .AppendLine($"  <br/>")
+                               .AppendLine($"  <h2>{pawnFragment}CAPs Rolling 10 Game Avg.</h2>")
+                               .AppendLine($"  <div class='priority-2'>")
+                               .AppendLine($"<div class='graphRow'>")
+                               .AppendLine($"<div class='graphBox'>{capsGraphRollingLongBullet}</div>")
+                               .AppendLine($"<div class='graphBox'>{capsGraphRollingLongBlitz}</div>")
+                               .AppendLine($"<div class='graphBox'>{capsGraphRollingLongRapid}</div>")
+                               .AppendLine($"</div>")
+                               .AppendLine($"</div>");
                 }
 
                 _ = htmlOut.AppendLine($"<div class='priority-2'>")
@@ -714,11 +708,11 @@ namespace ChessStats
 
         private static async Task<string> RenderRatingGraph(List<(DateTime gameDate, int rating, string gameType)> ratingsPostGame)
         {
-            const double WIDTH = 2000;
-            const double HEIGHT = 1000;
+            const double WIDTH = 3840;
+            const double HEIGHT = 1920;
 
-            float textSize = 70;
-            float textSizeMsg = 50;
+            float textSize = 140;
+            float textSizeMsg = 100;
 
             return await Task<string>.Run(() =>
             {
@@ -739,7 +733,7 @@ namespace ChessStats
                 //If less than 10 games don't graph
                 if (ratingsPostGame.Count < 10)
                 {
-                    gpr.FillText(new VectSharp.Point(2, HEIGHT - font.MeasureText($"Not enough data").Height), $"Not enough data", fontMessage, VectSharp.Colour.FromRgba(225, 225, 85, 255));
+                    gpr.FillText(new VectSharp.Point(2, HEIGHT - fontMessage.MeasureText($"Not enough data").Height), $"Not enough data", fontMessage, VectSharp.Colour.FromRgba(225, 225, 85, 255));
                     return Helpers.GetImageAsHtmlFragment(doc.Pages.First());
                 }
 
@@ -790,8 +784,8 @@ namespace ChessStats
                     lastDate = ratingsPostGameOrdered[loop].gameDate;
                 }
 
-                gpr.FillText(new VectSharp.Point(2, 2), $"{graphMax}", font, VectSharp.Colour.FromRgba(225, 225, 85, 255));
-                gpr.FillText(new VectSharp.Point(2, HEIGHT - font.MeasureText($"{graphMin}").Height), $"{graphMin}", font, VectSharp.Colour.FromRgba(225, 225, 85, 255));
+                gpr.FillText(new VectSharp.Point(3, 10), $"{graphMax}", font, VectSharp.Colour.FromRgba(225, 225, 85, 255));
+                gpr.FillText(new VectSharp.Point(2, HEIGHT - (font.MeasureText($"{graphMin}").Height)-10), $"{graphMin}", font, VectSharp.Colour.FromRgba(225, 225, 85, 255));
 
 
                 gpr.FillRectangle(0,
@@ -808,11 +802,11 @@ namespace ChessStats
 
         private static async Task<string> RenderAverageStatsGraph(List<(string TimeControl, int VsMin, int Worst, int LossAv, int DrawAv, int WinAv, int Best, int VsMax)> graphData)
         {
-            const double WIDTH = 1000;
-            const double HEIGHT = 300;
+            const double WIDTH = 3840;
+            const double HEIGHT = 1280;
 
-            float textSize = 30;
-            float textSizeMsg = 21;
+            float textSize = 140;
+            float textSizeMsg = 100;
 
             return await Task<string>.Run(() =>
             {
@@ -856,7 +850,7 @@ namespace ChessStats
                 //If less than 10 games don't graph
                 if (!isGraphRequired)
                 {
-                    gpr.FillText(new VectSharp.Point(2, HEIGHT - font.MeasureText($"Not enough data").Height), $"Not enough data", fontMessage, VectSharp.Colour.FromRgba(225, 225, 85, 255));
+                    gpr.FillText(new VectSharp.Point(2, HEIGHT - fontMessage.MeasureText($"Not enough data").Height), $"Not enough data", fontMessage, VectSharp.Colour.FromRgba(225, 225, 85, 255));
                     return Helpers.GetImageAsHtmlFragment(doc.Pages.First());
                 }
 
@@ -882,8 +876,8 @@ namespace ChessStats
                     }
                 }
 
-                gpr.FillText(new VectSharp.Point(2, 2), $"{graphMax}", font, VectSharp.Colour.FromRgba(225, 225, 85, 255));
-                gpr.FillText(new VectSharp.Point(2, HEIGHT - font.MeasureText($"{graphMin}").Height), $"{graphMin}", font, VectSharp.Colour.FromRgba(225, 225, 85, 255));
+                gpr.FillText(new VectSharp.Point(3, 10), $"{graphMax}", font, VectSharp.Colour.FromRgba(225, 225, 85, 255));
+                gpr.FillText(new VectSharp.Point(3, HEIGHT - (font.MeasureText($"{graphMin}").Height) -10), $"{graphMin}", font, VectSharp.Colour.FromRgba(225, 225, 85, 255));
 
                 return Helpers.GetImageAsHtmlFragment(doc.Pages.First());
             }).ConfigureAwait(false);
