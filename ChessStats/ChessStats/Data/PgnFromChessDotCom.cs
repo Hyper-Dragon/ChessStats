@@ -25,7 +25,7 @@ namespace ChessStats.Data
 
         public static async Task<List<ChessGame>> FetchGameRecordsForUser(string username, DirectoryInfo cacheDir)
         {
-            Helpers.ResetDisplayCounter();
+            Helpers.StatsConsole.ResetDisplayCounter();
             ConcurrentBag<ChessGame> PgnList = new();
 
             ArchivedGamesList monthlyArchive = await GetPlayerMonthlyArchive(username).ConfigureAwait(false);
@@ -42,7 +42,7 @@ namespace ChessStats.Data
                     {
                         if (game.Rules == GameVariant.Chess)
                         {
-                            Helpers.ProcessedDisplay(".");
+                            Helpers.StatsConsole.ProcessedDisplay(".");
 
                             PgnList.Add(new ChessGame()
                             {
@@ -61,13 +61,13 @@ namespace ChessStats.Data
                         }
                         else
                         {
-                            Helpers.ProcessedDisplay("X");
+                            Helpers.StatsConsole.ProcessedDisplay("X");
                         }
                     }
                 }
                 catch
                 {
-                    Helpers.ProcessedDisplay("E");
+                    Helpers.StatsConsole.ProcessedDisplay("E");
                 }
             });
 

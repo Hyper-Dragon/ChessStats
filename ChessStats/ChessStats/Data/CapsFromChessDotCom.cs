@@ -25,7 +25,7 @@ namespace ChessStats.Data
         {
             return await Task.Run<Dictionary<string, List<CapsRecord>>>(() =>
             {
-                Helpers.ResetDisplayCounter();
+                Helpers.StatsConsole.ResetDisplayCounter();
 
                 Dictionary<string, List<CapsRecord>> capsScores = new() {
                                                                             { $"White", new List<CapsRecord>() },

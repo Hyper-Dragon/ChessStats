@@ -1,96 +1,15 @@
-using Microsoft.Extensions.FileProviders;
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Text;
-using VectSharp.SVG;
 
-namespace ChessStats
+namespace ChessStats.Helpers
 {
-
-    public class SimpleMovingAverage
-    {
-        private readonly int _k;
-        private readonly double[] _values;
-
-        private int _index = 0;
-        private double _sum = 0;
-
-        public SimpleMovingAverage(int k)
-        {
-            if (k <= 0)
-            {
-                throw new ArgumentOutOfRangeException(nameof(k), "Must be greater than 0");
-            }
-
-            _k = k;
-            _values = new double[k];
-        }
-
-        public double Update(double nextInput)
-        {
-            // calculate the new sum
-            _sum = _sum - _values[_index] + nextInput;
-
-            // overwrite the old value with the new one
-            _values[_index] = nextInput;
-
-            // increment the index (wrapping back to 0)
-            _index = (_index + 1) % _k;
-
-            // calculate the average
-            return _sum / _k;
-        }
-
-
-        public static double[] CalculateMovingAv(List<double> values, int k)
-        {
-            SimpleMovingAverage movingAv = new(k);
-            List<double> movingAvOut = new();
-
-            for (int i = 0; i < values.Count; i++)
-            {
-                if (i < k)
-                {
-                    _ = movingAv.Update(values[i]);
-                }
-                else
-                {
-                    movingAvOut.Add(movingAv.Update(values[i]));
-                }
-            }
-
-            return movingAvOut.ToArray();
-        }
-    }
-
-
-    public static class Helpers
+    public static class StatsConsole
     {
         private static readonly Stopwatch stopwatch = new();
         private static int gameCount = 0;
         private static readonly object displayLock = new();
-
-
-        public static string EncodeResourceImageAsHtmlFragment(string imageName)
-        {
-            string base64Img = "";
-
-            using (Stream reader = new EmbeddedFileProvider(Assembly.GetExecutingAssembly()).GetFileInfo($"Images.{imageName}").CreateReadStream())
-            {
-                //read all to byte[]
-                byte[] bytes = new byte[reader.Length];
-                _ = reader.Read(bytes, 0, (int)reader.Length);
-
-                base64Img = Convert.ToBase64String(bytes.ToArray());
-            }
-
-            return $"'data:image/png;base64,{base64Img}'";
-        }
-
 
         public static void StartTimedSection(string msg, bool newLineFirst = false, bool newLineAfter = false)
         {
@@ -197,18 +116,6 @@ namespace ChessStats
             _ = textOut.AppendLine(@$"                                                                                                    ");
 
             return textOut.ToString();
-        }
-
-
-        public static string GetImageAsHtmlFragment(VectSharp.Page pageOut)
-        {
-            if (pageOut == null) { throw new ArgumentNullException(nameof(pageOut)); }
-
-            using MemoryStream stream = new();
-            pageOut.SaveAsSVG(stream);
-            string base64Img = Convert.ToBase64String(stream.ToArray());
-
-            return $"<img src='data:image/svg+xml;base64,{base64Img}'/>";
         }
 
         public static string GetHtmlTail(Uri chessdotcomUrl, string versionNumber, string projectLink)
