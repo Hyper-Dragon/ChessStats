@@ -13,104 +13,6 @@ using VectSharp.SVG;
 
 namespace ChessStats
 {
-    public class GraphHelper : IDisposable
-    {
-        private bool disposedValue;
-        public static Pen OrangePen => new(Color.FromArgb(255, 229, 139, 9), 1);
-        public static Pen DarkOrangePen => new(Color.FromArgb(255, 222, 132, 9), 1);
-        public static Pen RedPen => new(Color.FromArgb(255, 200, 9, 9), 3);
-        public static Pen WhitePen => new(Color.FromArgb(255, 255, 255, 255), 1) { DashStyle = DashStyle.Dash };
-        public static Brush TextBrush => Brushes.Yellow;
-        public Bitmap GraphSurface { get; private set; }
-        public Graphics DrawingSurface { get; private set; }
-        public int Height => GraphSurface.Height;
-        public int Width => GraphSurface.Width;
-        public LinearGradientBrush LinGrBrush { get; private set; }
-        public Pen BackgroundPen { get; private set; }
-        public int LowVal { get; }
-        public int HighVal { get; }
-        public int BaseLine => Height;
-        public int Range => HighVal - LowVal;
-        public enum GraphLine { NONE, RATING, PERCENTAGE }
-        public GraphHelper(int width, float graphDpi, int lowVal = 0, int highVal = 0, GraphLine graphLines = GraphLine.NONE)
-        {
-            LowVal = lowVal;
-            HighVal = highVal;
-
-            LinGrBrush = new LinearGradientBrush(
-                         new Point(0, 0),
-                         new Point(width, Range),
-                         Color.FromArgb(20, 49, 46, 43),
-                         Color.FromArgb(20, 181, 180, 179));
-
-            BackgroundPen = new Pen(LinGrBrush);
-
-            GraphSurface = new System.Drawing.Bitmap(width, Range);
-
-            //FIX: Explicitly set the DPI or getResolution fails on linux
-            GraphSurface.SetResolution(graphDpi, graphDpi);
-
-            DrawingSurface = Graphics.FromImage(GraphSurface);
-            DrawingSurface.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
-            DrawingSurface.CompositingQuality = System.Drawing.Drawing2D.CompositingQuality.HighQuality;
-            DrawingSurface.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
-
-            DrawingSurface.FillRectangle(LinGrBrush, 0, 0, width, Range);
-
-            //Add horizontal lines
-            if (graphLines == GraphLine.RATING)
-            {
-                for (int loop = HighVal % 100; loop < GraphSurface.Height; loop += 100)
-                {
-                    DrawingSurface.DrawLine(GraphHelper.WhitePen, 0, loop, Width, loop);
-                }
-            }
-            else if (graphLines == GraphLine.PERCENTAGE)
-            {
-                for (int loop = 25; loop < 100; loop += 25)
-                {
-                    DrawingSurface.DrawLine(GraphHelper.WhitePen, 0, loop, Width, loop);
-                }
-
-                for (int loop = Width / 5; loop < (Width - (Width / 5)); loop += Width / 5)
-                {
-                    DrawingSurface.DrawLine(GraphHelper.WhitePen, loop, lowVal, loop, highVal);
-                }
-            }
-        }
-
-        public int GetYAxisPoint(int actualValue)
-        {
-            return Height - (actualValue - LowVal);
-        }
-
-        protected virtual void Dispose(bool disposing)
-        {
-            if (!disposedValue)
-            {
-                if (disposing)
-                {
-                    // dispose managed state (managed objects)
-                    OrangePen.Dispose();
-                    DarkOrangePen.Dispose();
-                    RedPen.Dispose();
-                    WhitePen.Dispose();
-                    LinGrBrush.Dispose();
-                    BackgroundPen.Dispose();
-                    GraphSurface.Dispose();
-                    DrawingSurface.Dispose();
-                }
-
-                disposedValue = true;
-            }
-        }
-
-        public void Dispose()
-        {
-            Dispose(disposing: true);
-            GC.SuppressFinalize(this);
-        }
-    }
 
     public class SimpleMovingAverage
     {
@@ -179,10 +81,11 @@ namespace ChessStats
 
             using (Stream reader = new EmbeddedFileProvider(Assembly.GetExecutingAssembly()).GetFileInfo($"Images.{imageName}").CreateReadStream())
             {
-                Bitmap bitmapOut = new(reader);
-                using MemoryStream stream = new();
-                bitmapOut.Save(stream, System.Drawing.Imaging.ImageFormat.Png);
-                base64Img = Convert.ToBase64String(stream.ToArray());
+                //read all to byte[]
+                byte[] bytes = new byte[reader.Length];
+                reader.Read(bytes, 0, (int)reader.Length);
+                
+                base64Img = Convert.ToBase64String(bytes.ToArray());
             }
 
             return $"'data:image/png;base64,{base64Img}'";
@@ -215,31 +118,6 @@ namespace ChessStats
                 if (gameCount++ > 99) { Console.WriteLine(); gameCount = 1; }
                 Console.Write(outChar);
             }
-        }
-        public static Bitmap ResizeImage(Image image, int width, int height)
-        {
-            if (image == null) { throw new ArgumentNullException(nameof(image)); }
-
-            Rectangle destRect = new(0, 0, width, height);
-            Bitmap destImage = new(width, height);
-
-
-            destImage.SetResolution(image.HorizontalResolution, image.VerticalResolution);
-
-            using (Graphics graphics = Graphics.FromImage(destImage))
-            {
-                graphics.CompositingMode = CompositingMode.SourceCopy;
-                graphics.CompositingQuality = CompositingQuality.HighQuality;
-                graphics.InterpolationMode = InterpolationMode.HighQualityBicubic;
-                graphics.SmoothingMode = SmoothingMode.HighQuality;
-                graphics.PixelOffsetMode = PixelOffsetMode.HighQuality;
-
-                using ImageAttributes wrapMode = new();
-                wrapMode.SetWrapMode(WrapMode.Clamp);
-                graphics.DrawImage(image, destRect, 0, 0, image.Width, image.Height, GraphicsUnit.Pixel, wrapMode);
-            }
-
-            return destImage;
         }
 
         public static void ResetDisplayCounter()
@@ -331,18 +209,6 @@ namespace ChessStats
             string base64Img = Convert.ToBase64String(stream.ToArray());
 
             return $"<img src='data:image/svg+xml;base64,{base64Img}'/>";
-        }
-
-
-        public static string GetImageAsHtmlFragment(Bitmap bitmapOut)
-        {
-            if (bitmapOut == null) { throw new ArgumentNullException(nameof(bitmapOut)); }
-
-            using MemoryStream stream = new();
-            bitmapOut.Save(stream, System.Drawing.Imaging.ImageFormat.Png);
-            string base64Img = Convert.ToBase64String(stream.ToArray());
-
-            return $"<img src='data:image/png;base64,{base64Img}'/>";
         }
 
         public static string GetHtmlTail(Uri chessdotcomUrl, string versionNumber, string projectLink)
