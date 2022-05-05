@@ -716,72 +716,94 @@ namespace ChessStats
 
         private static async Task<string> RenderRatingGraph(int? currentRating, List<(DateTime gameDate, int rating, string gameType)> ratingsPostGame)
         {
+            const double WIDTH = 2000;
+            const double HEIGHT = 1000;
+
+            float textSize = 70;
+            float textSizeMsg = 50;
+
             return await Task<string>.Run(() =>
             {
+                var font = new VectSharp.Font(VectSharp.FontFamily.ResolveFontFamily(VectSharp.FontFamily.StandardFontFamilies.TimesRoman), textSize);
+                var fontMessage = new VectSharp.Font(VectSharp.FontFamily.ResolveFontFamily(VectSharp.FontFamily.StandardFontFamilies.TimesItalic), textSizeMsg);
+
+                VectSharp.Document doc = new();
+                doc.Pages.Add(new(WIDTH, HEIGHT));
+
+                VectSharp.Graphics gpr = doc.Pages[0].Graphics;
+                VectSharp.LinearGradientBrush bkgBrush = new(new VectSharp.Point(0, 0),
+                                                             new VectSharp.Point(WIDTH, HEIGHT),
+                                                             new VectSharp.GradientStop(VectSharp.Colour.FromRgba(0, 0, 0, 0), 0),
+                                                             new VectSharp.GradientStop(VectSharp.Colour.FromRgba(255, 255, 255, 25), 1));
+
+                gpr.FillRectangle(0, 0, WIDTH, HEIGHT, bkgBrush);
+
                 //If less than 10 games don't graph
                 if (ratingsPostGame.Count < 10)
                 {
-                    using GraphHelper graphHelperBlank = new(GRAPH_WIDTH, GRAPH_DPI, highVal: GRAPH_HEIGHT_STATS);
-                    graphHelperBlank.DrawingSurface.DrawString($"Not enough data", new Font(FontFamily.GenericSansSerif, 10f, FontStyle.Italic), GraphHelper.TextBrush, 1, graphHelperBlank.Height - 30);
-
-                    return Helpers.GetImageAsHtmlFragment(graphHelperBlank.GraphSurface);
+                    gpr.FillText(new VectSharp.Point(2, HEIGHT - (font.MeasureText($"Not enough data").Height)), $"Not enough data", fontMessage, VectSharp.Colour.FromRgba(225, 225, 85, 255));
+                    return Helpers.GetImageAsHtmlFragment(doc.Pages.First());
                 }
 
+
+
                 (DateTime gameDate, int rating)[] ratingsPostGameOrdered = ratingsPostGame.OrderBy(x => x.gameDate).Select(x => (x.gameDate, x.rating)).ToArray();
+                int graphMin = ratingsPostGame.Select(x => x.rating).Min();
+                int graphMax = ratingsPostGame.Select(x => x.rating).Max();
+                //int graphCurrent = GraphHelper.GraphLine.RATING;
 
-                int stepWidth = Math.Max(GRAPH_WIDTH / ratingsPostGameOrdered.Length, 1);
+                double CapsStepX = WIDTH / ratingsPostGame.Count;
+                double CapsStepY = HEIGHT / (graphMax - graphMin);
 
-                using GraphHelper graphHelper = new(Math.Max(ratingsPostGameOrdered.Length, ratingsPostGameOrdered.Length * stepWidth),
-                                                             GRAPH_DPI,
-                                                             ratingsPostGame.Select(x => x.rating).Min(),
-                                                             ratingsPostGame.Select(x => x.rating).Max(),
-                                                             GraphHelper.GraphLine.RATING);
+
+
+                for (double i = graphMax % 100; i < HEIGHT; i += 100)
+                {
+                    gpr.FillRectangle(0,
+                                      i * CapsStepY,
+                                      WIDTH,
+                                      3,
+                                      VectSharp.Colour.FromRgba(102, 102, 102, 255));
+                }
+
 
                 //Draw Graph
-                int graphX = 0;
                 DateTime lastDate = DateTime.MinValue;
-                Pen currentPen = GraphHelper.OrangePen;
 
-                for (int loop = 0; loop < ratingsPostGameOrdered.Length; loop++)
+                VectSharp.Colour brush01 = VectSharp.Colour.FromRgba(208, 134, 56, 230);
+                VectSharp.Colour brush02 = VectSharp.Colour.FromRgba(215, 141, 58, 230);
+
+                VectSharp.Colour currentBrush = brush01;
+
+                for (int loop = 0; loop < ratingsPostGame.Count; loop++)
                 {
                     //Switch pen when the month changes
                     if (ratingsPostGameOrdered[loop].gameDate.Month != lastDate.Month)
                     {
-                        currentPen = (currentPen.Color.Name == GraphHelper.OrangePen.Color.Name) ? GraphHelper.DarkOrangePen : GraphHelper.OrangePen;
+                        currentBrush = currentBrush == brush01 ? brush02 : brush01;
                     }
 
-                    for (int innerLoop = 0; innerLoop < stepWidth; innerLoop++)
-                    {
-                        graphHelper.DrawingSurface.DrawLine(currentPen,
-                                                            graphX,
-                                                            graphHelper.GetYAxisPoint(ratingsPostGameOrdered[loop].rating),
-                                                            graphX,
-                                                            graphHelper.BaseLine);
-                        graphX++;
-                    }
+                    gpr.FillRectangle(loop * CapsStepX,
+                                      (graphMax - ratingsPostGameOrdered[loop].rating) * CapsStepY,
+                                      CapsStepX,
+                                      ratingsPostGame[loop].rating * CapsStepY,
+                                      currentBrush);
 
                     lastDate = ratingsPostGameOrdered[loop].gameDate;
                 }
 
-                //Add line for current rating
-                if (currentRating != null)
-                {
-                    graphHelper.DrawingSurface.DrawLine(GraphHelper.RedPen,
-                                                        0,
-                                                        graphHelper.GetYAxisPoint(currentRating.Value),
-                                                        graphHelper.Width,
-                                                        graphHelper.GetYAxisPoint(currentRating.Value));
-                }
+                gpr.FillText(new VectSharp.Point(2, 2), $"{graphMax}", font, VectSharp.Colour.FromRgba(225, 225, 85, 255));
+                gpr.FillText(new VectSharp.Point(2, HEIGHT - (font.MeasureText($"{graphMin}").Height)), $"{graphMin}", font, VectSharp.Colour.FromRgba(225, 225, 85, 255));
 
-                //Resize graph for output
-                using Bitmap bitmapOut = Helpers.ResizeImage(graphHelper.GraphSurface, GRAPH_WIDTH, GRAPH_HEIGHT_STATS);
 
-                //Add ratings
-                using Graphics resizedSurface = Graphics.FromImage(bitmapOut);
-                resizedSurface.DrawString($"{graphHelper.HighVal}", new Font(FontFamily.GenericSansSerif, 18f), GraphHelper.TextBrush, 1, 1);
-                resizedSurface.DrawString($"{graphHelper.LowVal}", new Font(FontFamily.GenericSansSerif, 18f), GraphHelper.TextBrush, 1, bitmapOut.Height - 30);
+                gpr.FillRectangle(0,
+                                  (graphMax - ratingsPostGameOrdered[^1].rating) * CapsStepY,
+                                  WIDTH,
+                                  6,
+                                  VectSharp.Colour.FromRgba(255, 0, 0, 225));
 
-                return Helpers.GetImageAsHtmlFragment(bitmapOut);
+
+                return Helpers.GetImageAsHtmlFragment(doc.Pages.First());
 
             }).ConfigureAwait(false);
         }
@@ -789,15 +811,18 @@ namespace ChessStats
         private static async Task<string> RenderAverageStatsGraph(List<(string TimeControl, int VsMin, int Worst, int LossAv, int DrawAv, int WinAv, int Best, int VsMax)> graphData)
         {
             const double WIDTH = 1000;
-            const double HEIGHT = 300;            
+            const double HEIGHT = 300;
+
+            float textSize = 30;
+            float textSizeMsg = 21;
             
             return await Task<string>.Run(() =>
             {
                 bool isGraphRequired = true;
                 int graphMin = 0;
                 int graphMax = 0;
-                var font = new VectSharp.Font(VectSharp.FontFamily.ResolveFontFamily(VectSharp.FontFamily.StandardFontFamilies.TimesRoman), HEIGHT / 10);
-                var fontMessage = new VectSharp.Font(VectSharp.FontFamily.ResolveFontFamily(VectSharp.FontFamily.StandardFontFamilies.TimesItalic), HEIGHT / 14);
+                var font = new VectSharp.Font(VectSharp.FontFamily.ResolveFontFamily(VectSharp.FontFamily.StandardFontFamilies.TimesRoman), textSize);
+                var fontMessage = new VectSharp.Font(VectSharp.FontFamily.ResolveFontFamily(VectSharp.FontFamily.StandardFontFamilies.TimesItalic), textSizeMsg);
                 
                 if (graphData == null || graphData.Count < 2)
                 {
@@ -813,7 +838,6 @@ namespace ChessStats
                         isGraphRequired = false;
                     }
                 }
-
 
                 VectSharp.Document doc = new();
 
