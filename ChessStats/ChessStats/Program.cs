@@ -2,7 +2,6 @@ using ChessDotComSharp.Models;
 using ChessStats.Data;
 using System;
 using System.Collections.Generic;
-using System.Drawing;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -11,7 +10,6 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using static ChessStats.Data.GameHeader;
-using VectSharp.SVG;
 
 namespace ChessStats
 {
@@ -435,10 +433,10 @@ namespace ChessStats
 
             return await Task<string>.Run(() =>
             {
-                var whiteMovingAv = SimpleMovingAverage.CalculateMovingAv(capsScoresWhite.Select(item => item.Caps).ToList<double>(), RollingAv);
-                var blackMovingAv = SimpleMovingAverage.CalculateMovingAv(capsScoresBlack.Select(item => item.Caps).ToList<double>(), RollingAv);
-                var maxDataPoints = Math.Min(MAX_CAPS_GAMES, Math.Max(whiteMovingAv.Length, blackMovingAv.Length));
-    
+                double[] whiteMovingAv = SimpleMovingAverage.CalculateMovingAv(capsScoresWhite.Select(item => item.Caps).ToList<double>(), RollingAv);
+                double[] blackMovingAv = SimpleMovingAverage.CalculateMovingAv(capsScoresBlack.Select(item => item.Caps).ToList<double>(), RollingAv);
+                double maxDataPoints = Math.Min(MAX_CAPS_GAMES, Math.Max(whiteMovingAv.Length, blackMovingAv.Length));
+
                 VectSharp.Document doc = new();
 
                 double CapsStepX = WIDTH / (maxDataPoints - 2);
@@ -454,14 +452,14 @@ namespace ChessStats
 
                 gpr.FillRectangle(0, 0, WIDTH, HEIGHT, bkgBrush);
 
-                for (double i = (HEIGHT/10); i < HEIGHT; i += (HEIGHT/10))
+                for (double i = HEIGHT / 10; i < HEIGHT; i += HEIGHT / 10)
                 {
                     gpr.FillRectangle(0, i, WIDTH, 1, VectSharp.Colour.FromRgba(75, 0, 0, 255));
                 }
 
-                gpr.FillRectangle(0, (HEIGHT/4)*1 , WIDTH, 3, VectSharp.Colour.FromRgb(128, 0, 0));
-                gpr.FillRectangle(0, (HEIGHT/4)*2 , WIDTH, 3, VectSharp.Colour.FromRgb(128, 0, 0));
-                gpr.FillRectangle(0, (HEIGHT/4)*3 , WIDTH, 3, VectSharp.Colour.FromRgb(128, 0, 0));
+                gpr.FillRectangle(0, HEIGHT / 4 * 1, WIDTH, 3, VectSharp.Colour.FromRgb(128, 0, 0));
+                gpr.FillRectangle(0, HEIGHT / 4 * 2, WIDTH, 3, VectSharp.Colour.FromRgb(128, 0, 0));
+                gpr.FillRectangle(0, HEIGHT / 4 * 3, WIDTH, 3, VectSharp.Colour.FromRgb(128, 0, 0));
 
                 if (maxDataPoints > 2)
                 {
@@ -472,41 +470,41 @@ namespace ChessStats
 
                     if (whiteMovingAv.Length > 1)
                     {
-                        gpWhite.MoveTo(0, HEIGHT - (whiteMovingAv[0] * CapsStepY));
-                        gpWhitePoints.Add(new(0, HEIGHT - (whiteMovingAv[0]) * CapsStepY));
+                        _ = gpWhite.MoveTo(0, HEIGHT - (whiteMovingAv[0] * CapsStepY));
+                        gpWhitePoints.Add(new(0, HEIGHT - (whiteMovingAv[0] * CapsStepY)));
                     }
 
                     if (blackMovingAv.Length > 1)
                     {
-                        gpBlack.MoveTo(0, HEIGHT - (blackMovingAv[0] * CapsStepY));
-                        gpBlackPoints.Add(new(0, HEIGHT - (blackMovingAv[0]) * CapsStepY));
+                        _ = gpBlack.MoveTo(0, HEIGHT - (blackMovingAv[0] * CapsStepY));
+                        gpBlackPoints.Add(new(0, HEIGHT - (blackMovingAv[0] * CapsStepY)));
                     }
-                    
+
                     for (int i = 1; i < maxDataPoints - 1; i++)
                     {
                         if (i < whiteMovingAv.Length - 1)
                         {
-                            gpWhite.LineTo(i * CapsStepX, HEIGHT - (whiteMovingAv[i] * CapsStepY));
-                            gpWhitePoints.Add(new(i * CapsStepX, HEIGHT - (whiteMovingAv[i]) * CapsStepY));
+                            _ = gpWhite.LineTo(i * CapsStepX, HEIGHT - (whiteMovingAv[i] * CapsStepY));
+                            gpWhitePoints.Add(new(i * CapsStepX, HEIGHT - (whiteMovingAv[i] * CapsStepY)));
                         }
 
                         if (i < blackMovingAv.Length - 1)
                         {
-                            gpBlack.LineTo(i * CapsStepX, HEIGHT - (blackMovingAv[i] * CapsStepY));
-                            gpBlackPoints.Add(new(i * CapsStepX, HEIGHT - (blackMovingAv[i]) * CapsStepY));
+                            _ = gpBlack.LineTo(i * CapsStepX, HEIGHT - (blackMovingAv[i] * CapsStepY));
+                            gpBlackPoints.Add(new(i * CapsStepX, HEIGHT - (blackMovingAv[i] * CapsStepY)));
                         }
                     }
 
                     VectSharp.GraphicsPath gpWhiteSmooth = new();
-                    gpWhiteSmooth.AddSmoothSpline(gpWhitePoints.ToArray());
+                    _ = gpWhiteSmooth.AddSmoothSpline(gpWhitePoints.ToArray());
                     gpr.StrokePath(gpWhite, VectSharp.Colour.FromRgba(200, 200, 200, 200), lineWidth: 3);
 
 
                     VectSharp.GraphicsPath gpBlackSmooth = new();
-                    gpBlackSmooth.AddSmoothSpline(gpBlackPoints.ToArray());
+                    _ = gpBlackSmooth.AddSmoothSpline(gpBlackPoints.ToArray());
                     gpr.StrokePath(gpBlackSmooth, VectSharp.Colour.FromRgba(255, 127, 39, 175), lineWidth: 3);
                 }
-                
+
                 return Helpers.GetImageAsHtmlFragment(doc.Pages.First());
             }).ConfigureAwait(false);
         }
@@ -724,8 +722,8 @@ namespace ChessStats
 
             return await Task<string>.Run(() =>
             {
-                var font = new VectSharp.Font(VectSharp.FontFamily.ResolveFontFamily(VectSharp.FontFamily.StandardFontFamilies.TimesRoman), textSize);
-                var fontMessage = new VectSharp.Font(VectSharp.FontFamily.ResolveFontFamily(VectSharp.FontFamily.StandardFontFamilies.TimesItalic), textSizeMsg);
+                VectSharp.Font font = new(VectSharp.FontFamily.ResolveFontFamily(VectSharp.FontFamily.StandardFontFamilies.TimesRoman), textSize);
+                VectSharp.Font fontMessage = new(VectSharp.FontFamily.ResolveFontFamily(VectSharp.FontFamily.StandardFontFamilies.TimesItalic), textSizeMsg);
 
                 VectSharp.Document doc = new();
                 doc.Pages.Add(new(WIDTH, HEIGHT));
@@ -741,7 +739,7 @@ namespace ChessStats
                 //If less than 10 games don't graph
                 if (ratingsPostGame.Count < 10)
                 {
-                    gpr.FillText(new VectSharp.Point(2, HEIGHT - (font.MeasureText($"Not enough data").Height)), $"Not enough data", fontMessage, VectSharp.Colour.FromRgba(225, 225, 85, 255));
+                    gpr.FillText(new VectSharp.Point(2, HEIGHT - font.MeasureText($"Not enough data").Height), $"Not enough data", fontMessage, VectSharp.Colour.FromRgba(225, 225, 85, 255));
                     return Helpers.GetImageAsHtmlFragment(doc.Pages.First());
                 }
 
@@ -793,7 +791,7 @@ namespace ChessStats
                 }
 
                 gpr.FillText(new VectSharp.Point(2, 2), $"{graphMax}", font, VectSharp.Colour.FromRgba(225, 225, 85, 255));
-                gpr.FillText(new VectSharp.Point(2, HEIGHT - (font.MeasureText($"{graphMin}").Height)), $"{graphMin}", font, VectSharp.Colour.FromRgba(225, 225, 85, 255));
+                gpr.FillText(new VectSharp.Point(2, HEIGHT - font.MeasureText($"{graphMin}").Height), $"{graphMin}", font, VectSharp.Colour.FromRgba(225, 225, 85, 255));
 
 
                 gpr.FillRectangle(0,
@@ -815,15 +813,15 @@ namespace ChessStats
 
             float textSize = 30;
             float textSizeMsg = 21;
-            
+
             return await Task<string>.Run(() =>
             {
                 bool isGraphRequired = true;
                 int graphMin = 0;
                 int graphMax = 0;
-                var font = new VectSharp.Font(VectSharp.FontFamily.ResolveFontFamily(VectSharp.FontFamily.StandardFontFamilies.TimesRoman), textSize);
-                var fontMessage = new VectSharp.Font(VectSharp.FontFamily.ResolveFontFamily(VectSharp.FontFamily.StandardFontFamilies.TimesItalic), textSizeMsg);
-                
+                VectSharp.Font font = new(VectSharp.FontFamily.ResolveFontFamily(VectSharp.FontFamily.StandardFontFamilies.TimesRoman), textSize);
+                VectSharp.Font fontMessage = new(VectSharp.FontFamily.ResolveFontFamily(VectSharp.FontFamily.StandardFontFamilies.TimesItalic), textSizeMsg);
+
                 if (graphData == null || graphData.Count < 2)
                 {
                     isGraphRequired = false;
@@ -842,7 +840,7 @@ namespace ChessStats
                 VectSharp.Document doc = new();
 
                 double CapsStepX = WIDTH / graphData.Count;
-                double CapsStepY = HEIGHT / (graphMax-graphMin);
+                double CapsStepY = HEIGHT / (graphMax - graphMin);
 
                 doc.Pages.Add(new(WIDTH, HEIGHT));
 
@@ -858,16 +856,16 @@ namespace ChessStats
                 //If less than 10 games don't graph
                 if (!isGraphRequired)
                 {
-                    gpr.FillText(new VectSharp.Point(2, HEIGHT - (font.MeasureText($"Not enough data").Height)), $"Not enough data", fontMessage, VectSharp.Colour.FromRgba(225, 225, 85, 255));
+                    gpr.FillText(new VectSharp.Point(2, HEIGHT - font.MeasureText($"Not enough data").Height), $"Not enough data", fontMessage, VectSharp.Colour.FromRgba(225, 225, 85, 255));
                     return Helpers.GetImageAsHtmlFragment(doc.Pages.First());
                 }
 
                 for (double i = graphMax % 100; i < HEIGHT; i += 100)
                 {
                     gpr.FillRectangle(0,
-                                      i*CapsStepY,
-                                      WIDTH, 
-                                      3, 
+                                      i * CapsStepY,
+                                      WIDTH,
+                                      3,
                                       VectSharp.Colour.FromRgba(102, 102, 102, 255));
                 }
 
@@ -879,14 +877,14 @@ namespace ChessStats
                         gpr.FillRectangle(loop * CapsStepX,
                                           (graphMax - graphData[loop].LossAv) * CapsStepY,
                                           CapsStepX,
-                                          (graphData[loop].LossAv - graphData[loop].WinAv)*CapsStepY, 
+                                          (graphData[loop].LossAv - graphData[loop].WinAv) * CapsStepY,
                                           VectSharp.Colour.FromRgba(215, 141, 58, 200));
                     }
                 }
 
                 gpr.FillText(new VectSharp.Point(2, 2), $"{graphMax}", font, VectSharp.Colour.FromRgba(225, 225, 85, 255));
-                gpr.FillText(new VectSharp.Point(2, HEIGHT-(font.MeasureText($"{graphMin}").Height)), $"{graphMin}", font, VectSharp.Colour.FromRgba(225, 225, 85, 255));
-                
+                gpr.FillText(new VectSharp.Point(2, HEIGHT - font.MeasureText($"{graphMin}").Height), $"{graphMin}", font, VectSharp.Colour.FromRgba(225, 225, 85, 255));
+
                 return Helpers.GetImageAsHtmlFragment(doc.Pages.First());
             }).ConfigureAwait(false);
         }

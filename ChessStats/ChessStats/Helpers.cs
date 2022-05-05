@@ -2,9 +2,6 @@ using Microsoft.Extensions.FileProviders;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Drawing;
-using System.Drawing.Drawing2D;
-using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -24,7 +21,10 @@ namespace ChessStats
 
         public SimpleMovingAverage(int k)
         {
-            if (k <= 0) throw new ArgumentOutOfRangeException(nameof(k), "Must be greater than 0");
+            if (k <= 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(k), "Must be greater than 0");
+            }
 
             _k = k;
             _values = new double[k];
@@ -42,20 +42,20 @@ namespace ChessStats
             _index = (_index + 1) % _k;
 
             // calculate the average
-            return ((double)_sum) / _k;
+            return _sum / _k;
         }
 
 
         public static double[] CalculateMovingAv(List<double> values, int k)
         {
-            var movingAv = new SimpleMovingAverage(k);
+            SimpleMovingAverage movingAv = new(k);
             List<double> movingAvOut = new();
-            
+
             for (int i = 0; i < values.Count; i++)
             {
                 if (i < k)
                 {
-                    movingAv.Update(values[i]);
+                    _ = movingAv.Update(values[i]);
                 }
                 else
                 {
@@ -83,8 +83,8 @@ namespace ChessStats
             {
                 //read all to byte[]
                 byte[] bytes = new byte[reader.Length];
-                reader.Read(bytes, 0, (int)reader.Length);
-                
+                _ = reader.Read(bytes, 0, (int)reader.Length);
+
                 base64Img = Convert.ToBase64String(bytes.ToArray());
             }
 
@@ -200,7 +200,7 @@ namespace ChessStats
         }
 
 
-        public static string GetImageAsHtmlFragment(VectSharp.Page pageOut) 
+        public static string GetImageAsHtmlFragment(VectSharp.Page pageOut)
         {
             if (pageOut == null) { throw new ArgumentNullException(nameof(pageOut)); }
 
