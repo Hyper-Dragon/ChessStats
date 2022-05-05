@@ -21,10 +21,11 @@ namespace ChessStats.Helpers
         private Colour SCALE_LIGHT = Colour.FromRgba(150, 0, 0, 255);
         private Colour CAPS_WHITE = Colour.FromRgba(200, 200, 200, 200);
         private Colour CAPS_BLACK = Colour.FromRgba(255, 127, 39, 175);
-        private Colour BAR_COL = Colour.FromRgba(215, 141, 58, 200);
-        private Colour BAR_ALT_COL = Colour.FromRgba(208, 134, 56, 230);
+        private Colour BAR_COL = Colour.FromRgba(229, 139, 9, 200);
+        private Colour BAR_ALT_COL = Colour.FromRgba(209, 96, 2, 230);
         private Colour FONT_COL = Colour.FromRgba(225, 225, 85, 255);
         private Colour FONT_MSG_COL = Colour.FromRgba(225, 225, 85, 255);
+        private Colour CUR_RATING_BAR = Colour.FromRgba(85, 105, 66, 200);
 
         private readonly Font fontMessage;
         private readonly Font font;
@@ -63,7 +64,7 @@ namespace ChessStats.Helpers
             gpr.FillText(new Point(GRAPH_OFFSET_X, height - fontMessage.MeasureText(NO_DATA_MSG).Height - GRAPH_OFFSET_Y), NO_DATA_MSG, fontMessage, FONT_MSG_COL);
         }
 
-        private void WriteRangeMessage(VectSharp.Graphics gpr, double height, string topVal = "-", string bottomVal = "-")
+        private void WriteRangeMessage(VectSharp.Graphics gpr, double height, string bottomVal = "-", string topVal = "-")
         {
             gpr.FillText(new Point(GRAPH_OFFSET_X, GRAPH_OFFSET_Y), topVal, font, FONT_COL);
             gpr.FillText(new Point(GRAPH_OFFSET_X, height - font.MeasureText(bottomVal).Height - GRAPH_OFFSET_Y), bottomVal, font, FONT_COL);
@@ -206,8 +207,8 @@ namespace ChessStats.Helpers
                     gpr.FillRectangle(0,
                                       (graphMax - ratingsPostGameOrdered[^1].rating) * CapsStepY,
                                       Width,
-                                      6,
-                                      Colour.FromRgba(255, 0, 0, 225));
+                                      20,
+                                      CUR_RATING_BAR);
                 }
 
                 return Graphics.GetImageAsHtmlFragment(doc.Pages.First());
