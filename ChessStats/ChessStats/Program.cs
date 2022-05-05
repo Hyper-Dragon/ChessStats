@@ -237,9 +237,9 @@ namespace ChessStats
 
                 Helpers.StartTimedSection($">>Rendering Graphs");
 
-                Task<string> graphT1 = RenderRatingGraph(userStats?.ChessBullet?.Last?.Rating, ratingsPostGame.Where(x => x.gameType == "Bullet").ToList());
-                Task<string> graphT2 = RenderRatingGraph(userStats?.ChessBlitz?.Last?.Rating, ratingsPostGame.Where(x => x.gameType == "Blitz").ToList());
-                Task<string> graphT3 = RenderRatingGraph(userStats?.ChessRapid?.Last?.Rating, ratingsPostGame.Where(x => x.gameType == "Rapid").ToList());
+                Task<string> graphT1 = RenderRatingGraph(ratingsPostGame.Where(x => x.gameType == "Bullet").ToList());
+                Task<string> graphT2 = RenderRatingGraph(ratingsPostGame.Where(x => x.gameType == "Blitz").ToList());
+                Task<string> graphT3 = RenderRatingGraph(ratingsPostGame.Where(x => x.gameType == "Rapid").ToList());
 
                 Task<string> graphT4 = RenderAverageStatsGraph(graphData.Where(x => x.TimeControl.Contains("Bullet", StringComparison.InvariantCultureIgnoreCase)).OrderBy(x => x.TimeControl).ToList());
                 Task<string> graphT5 = RenderAverageStatsGraph(graphData.Where(x => x.TimeControl.Contains("Blitz", StringComparison.InvariantCultureIgnoreCase)).OrderBy(x => x.TimeControl).ToList());
@@ -712,7 +712,7 @@ namespace ChessStats
         }
 
 
-        private static async Task<string> RenderRatingGraph(int? currentRating, List<(DateTime gameDate, int rating, string gameType)> ratingsPostGame)
+        private static async Task<string> RenderRatingGraph(List<(DateTime gameDate, int rating, string gameType)> ratingsPostGame)
         {
             const double WIDTH = 2000;
             const double HEIGHT = 1000;
