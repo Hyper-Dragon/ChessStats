@@ -14,7 +14,7 @@ namespace ChessStats.Helpers
         private const double GRAPH_OFFSET_Y = 20;
 
         private const double LINE_GRAPH_WIDTH = 10;
-        
+
         private Colour BKG_GRAD_START = Colour.FromRgba(0, 0, 0, 0);
         private Colour BKG_GRAD_END = Colour.FromRgba(255, 255, 255, 25);
         private Colour SCALE_HEAVY = Colour.FromRgba(102, 102, 102, 255);
@@ -60,10 +60,10 @@ namespace ChessStats.Helpers
 
         private void WriteNoDataMessage(VectSharp.Graphics gpr, double height)
         {
-            gpr.FillText(new Point(GRAPH_OFFSET_X, height - (fontMessage.MeasureText(NO_DATA_MSG).Height)-GRAPH_OFFSET_Y), NO_DATA_MSG, fontMessage, FONT_MSG_COL);
+            gpr.FillText(new Point(GRAPH_OFFSET_X, height - fontMessage.MeasureText(NO_DATA_MSG).Height - GRAPH_OFFSET_Y), NO_DATA_MSG, fontMessage, FONT_MSG_COL);
         }
 
-        private void WriteRangeMessage(VectSharp.Graphics gpr, double height, string topVal="-", string bottomVal="-")
+        private void WriteRangeMessage(VectSharp.Graphics gpr, double height, string topVal = "-", string bottomVal = "-")
         {
             gpr.FillText(new Point(GRAPH_OFFSET_X, GRAPH_OFFSET_Y), topVal, font, FONT_COL);
             gpr.FillText(new Point(GRAPH_OFFSET_X, height - font.MeasureText(bottomVal).Height - GRAPH_OFFSET_Y), bottomVal, font, FONT_COL);
@@ -80,7 +80,7 @@ namespace ChessStats.Helpers
                 double CapsStepX = Width / (maxDataPoints - 2);
                 double CapsStepY = height / 100;
 
-                var doc = CreateDocument(height);
+                Document doc = CreateDocument(height);
                 VectSharp.Graphics gpr = doc.Pages[0].Graphics;
 
                 if (maxDataPoints <= 2)
@@ -150,7 +150,7 @@ namespace ChessStats.Helpers
         {
             return await Task<string>.Run(() =>
             {
-                var doc = CreateDocument(height);
+                Document doc = CreateDocument(height);
                 VectSharp.Graphics gpr = doc.Pages[0].Graphics;
 
                 //If less than 10 games don't graph
@@ -160,7 +160,6 @@ namespace ChessStats.Helpers
                 }
                 else
                 {
-
                     (DateTime gameDate, int rating)[] ratingsPostGameOrdered = ratingsPostGame.OrderBy(x => x.gameDate).Select(x => (x.gameDate, x.rating)).ToArray();
                     int graphMin = ratingsPostGame.Select(x => x.rating).Min();
                     int graphMax = ratingsPostGame.Select(x => x.rating).Max();
@@ -181,7 +180,7 @@ namespace ChessStats.Helpers
                     DateTime lastDate = DateTime.MinValue;
 
                     Colour brush01 = BAR_COL;
-                    Colour brush02 = BAR_ALT_COL; 
+                    Colour brush02 = BAR_ALT_COL;
 
                     Colour currentBrush = brush01;
 
@@ -223,8 +222,8 @@ namespace ChessStats.Helpers
             {
                 int graphMinCalc = graphData.Where(x => x.WinAv != 0 && x.LossAv != 0).Select(x => x.WinAv).DefaultIfEmpty(0).Min();
                 int graphMaxCalc = graphData.Where(x => x.WinAv != 0 && x.LossAv != 0).Select(x => x.LossAv).DefaultIfEmpty(0).Max();
-                
-                var doc = CreateDocument(height);
+
+                Document doc = CreateDocument(height);
                 VectSharp.Graphics gpr = doc.Pages[0].Graphics;
 
                 if (graphData == null || graphData.Count < 2 || graphMinCalc == 0 || graphMaxCalc == 0)
@@ -238,7 +237,7 @@ namespace ChessStats.Helpers
 
                     double CapsStepX = Width / graphData.Count;
                     double CapsStepY = height / (graphMax - graphMin);
-                    
+
                     for (double i = graphMax % 100; i < height; i += 100)
                     {
                         gpr.FillRectangle(0,
@@ -263,7 +262,7 @@ namespace ChessStats.Helpers
 
                     WriteRangeMessage(gpr, height, $"{graphMin}", $"{graphMax}");
                 }
-                
+
                 return Graphics.GetImageAsHtmlFragment(doc.Pages.First());
             }).ConfigureAwait(false);
         }

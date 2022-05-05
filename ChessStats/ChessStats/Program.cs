@@ -245,17 +245,17 @@ namespace ChessStats
                 Task<string> graphT5 = statsGraph.RenderAverageStatsGraph(graphData.Where(x => x.TimeControl.Contains("Blitz", StringComparison.InvariantCultureIgnoreCase)).OrderBy(x => x.TimeControl).ToList());
                 Task<string> graphT6 = statsGraph.RenderAverageStatsGraph(graphData.Where(x => x.TimeControl.Contains("Rapid", StringComparison.InvariantCultureIgnoreCase)).OrderBy(x => x.TimeControl).ToList());
 
-                Task<string> graphT10 = statsGraph.RenderCapsGraph(capsScores["White"].Where(x => x.TimeClass == "Bullet").ToList(), 
+                Task<string> graphT10 = statsGraph.RenderCapsGraph(capsScores["White"].Where(x => x.TimeClass == "Bullet").ToList(),
                                                                    capsScores["Black"].Where(x => x.TimeClass == "Bullet").ToList(), 3);
-                Task<string> graphT11 = statsGraph.RenderCapsGraph(capsScores["White"].Where(x => x.TimeClass == "Blitz").ToList(), 
+                Task<string> graphT11 = statsGraph.RenderCapsGraph(capsScores["White"].Where(x => x.TimeClass == "Blitz").ToList(),
                                                                    capsScores["Black"].Where(x => x.TimeClass == "Blitz").ToList(), 3);
-                Task<string> graphT12 = statsGraph.RenderCapsGraph(capsScores["White"].Where(x => x.TimeClass == "Rapid").ToList(), 
+                Task<string> graphT12 = statsGraph.RenderCapsGraph(capsScores["White"].Where(x => x.TimeClass == "Rapid").ToList(),
                                                                    capsScores["Black"].Where(x => x.TimeClass == "Rapid").ToList(), 3);
-                Task<string> graphT13 = statsGraph.RenderCapsGraph(capsScores["White"].Where(x => x.TimeClass == "Bullet").ToList(), 
+                Task<string> graphT13 = statsGraph.RenderCapsGraph(capsScores["White"].Where(x => x.TimeClass == "Bullet").ToList(),
                                                                    capsScores["Black"].Where(x => x.TimeClass == "Bullet").ToList(), 10);
-                Task<string> graphT14 = statsGraph.RenderCapsGraph(capsScores["White"].Where(x => x.TimeClass == "Blitz").ToList(), 
+                Task<string> graphT14 = statsGraph.RenderCapsGraph(capsScores["White"].Where(x => x.TimeClass == "Blitz").ToList(),
                                                                    capsScores["Black"].Where(x => x.TimeClass == "Blitz").ToList(), 10);
-                Task<string> graphT15 = statsGraph.RenderCapsGraph(capsScores["White"].Where(x => x.TimeClass == "Rapid").ToList(), 
+                Task<string> graphT15 = statsGraph.RenderCapsGraph(capsScores["White"].Where(x => x.TimeClass == "Rapid").ToList(),
                                                                    capsScores["Black"].Where(x => x.TimeClass == "Rapid").ToList(), 10);
 
                 _ = await Task.WhenAll(graphT1, graphT2, graphT3,
