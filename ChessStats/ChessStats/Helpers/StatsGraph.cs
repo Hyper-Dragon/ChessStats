@@ -10,27 +10,30 @@ namespace ChessStats.Helpers
     internal class StatsGraph
     {
         private const string NO_DATA_MSG = "Not enough data";
-        private const double GRAPH_OFFSET_X = 5;
-        private const double GRAPH_OFFSET_Y = 20;
+        
+        private const double MSG_OFFSET_X = 5;
+        private const double MSG_OFFSET_Y = 10;
+        private const double CUR_RATING_BAR_HEIGHT = 30;        
+        private const double GRAPH_LINE_WIDTH = 15;
+        private const double SCALE_LIGHT_HEIGHT = 4;
+        private const double SCALE_HEAVY_HEIGHT = 8;
 
-        private const double LINE_GRAPH_WIDTH = 10;
-
-        private Colour BKG_GRAD_START = Colour.FromRgba(0, 0, 0, 0);
-        private Colour BKG_GRAD_END = Colour.FromRgba(255, 255, 255, 25);
-        private Colour SCALE_HEAVY = Colour.FromRgba(102, 102, 102, 255);
-        private Colour SCALE_LIGHT = Colour.FromRgba(150, 0, 0, 255);
-        private Colour CAPS_WHITE = Colour.FromRgba(200, 200, 200, 200);
-        private Colour CAPS_BLACK = Colour.FromRgba(255, 127, 39, 175);
-        private Colour BAR_COL = Colour.FromRgba(229, 139, 9, 200);
-        private Colour BAR_ALT_COL = Colour.FromRgba(209, 96, 2, 230);
-        private Colour FONT_COL = Colour.FromRgba(225, 225, 85, 255);
-        private Colour FONT_MSG_COL = Colour.FromRgba(225, 225, 85, 255);
-        private Colour CUR_RATING_BAR = Colour.FromRgba(85, 105, 66, 200);
+        private Colour COL_BKG_GRAD_START = Colour.FromRgba(0, 0, 0, 0);
+        private Colour COL_BKG_GRAD_END = Colour.FromRgba(255, 255, 255, 25);
+        private Colour COL_SCALE_HEAVY = Colour.FromRgba(102, 102, 102, 255);
+        private Colour COL_SCALE_LIGHT = Colour.FromRgba(150, 0, 0, 255);
+        private Colour COL_CAPS_WHITE = Colour.FromRgba(200, 200, 200, 200);
+        private Colour COL_CAPS_BLACK = Colour.FromRgba(255, 127, 39, 175);
+        private Colour COL_BAR = Colour.FromRgba(229, 139, 9, 200);
+        private Colour COL_BAR_ALT = Colour.FromRgba(209, 96, 2, 230);
+        private Colour COL_FONT = Colour.FromRgba(225, 225, 85, 255);
+        private Colour COL_FONT_MSG = Colour.FromRgba(225, 225, 85, 255);
+        private Colour COL_RATING = Colour.FromRgba(85, 105, 66, 175);
 
         private readonly Font fontMessage;
         private readonly Font font;
 
-        public double Width { get; private set; }
+        public double GraphWidth { get; private set; }
         public float TextSize { get; private set; }
         public float TextSizeMsg { get; private set; }
 
@@ -38,7 +41,7 @@ namespace ChessStats.Helpers
         {
             TextSize = textSize;
             TextSizeMsg = textSizeMsg;
-            Width = width;
+            GraphWidth = width;
 
             font = new(FontFamily.ResolveFontFamily(FontFamily.StandardFontFamilies.TimesRoman), TextSize);
             fontMessage = new(FontFamily.ResolveFontFamily(FontFamily.StandardFontFamilies.TimesItalic), TextSizeMsg);
@@ -47,27 +50,29 @@ namespace ChessStats.Helpers
         private Document CreateDocument(double height)
         {
             Document doc = new();
-            doc.Pages.Add(new(Width, height));
+            doc.Pages.Add(new(GraphWidth, height));
 
             LinearGradientBrush bkgBrush = new(new Point(0, 0),
-                                                         new Point(Width, height),
-                                                         new GradientStop(BKG_GRAD_START, 0),
-                                                         new GradientStop(BKG_GRAD_END, 1));
+                                                         new Point(GraphWidth, height),
+                                                         new GradientStop(COL_BKG_GRAD_START, 0),
+                                                         new GradientStop(COL_BKG_GRAD_END, 1));
 
-            doc.Pages[0].Graphics.FillRectangle(0, 0, Width, height, bkgBrush);
+            doc.Pages[0].Graphics.FillRectangle(0, 0, GraphWidth, height, bkgBrush);
 
             return doc;
         }
 
         private void WriteNoDataMessage(VectSharp.Graphics gpr, double height)
         {
-            gpr.FillText(new Point(GRAPH_OFFSET_X, height - fontMessage.MeasureText(NO_DATA_MSG).Height - GRAPH_OFFSET_Y), NO_DATA_MSG, fontMessage, FONT_MSG_COL);
+            gpr.FillText(new Point(MSG_OFFSET_X, height - fontMessage.MeasureText(NO_DATA_MSG).Height - MSG_OFFSET_Y), 
+                         NO_DATA_MSG, fontMessage, COL_FONT_MSG);
         }
 
         private void WriteRangeMessage(VectSharp.Graphics gpr, double height, string bottomVal = "-", string topVal = "-")
         {
-            gpr.FillText(new Point(GRAPH_OFFSET_X, GRAPH_OFFSET_Y), topVal, font, FONT_COL);
-            gpr.FillText(new Point(GRAPH_OFFSET_X, height - font.MeasureText(bottomVal).Height - GRAPH_OFFSET_Y), bottomVal, font, FONT_COL);
+            gpr.FillText(new Point(MSG_OFFSET_X, MSG_OFFSET_Y), topVal, font, COL_FONT);
+            gpr.FillText(new Point(MSG_OFFSET_X, height - font.MeasureText(bottomVal).Height - MSG_OFFSET_Y), 
+                                   bottomVal, font, COL_FONT);
         }
 
         internal async Task<string> RenderCapsGraph(List<CapsRecord> capsScoresWhite, List<CapsRecord> capsScoresBlack,
@@ -78,7 +83,7 @@ namespace ChessStats.Helpers
                 double[] whiteMovingAv = MovingAverage.CalculateMovingAv(capsScoresWhite.Select(item => item.Caps).ToList<double>(), rollingAv);
                 double[] blackMovingAv = MovingAverage.CalculateMovingAv(capsScoresBlack.Select(item => item.Caps).ToList<double>(), rollingAv);
                 double maxDataPoints = Math.Min(maxCapsGames, Math.Max(whiteMovingAv.Length, blackMovingAv.Length));
-                double CapsStepX = Width / (maxDataPoints - 2);
+                double CapsStepX = GraphWidth / (maxDataPoints - 2);
                 double CapsStepY = height / 100;
 
                 Document doc = CreateDocument(height);
@@ -90,14 +95,14 @@ namespace ChessStats.Helpers
                 }
                 else
                 {
-                    for (double i = height / 10; i < height; i += height / 10)
+                    for (double i = 1; i < 10; i++)
                     {
-                        gpr.FillRectangle(0, i, Width, 3, SCALE_LIGHT);
+                        gpr.FillRectangle(0, (height/10*i) - (SCALE_LIGHT_HEIGHT/2), GraphWidth, SCALE_LIGHT_HEIGHT, COL_SCALE_LIGHT);
                     }
 
-                    gpr.FillRectangle(0, height / 4 * 1, Width, 6, SCALE_HEAVY);
-                    gpr.FillRectangle(0, height / 4 * 2, Width, 6, SCALE_HEAVY);
-                    gpr.FillRectangle(0, height / 4 * 3, Width, 6, SCALE_HEAVY);
+                    gpr.FillRectangle(0, (height / 4 * 1) - (SCALE_HEAVY_HEIGHT/2), GraphWidth, SCALE_HEAVY_HEIGHT, COL_SCALE_HEAVY);
+                    gpr.FillRectangle(0, (height / 4 * 2) - (SCALE_HEAVY_HEIGHT/2), GraphWidth, SCALE_HEAVY_HEIGHT, COL_SCALE_HEAVY);
+                    gpr.FillRectangle(0, (height / 4 * 3) - (SCALE_HEAVY_HEIGHT/2), GraphWidth, SCALE_HEAVY_HEIGHT, COL_SCALE_HEAVY);
 
 
                     GraphicsPath gpWhite = new();
@@ -117,29 +122,29 @@ namespace ChessStats.Helpers
                         gpBlackPoints.Add(new(0, height - (blackMovingAv[0] * CapsStepY)));
                     }
 
-                    for (int i = 1; i < maxDataPoints - 1; i++)
+                    for (int loopY = 1; loopY < maxDataPoints - 1; loopY++)
                     {
-                        if (i < whiteMovingAv.Length - 1)
+                        if (loopY < whiteMovingAv.Length - 1)
                         {
-                            _ = gpWhite.LineTo(i * CapsStepX, height - (whiteMovingAv[i] * CapsStepY));
-                            gpWhitePoints.Add(new(i * CapsStepX, height - (whiteMovingAv[i] * CapsStepY)));
+                            _ = gpWhite.LineTo(loopY * CapsStepX, height - (whiteMovingAv[loopY] * CapsStepY));
+                            gpWhitePoints.Add(new(loopY * CapsStepX, height - (whiteMovingAv[loopY] * CapsStepY)));
                         }
 
-                        if (i < blackMovingAv.Length - 1)
+                        if (loopY < blackMovingAv.Length - 1)
                         {
-                            _ = gpBlack.LineTo(i * CapsStepX, height - (blackMovingAv[i] * CapsStepY));
-                            gpBlackPoints.Add(new(i * CapsStepX, height - (blackMovingAv[i] * CapsStepY)));
+                            _ = gpBlack.LineTo(loopY * CapsStepX, height - (blackMovingAv[loopY] * CapsStepY));
+                            gpBlackPoints.Add(new(loopY * CapsStepX, height - (blackMovingAv[loopY] * CapsStepY)));
                         }
                     }
 
                     GraphicsPath gpWhiteSmooth = new();
                     _ = gpWhiteSmooth.AddSmoothSpline(gpWhitePoints.ToArray());
-                    gpr.StrokePath(gpWhite, CAPS_WHITE, lineWidth: LINE_GRAPH_WIDTH);
+                    gpr.StrokePath(gpWhite, COL_CAPS_WHITE, lineWidth: GRAPH_LINE_WIDTH);
 
 
                     GraphicsPath gpBlackSmooth = new();
                     _ = gpBlackSmooth.AddSmoothSpline(gpBlackPoints.ToArray());
-                    gpr.StrokePath(gpBlackSmooth, CAPS_BLACK, lineWidth: LINE_GRAPH_WIDTH);
+                    gpr.StrokePath(gpBlackSmooth, COL_CAPS_BLACK, lineWidth: GRAPH_LINE_WIDTH);
                 }
 
                 return Graphics.GetImageAsHtmlFragment(doc.Pages.First());
@@ -165,50 +170,44 @@ namespace ChessStats.Helpers
                     int graphMin = ratingsPostGame.Select(x => x.rating).Min();
                     int graphMax = ratingsPostGame.Select(x => x.rating).Max();
 
-                    double CapsStepX = Width / ratingsPostGame.Count;
-                    double CapsStepY = height / (graphMax - graphMin);
+                    double RatingStepX = GraphWidth / ratingsPostGame.Count;
+                    double RatingStepY = height / (graphMax - graphMin);
 
-                    for (double i = graphMax % 100; i < height; i += 100)
+                    for (double loopY = graphMax % 100; loopY < (graphMax - graphMin); loopY += 100)
                     {
-                        gpr.FillRectangle(0,
-                                          i * CapsStepY,
-                                          Width,
-                                          3,
-                                          SCALE_HEAVY);
+                        gpr.FillRectangle(0, (loopY * RatingStepY) - (SCALE_HEAVY_HEIGHT / 2),
+                                          GraphWidth, SCALE_HEAVY_HEIGHT,
+                                          COL_SCALE_HEAVY);
                     }
 
                     //Draw Graph
                     DateTime lastDate = DateTime.MinValue;
 
-                    Colour brush01 = BAR_COL;
-                    Colour brush02 = BAR_ALT_COL;
+                    Colour brush01 = COL_BAR;
+                    Colour brush02 = COL_BAR_ALT;
 
                     Colour currentBrush = brush01;
 
                     for (int loop = 0; loop < ratingsPostGame.Count; loop++)
                     {
-                        //Switch pen when the month changes
+                        //Switch brush when the month changes
                         if (ratingsPostGameOrdered[loop].gameDate.Month != lastDate.Month)
                         {
                             currentBrush = currentBrush == brush01 ? brush02 : brush01;
                         }
 
-                        gpr.FillRectangle(loop * CapsStepX,
-                                          (graphMax - ratingsPostGameOrdered[loop].rating) * CapsStepY,
-                                          CapsStepX,
-                                          ratingsPostGame[loop].rating * CapsStepY,
+                        gpr.FillRectangle(loop * RatingStepX, (graphMax - ratingsPostGameOrdered[loop].rating) * RatingStepY,
+                                          RatingStepX, height - ((graphMax - ratingsPostGameOrdered[loop].rating) * RatingStepY),
                                           currentBrush);
-
+                        
                         lastDate = ratingsPostGameOrdered[loop].gameDate;
                     }
 
                     WriteRangeMessage(gpr, height, $"{graphMin}", $"{graphMax}");
 
-                    gpr.FillRectangle(0,
-                                      (graphMax - ratingsPostGameOrdered[^1].rating) * CapsStepY,
-                                      Width,
-                                      20,
-                                      CUR_RATING_BAR);
+                    gpr.FillRectangle(0, ((graphMax - ratingsPostGameOrdered[^1].rating) * RatingStepY) - ((CUR_RATING_BAR_HEIGHT / 2)),
+                                      GraphWidth, CUR_RATING_BAR_HEIGHT,
+                                      COL_RATING);
                 }
 
                 return Graphics.GetImageAsHtmlFragment(doc.Pages.First());
@@ -236,28 +235,24 @@ namespace ChessStats.Helpers
                     int graphMin = Math.Min(graphMinCalc, graphMaxCalc);
                     int graphMax = Math.Max(graphMinCalc, graphMaxCalc);
 
-                    double CapsStepX = Width / graphData.Count;
-                    double CapsStepY = height / (graphMax - graphMin);
+                    double RatingStepX = GraphWidth / graphData.Count;
+                    double RatingStepY = height / (graphMax - graphMin);
 
-                    for (double i = graphMax % 100; i < height; i += 100)
+                    for (double loopY = graphMax % 100; loopY < (graphMax-graphMin); loopY += 100)
                     {
-                        gpr.FillRectangle(0,
-                                          i * CapsStepY,
-                                          Width,
-                                          3,
-                                          SCALE_HEAVY);
-                    }
+                        gpr.FillRectangle(0, (loopY * RatingStepY) - (SCALE_HEAVY_HEIGHT / 2),
+                                          GraphWidth, SCALE_HEAVY_HEIGHT,
+                                          COL_SCALE_HEAVY);
+                    }                    
 
                     for (int loop = 0; loop < graphData.Count; loop++)
                     {
                         if (graphData[loop].WinAv != 0 &&
                             graphData[loop].LossAv != 0)
                         {
-                            gpr.FillRectangle(loop * CapsStepX,
-                                              (graphMax - graphData[loop].LossAv) * CapsStepY,
-                                              CapsStepX,
-                                              (graphData[loop].LossAv - graphData[loop].WinAv) * CapsStepY,
-                                              BAR_COL);
+                            gpr.FillRectangle(loop * RatingStepX, (graphMax - graphData[loop].LossAv) * RatingStepY,
+                                              RatingStepX, (graphData[loop].LossAv - graphData[loop].WinAv) * RatingStepY,
+                                              COL_BAR);
                         }
                     }
 
