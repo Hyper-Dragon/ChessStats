@@ -10,10 +10,10 @@ namespace ChessStats.Helpers
     internal class StatsGraph
     {
         private const string NO_DATA_MSG = "Not enough data";
-        
+
         private const double MSG_OFFSET_X = 5;
         private const double MSG_OFFSET_Y = 10;
-        private const double CUR_RATING_BAR_HEIGHT = 30;        
+        private const double CUR_RATING_BAR_HEIGHT = 30;
         private const double GRAPH_LINE_WIDTH = 15;
         private const double SCALE_LIGHT_HEIGHT = 4;
         private const double SCALE_HEAVY_HEIGHT = 8;
@@ -64,14 +64,14 @@ namespace ChessStats.Helpers
 
         private void WriteNoDataMessage(VectSharp.Graphics gpr, double height)
         {
-            gpr.FillText(new Point(MSG_OFFSET_X, height - fontMessage.MeasureText(NO_DATA_MSG).Height - MSG_OFFSET_Y), 
+            gpr.FillText(new Point(MSG_OFFSET_X, height - fontMessage.MeasureText(NO_DATA_MSG).Height - MSG_OFFSET_Y),
                          NO_DATA_MSG, fontMessage, COL_FONT_MSG);
         }
 
         private void WriteRangeMessage(VectSharp.Graphics gpr, double height, string bottomVal = "-", string topVal = "-")
         {
             gpr.FillText(new Point(MSG_OFFSET_X, MSG_OFFSET_Y), topVal, font, COL_FONT);
-            gpr.FillText(new Point(MSG_OFFSET_X, height - font.MeasureText(bottomVal).Height - MSG_OFFSET_Y), 
+            gpr.FillText(new Point(MSG_OFFSET_X, height - font.MeasureText(bottomVal).Height - MSG_OFFSET_Y),
                                    bottomVal, font, COL_FONT);
         }
 
@@ -97,12 +97,12 @@ namespace ChessStats.Helpers
                 {
                     for (double i = 1; i < 10; i++)
                     {
-                        gpr.FillRectangle(0, (height/10*i) - (SCALE_LIGHT_HEIGHT/2), GraphWidth, SCALE_LIGHT_HEIGHT, COL_SCALE_LIGHT);
+                        gpr.FillRectangle(0, (height / 10 * i) - (SCALE_LIGHT_HEIGHT / 2), GraphWidth, SCALE_LIGHT_HEIGHT, COL_SCALE_LIGHT);
                     }
 
-                    gpr.FillRectangle(0, (height / 4 * 1) - (SCALE_HEAVY_HEIGHT/2), GraphWidth, SCALE_HEAVY_HEIGHT, COL_SCALE_HEAVY);
-                    gpr.FillRectangle(0, (height / 4 * 2) - (SCALE_HEAVY_HEIGHT/2), GraphWidth, SCALE_HEAVY_HEIGHT, COL_SCALE_HEAVY);
-                    gpr.FillRectangle(0, (height / 4 * 3) - (SCALE_HEAVY_HEIGHT/2), GraphWidth, SCALE_HEAVY_HEIGHT, COL_SCALE_HEAVY);
+                    gpr.FillRectangle(0, (height / 4 * 1) - (SCALE_HEAVY_HEIGHT / 2), GraphWidth, SCALE_HEAVY_HEIGHT, COL_SCALE_HEAVY);
+                    gpr.FillRectangle(0, (height / 4 * 2) - (SCALE_HEAVY_HEIGHT / 2), GraphWidth, SCALE_HEAVY_HEIGHT, COL_SCALE_HEAVY);
+                    gpr.FillRectangle(0, (height / 4 * 3) - (SCALE_HEAVY_HEIGHT / 2), GraphWidth, SCALE_HEAVY_HEIGHT, COL_SCALE_HEAVY);
 
 
                     GraphicsPath gpWhite = new();
@@ -199,13 +199,13 @@ namespace ChessStats.Helpers
                         gpr.FillRectangle(loop * RatingStepX, (graphMax - ratingsPostGameOrdered[loop].rating) * RatingStepY,
                                           RatingStepX, height - ((graphMax - ratingsPostGameOrdered[loop].rating) * RatingStepY),
                                           currentBrush);
-                        
+
                         lastDate = ratingsPostGameOrdered[loop].gameDate;
                     }
 
                     WriteRangeMessage(gpr, height, $"{graphMin}", $"{graphMax}");
 
-                    gpr.FillRectangle(0, ((graphMax - ratingsPostGameOrdered[^1].rating) * RatingStepY) - ((CUR_RATING_BAR_HEIGHT / 2)),
+                    gpr.FillRectangle(0, ((graphMax - ratingsPostGameOrdered[^1].rating) * RatingStepY) - (CUR_RATING_BAR_HEIGHT / 2),
                                       GraphWidth, CUR_RATING_BAR_HEIGHT,
                                       COL_RATING);
                 }
@@ -238,12 +238,12 @@ namespace ChessStats.Helpers
                     double RatingStepX = GraphWidth / graphData.Count;
                     double RatingStepY = height / (graphMax - graphMin);
 
-                    for (double loopY = graphMax % 100; loopY < (graphMax-graphMin); loopY += 100)
+                    for (double loopY = graphMax % 100; loopY < (graphMax - graphMin); loopY += 100)
                     {
                         gpr.FillRectangle(0, (loopY * RatingStepY) - (SCALE_HEAVY_HEIGHT / 2),
                                           GraphWidth, SCALE_HEAVY_HEIGHT,
                                           COL_SCALE_HEAVY);
-                    }                    
+                    }
 
                     for (int loop = 0; loop < graphData.Count; loop++)
                     {
