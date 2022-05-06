@@ -25,7 +25,7 @@ namespace ChessStats.Data
 
         public static async Task<List<ChessGame>> FetchGameRecordsForUser(string username, DirectoryInfo cacheDir)
         {
-            Helpers.ResetDisplayCounter();
+            Helpers.StatsConsole.ResetDisplayCounter();
             ConcurrentBag<ChessGame> PgnList = new();
 
             ArchivedGamesList monthlyArchive = await GetPlayerMonthlyArchive(username).ConfigureAwait(false);
@@ -42,7 +42,7 @@ namespace ChessStats.Data
                     {
                         if (game.Rules == GameVariant.Chess)
                         {
-                            Helpers.ProcessedDisplay(".");
+                            Helpers.StatsConsole.ProcessedDisplay(".");
 
                             PgnList.Add(new ChessGame()
                             {
@@ -54,20 +54,20 @@ namespace ChessStats.Data
                                 TimeClass = game.TimeClass.ToString(),
                                 WhiteRating = game.IsRated ? game.White.Rating : 0,
                                 BlackRating = game.IsRated ? game.Black.Rating : 0,
-                                WhiteCaps  = game?.Accuracies?.White ?? 0f,
-                                BlackCaps = game?.Accuracies?.Black ??  0f,
+                                WhiteCaps = game?.Accuracies?.White ?? 0f,
+                                BlackCaps = game?.Accuracies?.Black ?? 0f,
                                 GameAttributes = GameHeader.GetHeaderAttributesFromPgn(game.Pgn)
                             });
                         }
                         else
                         {
-                            Helpers.ProcessedDisplay("X");
+                            Helpers.StatsConsole.ProcessedDisplay("X");
                         }
                     }
                 }
                 catch
                 {
-                    Helpers.ProcessedDisplay("E");
+                    Helpers.StatsConsole.ProcessedDisplay("E");
                 }
             });
 
@@ -105,12 +105,12 @@ namespace ChessStats.Data
                     using ChessDotComSharp.ChessDotComClient client = new();
                     myGames = await client.GetPlayerGameMonthlyArchiveAsync(username, year, month).ConfigureAwait(true);
 
-                                       
+
                     // Never cache data for this or the previous month since we may have new CAPS scores generated
                     // (there may of course be older scores we don't have but that will be upto the user to clear the
                     //  cache if these are required)
-                    if (!(DateTime.UtcNow.Year == year && DateTime.UtcNow.Month == month ||
-                          DateTime.UtcNow.AddMonths(-1).Year == year && DateTime.UtcNow.AddMonths(-1).Month == month))
+                    if (!((DateTime.UtcNow.Year == year && DateTime.UtcNow.Month == month) ||
+                          (DateTime.UtcNow.AddMonths(-1).Year == year && DateTime.UtcNow.AddMonths(-1).Month == month)))
                     {
                         using FileStream gameFileOutStream = File.Create(cacheFileName);
                         await JsonSerializer.SerializeAsync(gameFileOutStream, myGames).ConfigureAwait(false);

@@ -1,8 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
-using System.Net.Http;
-using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
@@ -10,7 +8,13 @@ namespace ChessStats.Data
 {
     public class CapsRecord
     {
+        public enum GameEndState { WHITE, BLACK, DRAW };
+        public GameEndState GameResult { get; set; }
+        public string ResultReson { get; set; }
         public double Caps { get; set; }
+        public string TimeClass { get; set; }
+        public bool IsWin { get; set; }
+        public bool IsDraw { get; set; }
         public DateTime GameDate { get; set; }
         public string GameYearMonth => $"{GameDate.Year}-{GameDate.Month.ToString(CultureInfo.InvariantCulture).PadLeft(2, '0')}";
     }
@@ -21,39 +25,38 @@ namespace ChessStats.Data
         {
             return await Task.Run<Dictionary<string, List<CapsRecord>>>(() =>
             {
-                Helpers.ResetDisplayCounter();
+                Helpers.StatsConsole.ResetDisplayCounter();
 
                 Dictionary<string, List<CapsRecord>> capsScores = new() {
                                                                             { $"White", new List<CapsRecord>() },
                                                                             { $"Black", new List<CapsRecord>() }
                                                                         };
 
-                foreach (var game in gameList)
+                foreach (ChessGame game in gameList)
                 {
-                    try
+                    if (game.WhiteCaps > 0 && game.BlackCaps > 0 && game.IsRatedGame)
                     {
-                        if (game.WhiteCaps > 0 && game.BlackCaps > 0 && game.IsRatedGame)
-                        {
-                            var dateSplit = game.GameAttributes.Attributes["Date"].Split('.');
+                        string[] dateSplit = game.GameAttributes.Attributes["Date"].Split('.');
 
-                            capsScores[$"{((game.GameAttributes.Attributes["White"] == chessdotcomUsername) ? "White" : "Black")}"]
-                                .Add(new CapsRecord()
-                                {
-                                    Caps = (game.GameAttributes.Attributes["White"] == chessdotcomUsername) ? game.WhiteCaps : game.BlackCaps,
-                                    GameDate = new DateTime(int.Parse(dateSplit[0]), int.Parse(dateSplit[1]), int.Parse(dateSplit[2]))
-                                });
-
-                            Helpers.ProcessedDisplay(".");
-                        }
-                    }
-                    catch (System.NullReferenceException)
-                    {
-                        //Value missing
-                        Helpers.ProcessedDisplay("-");
-                    }
-                    catch
-                    {
-                        Helpers.ProcessedDisplay("E");
+                        capsScores[$"{((game.GameAttributes.Attributes["White"] == chessdotcomUsername) ? "White" : "Black")}"]
+                            .Add(new CapsRecord()
+                            {
+                                GameResult = (game.GameAttributes.Attributes["Result"] == "1-0") ? CapsRecord.GameEndState.WHITE :
+                                             (game.GameAttributes.Attributes["Result"] == "0-1") ? CapsRecord.GameEndState.BLACK :
+                                             CapsRecord.GameEndState.DRAW,
+                                ResultReson = game.GameAttributes.Attributes["Termination"],
+                                IsWin = (game.GameAttributes.Attributes["White"] == chessdotcomUsername &&
+                                           game.GameAttributes.Attributes["Result"] == "1-0") ||
+                                          (game.GameAttributes.Attributes["Black"] == chessdotcomUsername &&
+                                           game.GameAttributes.Attributes["Result"] == "0-1"),
+                                IsDraw = game.GameAttributes.Attributes["White"] == chessdotcomUsername &&
+                                           game.GameAttributes.Attributes["Result"] != "1-0" &&
+                                          game.GameAttributes.Attributes["Black"] == chessdotcomUsername &&
+                                           game.GameAttributes.Attributes["Result"] != "0-1",
+                                TimeClass = game.TimeClass,
+                                Caps = (game.GameAttributes.Attributes["White"] == chessdotcomUsername) ? game.WhiteCaps : game.BlackCaps,
+                                GameDate = new DateTime(int.Parse(dateSplit[0]), int.Parse(dateSplit[1]), int.Parse(dateSplit[2]))
+                            });
                     }
                 }
 

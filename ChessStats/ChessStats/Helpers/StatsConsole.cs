@@ -1,138 +1,15 @@
-using Microsoft.Extensions.FileProviders;
 using System;
 using System.Diagnostics;
-using System.Drawing;
-using System.Drawing.Drawing2D;
-using System.Drawing.Imaging;
-using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Text;
 
-namespace ChessStats
+namespace ChessStats.Helpers
 {
-    public class GraphHelper : IDisposable
-    {
-        private bool disposedValue;
-        public static Pen OrangePen => new(Color.FromArgb(255, 229, 139, 9), 1);
-        public static Pen DarkOrangePen => new(Color.FromArgb(255, 222, 132, 9), 1);
-        public static Pen RedPen => new(Color.FromArgb(255, 200, 9, 9), 3);
-        public static Pen WhitePen => new(Color.FromArgb(255, 255, 255, 255), 1) { DashStyle = DashStyle.Dash };
-        public static Brush TextBrush => Brushes.Yellow;
-        public Bitmap GraphSurface { get; private set; }
-        public Graphics DrawingSurface { get; private set; }
-        public int Height => GraphSurface.Height;
-        public int Width => GraphSurface.Width;
-        public LinearGradientBrush LinGrBrush { get; private set; }
-        public Pen BackgroundPen { get; private set; }
-        public int LowVal { get; }
-        public int HighVal { get; }
-        public int BaseLine => Height;
-        public int Range => HighVal - LowVal;
-        public enum GraphLine { NONE, RATING, PERCENTAGE }
-        public GraphHelper(int width, float graphDpi, int lowVal = 0, int highVal = 0, GraphLine graphLines = GraphLine.NONE)
-        {
-            LowVal = lowVal;
-            HighVal = highVal;
-
-            LinGrBrush = new LinearGradientBrush(
-                         new Point(0, 0),
-                         new Point(width, Range),
-                         Color.FromArgb(20, 49, 46, 43),
-                         Color.FromArgb(20, 181, 180, 179));
-
-            BackgroundPen = new Pen(LinGrBrush);
-
-            GraphSurface = new System.Drawing.Bitmap(width, Range);
-
-            //FIX: Explicitly set the DPI or getResolution fails on linux
-            GraphSurface.SetResolution(graphDpi, graphDpi);
-
-            DrawingSurface = Graphics.FromImage(GraphSurface);
-            DrawingSurface.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
-            DrawingSurface.CompositingQuality = System.Drawing.Drawing2D.CompositingQuality.HighQuality;
-            DrawingSurface.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
-
-            DrawingSurface.FillRectangle(LinGrBrush, 0, 0, width, Range);
-
-            //Add horizontal lines
-            if (graphLines == GraphLine.RATING)
-            {
-                for (int loop = HighVal % 100; loop < GraphSurface.Height; loop += 100)
-                {
-                    DrawingSurface.DrawLine(GraphHelper.WhitePen, 0, loop, Width, loop);
-                }
-            }
-            else if (graphLines == GraphLine.PERCENTAGE)
-            {
-                for (int loop = 25; loop < 100; loop += 25)
-                {
-                    DrawingSurface.DrawLine(GraphHelper.WhitePen, 0, loop, Width, loop);
-                }
-
-                for (int loop = Width / 5; loop < (Width - (Width / 5)); loop += Width / 5)
-                {
-                    DrawingSurface.DrawLine(GraphHelper.WhitePen, loop, lowVal, loop, highVal);
-                }
-            }
-        }
-
-        public int GetYAxisPoint(int actualValue)
-        {
-            return Height - (actualValue - LowVal);
-        }
-
-        protected virtual void Dispose(bool disposing)
-        {
-            if (!disposedValue)
-            {
-                if (disposing)
-                {
-                    // dispose managed state (managed objects)
-                    OrangePen.Dispose();
-                    DarkOrangePen.Dispose();
-                    RedPen.Dispose();
-                    WhitePen.Dispose();
-                    LinGrBrush.Dispose();
-                    BackgroundPen.Dispose();
-                    GraphSurface.Dispose();
-                    DrawingSurface.Dispose();
-                }
-
-                disposedValue = true;
-            }
-        }
-
-        public void Dispose()
-        {
-            Dispose(disposing: true);
-            GC.SuppressFinalize(this);
-        }
-    }
-
-
-    public static class Helpers
+    public static class StatsConsole
     {
         private static readonly Stopwatch stopwatch = new();
         private static int gameCount = 0;
         private static readonly object displayLock = new();
-
-
-        public static string EncodeResourceImageAsHtmlFragment(string imageName)
-        {
-            string base64Img = "";
-
-            using (Stream reader = new EmbeddedFileProvider(Assembly.GetExecutingAssembly()).GetFileInfo($"Images.{imageName}").CreateReadStream())
-            {
-                Bitmap bitmapOut = new(reader);
-                using MemoryStream stream = new();
-                bitmapOut.Save(stream, System.Drawing.Imaging.ImageFormat.Png);
-                base64Img = Convert.ToBase64String(stream.ToArray());
-            }
-
-            return $"'data:image/png;base64,{base64Img}'";
-        }
-
 
         public static void StartTimedSection(string msg, bool newLineFirst = false, bool newLineAfter = false)
         {
@@ -160,31 +37,6 @@ namespace ChessStats
                 if (gameCount++ > 99) { Console.WriteLine(); gameCount = 1; }
                 Console.Write(outChar);
             }
-        }
-        public static Bitmap ResizeImage(Image image, int width, int height)
-        {
-            if (image == null) { throw new ArgumentNullException(nameof(image)); }
-
-            Rectangle destRect = new(0, 0, width, height);
-            Bitmap destImage = new(width, height);
-
-
-            destImage.SetResolution(image.HorizontalResolution, image.VerticalResolution);
-
-            using (Graphics graphics = Graphics.FromImage(destImage))
-            {
-                graphics.CompositingMode = CompositingMode.SourceCopy;
-                graphics.CompositingQuality = CompositingQuality.HighQuality;
-                graphics.InterpolationMode = InterpolationMode.HighQualityBicubic;
-                graphics.SmoothingMode = SmoothingMode.HighQuality;
-                graphics.PixelOffsetMode = PixelOffsetMode.HighQuality;
-
-                using ImageAttributes wrapMode = new();
-                wrapMode.SetWrapMode(WrapMode.Clamp);
-                graphics.DrawImage(image, destRect, 0, 0, image.Width, image.Height, GraphicsUnit.Pixel, wrapMode);
-            }
-
-            return destImage;
         }
 
         public static void ResetDisplayCounter()
@@ -240,41 +92,30 @@ namespace ChessStats
             Console.WriteLine("<Press a Key>");
             _ = Console.ReadKey();
         }
-
-        public static void DisplayLogo(string versionNo)
+        
+        public static void DisplayLogo(string versionNo, string releaseDate)
         {
-            Console.WriteLine(GetDisplayLogo(versionNo));
+            Console.WriteLine(GetDisplayLogo(versionNo, releaseDate));
         }
 
-        public static string GetDisplayLogo(string versionNo)
+        public static string GetDisplayLogo(string versionNo,string relDate)
         {
             StringBuilder textOut = new();
 
-            _ = textOut.AppendLine(@$"                                                                                                    ");
-            _ = textOut.AppendLine(@$"     ()                                                                                             ");
+            _ = textOut.AppendLine(@$"           ");
+            _ = textOut.AppendLine(@$"     ()    ");
             _ = textOut.AppendLine(@$"   <~~~~>  _________  .__                                   _________  __             __            ");
             _ = textOut.AppendLine(@$"    \__/   \_   ___ \ |  |__    ____    ______  ______     /   _____/_/  |_ _____   _/  |_   ______ ");
             _ = textOut.AppendLine(@$"   (____)  /    \  \/ |  |  \ _/ __ \  /  ___/ /  ___/     \_____  \ \   __\\__  \  \   __\ /  ___/ ");
             _ = textOut.AppendLine(@$"    |  |   \     \____|   Y  \\  ___/  \___ \  \___ \      /        \ |  |   / __ \_ |  |   \___ \  ");
             _ = textOut.AppendLine(@$"    |  |    \______  /|___|  / \___  >/____  >/____  >    /_______  / |__|  (____  / |__|  /____  > ");
             _ = textOut.AppendLine(@$"    |__|           \/      \/      \/      \/      \/             \/             \/for Chess.com\/  ");
-            _ = textOut.AppendLine(@$"   /____\                                                                                           ");
-            _ = textOut.AppendLine(@$"  (______)                                                                                          ");
-            _ = textOut.AppendLine(@$" (________) Hyper-Dragon :: Version {versionNo} :: 07/2021 :: https://github.com/Hyper-Dragon/ChessStats  ");
-            _ = textOut.AppendLine(@$"                                                                                                    ");
+            _ = textOut.AppendLine(@$"   /____\   ");
+            _ = textOut.AppendLine(@$"  (______)  ");
+            _ = textOut.AppendLine(@$" (________) Hyper-Dragon :: Version {versionNo} :: {relDate} :: https://hyper-dragon.github.io/ChessStats/");
+            _ = textOut.AppendLine(@$"            ");
 
             return textOut.ToString();
-        }
-
-        public static string GetImageAsHtmlFragment(Bitmap bitmapOut)
-        {
-            if (bitmapOut == null) { throw new ArgumentNullException(nameof(bitmapOut)); }
-
-            using MemoryStream stream = new();
-            bitmapOut.Save(stream, System.Drawing.Imaging.ImageFormat.Png);
-            string base64Img = Convert.ToBase64String(stream.ToArray());
-
-            return $"<img src='data:image/png;base64,{base64Img}'/>";
         }
 
         public static string GetHtmlTail(Uri chessdotcomUrl, string versionNumber, string projectLink)
