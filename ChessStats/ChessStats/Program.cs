@@ -17,6 +17,7 @@ namespace ChessStats
     internal class Program
     {
         private const string VERSION_NUMBER = "0.8.0";
+        private const string RELEEASE_DATE = "05/2022";
         private const string RESULTS_DIR_NAME = "ChessStatsResults";
         private const string CACHE_DIR_NAME = "ChessStatsCache";
         private const string CACHE_VERSION_NUMBER = "2";
@@ -41,7 +42,7 @@ namespace ChessStats
 
         private static async Task Main(string[] args)
         {
-            Helpers.StatsConsole.DisplayLogo(VERSION_NUMBER);
+            Helpers.StatsConsole.DisplayLogo(VERSION_NUMBER, RELEEASE_DATE);
 
             try
             {
@@ -93,8 +94,8 @@ namespace ChessStats
             DirectoryInfo baseCacheDir = applicationPath.CreateSubdirectory($"{CACHE_DIR_NAME}/CacheV{CACHE_VERSION_NUMBER}");
 
             //Load Embeded Resources
-            bkgImageBase64 = Graphics.EncodeResourceImageAsHtmlFragment("SeamlessBkg01.png");
-            favIconBase64 = Graphics.EncodeResourceImageAsHtmlFragment("FavIcon.png");
+            bkgImageBase64 = Imaging.EncodeResourceImageAsHtmlFragment("SeamlessBkg01.png");
+            favIconBase64 = Imaging.EncodeResourceImageAsHtmlFragment("FavIcon.png");
 
             while (args.Length != 1 || string.IsNullOrWhiteSpace(args[0]))
             {
@@ -578,7 +579,7 @@ namespace ChessStats
         private static async Task WriteTextReportToDisk(string VERSION_NUMBER, DirectoryInfo resultsDir, string chessdotcomUsername, string textReport)
         {
             using StreamWriter textReportFileOutStream = File.CreateText($"{Path.Combine(resultsDir.FullName, $"{chessdotcomUsername}-Summary.txt")}");
-            await textReportFileOutStream.WriteLineAsync($"{Helpers.StatsConsole.GetDisplayLogo(VERSION_NUMBER)}").ConfigureAwait(false);
+            await textReportFileOutStream.WriteLineAsync($"{Helpers.StatsConsole.GetDisplayLogo(VERSION_NUMBER, RELEEASE_DATE)}").ConfigureAwait(false);
             await textReportFileOutStream.WriteLineAsync($"{textReport}").ConfigureAwait(false);
             await textReportFileOutStream.FlushAsync().ConfigureAwait(false);
             textReportFileOutStream.Close();

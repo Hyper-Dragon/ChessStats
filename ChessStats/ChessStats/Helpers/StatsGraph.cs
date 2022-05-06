@@ -147,7 +147,7 @@ namespace ChessStats.Helpers
                     gpr.StrokePath(gpBlackSmooth, COL_CAPS_BLACK, lineWidth: GRAPH_LINE_WIDTH);
                 }
 
-                return Graphics.GetImageAsHtmlFragment(doc.Pages.First());
+                return Imaging.GetImageAsHtmlFragment(doc.Pages.First());
             }).ConfigureAwait(false);
         }
 
@@ -210,7 +210,7 @@ namespace ChessStats.Helpers
                                       COL_RATING);
                 }
 
-                return Graphics.GetImageAsHtmlFragment(doc.Pages.First());
+                return Imaging.GetImageAsHtmlFragment(doc.Pages.First());
 
             }).ConfigureAwait(false);
         }
@@ -259,7 +259,7 @@ namespace ChessStats.Helpers
                     WriteRangeMessage(gpr, height, $"{graphMin}", $"{graphMax}");
                 }
 
-                return Graphics.GetImageAsHtmlFragment(doc.Pages.First());
+                return Imaging.GetImageAsHtmlFragment(doc.Pages.First());
             }).ConfigureAwait(false);
         }
     }

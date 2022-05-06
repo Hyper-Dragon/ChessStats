@@ -92,28 +92,28 @@ namespace ChessStats.Helpers
             Console.WriteLine("<Press a Key>");
             _ = Console.ReadKey();
         }
-
-        public static void DisplayLogo(string versionNo)
+        
+        public static void DisplayLogo(string versionNo, string releaseDate)
         {
-            Console.WriteLine(GetDisplayLogo(versionNo));
+            Console.WriteLine(GetDisplayLogo(versionNo, releaseDate));
         }
 
-        public static string GetDisplayLogo(string versionNo)
+        public static string GetDisplayLogo(string versionNo,string relDate)
         {
             StringBuilder textOut = new();
 
-            _ = textOut.AppendLine(@$"                                                                                                    ");
-            _ = textOut.AppendLine(@$"     ()                                                                                             ");
+            _ = textOut.AppendLine(@$"           ");
+            _ = textOut.AppendLine(@$"     ()    ");
             _ = textOut.AppendLine(@$"   <~~~~>  _________  .__                                   _________  __             __            ");
             _ = textOut.AppendLine(@$"    \__/   \_   ___ \ |  |__    ____    ______  ______     /   _____/_/  |_ _____   _/  |_   ______ ");
             _ = textOut.AppendLine(@$"   (____)  /    \  \/ |  |  \ _/ __ \  /  ___/ /  ___/     \_____  \ \   __\\__  \  \   __\ /  ___/ ");
             _ = textOut.AppendLine(@$"    |  |   \     \____|   Y  \\  ___/  \___ \  \___ \      /        \ |  |   / __ \_ |  |   \___ \  ");
             _ = textOut.AppendLine(@$"    |  |    \______  /|___|  / \___  >/____  >/____  >    /_______  / |__|  (____  / |__|  /____  > ");
             _ = textOut.AppendLine(@$"    |__|           \/      \/      \/      \/      \/             \/             \/for Chess.com\/  ");
-            _ = textOut.AppendLine(@$"   /____\                                                                                           ");
-            _ = textOut.AppendLine(@$"  (______)                                                                                          ");
-            _ = textOut.AppendLine(@$" (________) Hyper-Dragon :: Version {versionNo} :: 07/2021 :: https://github.com/Hyper-Dragon/ChessStats  ");
-            _ = textOut.AppendLine(@$"                                                                                                    ");
+            _ = textOut.AppendLine(@$"   /____\   ");
+            _ = textOut.AppendLine(@$"  (______)  ");
+            _ = textOut.AppendLine(@$" (________) Hyper-Dragon :: Version {versionNo} :: {relDate} :: https://hyper-dragon.github.io/ChessStats/");
+            _ = textOut.AppendLine(@$"            ");
 
             return textOut.ToString();
         }

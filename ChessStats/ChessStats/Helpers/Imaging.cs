@@ -7,7 +7,7 @@ using VectSharp.SVG;
 
 namespace ChessStats.Helpers
 {
-    internal class Graphics
+    internal class Imaging
     {
         public static string EncodeResourceImageAsHtmlFragment(string imageName)
         {
