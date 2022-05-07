@@ -132,30 +132,34 @@ namespace ChessStats.Helpers
                     List<Point> gpWhitePoints = new();
                     List<Point> gpBlackPoints = new();
 
+                    //Shift the data to the right if we don't have enough data points
+                    int whiteOffsetX = Math.Max(0,blackMovingAv.Length - whiteMovingAv.Length);
+                    int blackOffsetX = Math.Max(0,whiteMovingAv.Length - blackMovingAv.Length);
+
                     if (whiteMovingAv.Length > 1)
                     {
-                        _ = gpWhite.MoveTo(0, height - (whiteMovingAv[0] * CapsStepY));
-                        gpWhitePoints.Add(new(0, height - (whiteMovingAv[0] * CapsStepY)));
+                        _ = gpWhite.MoveTo(whiteOffsetX, height - (whiteMovingAv[0] * CapsStepY));
+                        gpWhitePoints.Add(new(whiteOffsetX, height - (whiteMovingAv[0] * CapsStepY)));
                     }
 
                     if (blackMovingAv.Length > 1)
                     {
-                        _ = gpBlack.MoveTo(0, height - (blackMovingAv[0] * CapsStepY));
-                        gpBlackPoints.Add(new(0, height - (blackMovingAv[0] * CapsStepY)));
+                        _ = gpBlack.MoveTo(blackOffsetX, height - (blackMovingAv[0] * CapsStepY));
+                        gpBlackPoints.Add(new(blackOffsetX, height - (blackMovingAv[0] * CapsStepY)));
                     }
 
                     for (int loopY = 1; loopY < maxDataPoints - 1; loopY++)
                     {
                         if (loopY < whiteMovingAv.Length - 1)
                         {
-                            _ = gpWhite.LineTo(loopY * CapsStepX, height - (whiteMovingAv[loopY] * CapsStepY));
-                            gpWhitePoints.Add(new(loopY * CapsStepX, height - (whiteMovingAv[loopY] * CapsStepY)));
+                            _ = gpWhite.LineTo((loopY+whiteOffsetX) * CapsStepX, height - (whiteMovingAv[loopY] * CapsStepY));
+                            gpWhitePoints.Add(new((loopY+whiteOffsetX) * CapsStepX, height - (whiteMovingAv[loopY] * CapsStepY)));
                         }
 
                         if (loopY < blackMovingAv.Length - 1)
                         {
-                            _ = gpBlack.LineTo(loopY * CapsStepX, height - (blackMovingAv[loopY] * CapsStepY));
-                            gpBlackPoints.Add(new(loopY * CapsStepX, height - (blackMovingAv[loopY] * CapsStepY)));
+                            _ = gpBlack.LineTo((loopY+blackOffsetX) * CapsStepX, height - (blackMovingAv[loopY] * CapsStepY));
+                            gpBlackPoints.Add(new((loopY+blackOffsetX) * CapsStepX, height - (blackMovingAv[loopY] * CapsStepY)));
                         }
                     }
 
@@ -220,7 +224,8 @@ namespace ChessStats.Helpers
                         lastDate = capsScores[loop].GameDate;
                     }
 
-                    WriteRangeMessage(gpr, height, "", "100%");
+                    //WriteRangeMessage(gpr, height, "", "100%");
+                    WriteMessage(gpr, height, $"* CAPs % over {capsScores.Count} games");
                 }
 
                 return Imaging.GetImageAsHtmlFragment(doc.Pages.First());
