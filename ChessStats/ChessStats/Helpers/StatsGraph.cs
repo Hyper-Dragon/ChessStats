@@ -22,7 +22,7 @@ namespace ChessStats.Helpers
         private Colour COL_BKG_GRAD_START = Colour.FromRgba(0, 0, 0, 0);
         private Colour COL_BKG_GRAD_END = Colour.FromRgba(255, 255, 255, 25);
         private Colour COL_SCALE_MINOR = Colour.FromRgba(76, 76, 75, 255);
-        private Colour COL_SCALE_MAJOR = Colour.FromRgba(99,99,98, 255);
+        private Colour COL_SCALE_MAJOR = Colour.FromRgba(99, 99, 98, 255);
         private Colour COL_CAPS_WHITE = Colour.FromRgba(200, 200, 200, 200);
         private Colour COL_CAPS_BLACK = Colour.FromRgba(255, 127, 39, 175);
         private Colour COL_BAR = Colour.FromRgba(229, 139, 9, 200);
@@ -80,7 +80,7 @@ namespace ChessStats.Helpers
             {
                 gpr.FillText(new Point(MSG_OFFSET_X, MSG_OFFSET_Y), topVal, font, COL_FONT);
             }
-            
+
             if (!string.IsNullOrEmpty(bottomVal))
             {
                 gpr.FillText(new Point(MSG_OFFSET_X, height - font.MeasureText(bottomVal).Height - MSG_OFFSET_Y),
@@ -90,7 +90,7 @@ namespace ChessStats.Helpers
 
         private void RenderPercentageScale(VectSharp.Graphics gpr, double height, bool showMinorScale = true)
         {
-            for (double i = 1; i < 10 && showMinorScale ; i++)
+            for (double i = 1; i < 10 && showMinorScale; i++)
             {
                 gpr.FillRectangle(0, (height / 10 * i) - (SCALE_MINOR_HEIGHT / 2), GraphWidth, SCALE_MINOR_HEIGHT, COL_SCALE_MINOR);
             }
@@ -222,7 +222,7 @@ namespace ChessStats.Helpers
 
                     WriteRangeMessage(gpr, height, "", "100%");
                 }
-                
+
                 return Imaging.GetImageAsHtmlFragment(doc.Pages.First());
             }).ConfigureAwait(false);
         }

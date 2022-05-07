@@ -253,7 +253,7 @@ namespace ChessStats
 
 
                 Task<string> graphT10 = statsGraph.RenderCapsGraph(capsScores["White"].Where(x => x.TimeClass == "Bullet").ToList(),
-                                                                   capsScores["Black"].Where(x => x.TimeClass == "Bullet").ToList(), 3, height: 1536, maxCapsGames: 28 );
+                                                                   capsScores["Black"].Where(x => x.TimeClass == "Bullet").ToList(), 3, height: 1536, maxCapsGames: 28);
                 Task<string> graphT11 = statsGraph.RenderCapsGraph(capsScores["White"].Where(x => x.TimeClass == "Blitz").ToList(),
                                                                    capsScores["Black"].Where(x => x.TimeClass == "Blitz").ToList(), 3, height: 1536, maxCapsGames: 28);
                 Task<string> graphT12 = statsGraph.RenderCapsGraph(capsScores["White"].Where(x => x.TimeClass == "Rapid").ToList(),

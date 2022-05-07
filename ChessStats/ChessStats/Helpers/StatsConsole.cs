@@ -92,13 +92,13 @@ namespace ChessStats.Helpers
             Console.WriteLine("<Press a Key>");
             _ = Console.ReadKey();
         }
-        
+
         public static void DisplayLogo(string versionNo, string releaseDate)
         {
             Console.WriteLine(GetDisplayLogo(versionNo, releaseDate));
         }
 
-        public static string GetDisplayLogo(string versionNo,string relDate)
+        public static string GetDisplayLogo(string versionNo, string relDate)
         {
             StringBuilder textOut = new();
 

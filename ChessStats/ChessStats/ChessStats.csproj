@@ -24,8 +24,8 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.FileProviders.Embedded" Version="6.0.4" />
     <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.15.1" />
-    <PackageReference Include="VectSharp" Version="2.2.1" />
-    <PackageReference Include="VectSharp.SVG" Version="1.7.0" />
+    <PackageReference Include="VectSharp" Version="2.3.0" />
+    <PackageReference Include="VectSharp.SVG" Version="1.7.1" />
   </ItemGroup>
 
   <ItemGroup>
