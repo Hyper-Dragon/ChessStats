@@ -75,6 +75,7 @@ namespace ChessStats
                 Console.WriteLine("");
                 Console.WriteLine("*** Fatal Error - Unable to Continue ***");
                 Console.WriteLine($"{ex.Message}");
+                Console.WriteLine($"{ex.StackTrace}");
                 Console.WriteLine("");
 
                 if (args.Length != 1) { Helpers.StatsConsole.PressToContinue(); }
