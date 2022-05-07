@@ -246,21 +246,28 @@ namespace ChessStats
                 Task<string> graphT5 = statsGraph.RenderAverageStatsGraph(graphData.Where(x => x.TimeControl.Contains("Blitz", StringComparison.InvariantCultureIgnoreCase)).OrderBy(x => x.TimeControl).ToList());
                 Task<string> graphT6 = statsGraph.RenderAverageStatsGraph(graphData.Where(x => x.TimeControl.Contains("Rapid", StringComparison.InvariantCultureIgnoreCase)).OrderBy(x => x.TimeControl).ToList());
 
+
+                Task<string> graphT7 = statsGraph.RenderAllCapsGraph(capsScores["All"].Where(x => x.TimeClass == "Bullet").ToList(), 576);
+                Task<string> graphT8 = statsGraph.RenderAllCapsGraph(capsScores["All"].Where(x => x.TimeClass == "Blitz").ToList(), 576);
+                Task<string> graphT9 = statsGraph.RenderAllCapsGraph(capsScores["All"].Where(x => x.TimeClass == "Rapid").ToList(), 576);
+
+
                 Task<string> graphT10 = statsGraph.RenderCapsGraph(capsScores["White"].Where(x => x.TimeClass == "Bullet").ToList(),
-                                                                   capsScores["Black"].Where(x => x.TimeClass == "Bullet").ToList(), 3);
+                                                                   capsScores["Black"].Where(x => x.TimeClass == "Bullet").ToList(), 3, height: 1536, maxCapsGames: 28 );
                 Task<string> graphT11 = statsGraph.RenderCapsGraph(capsScores["White"].Where(x => x.TimeClass == "Blitz").ToList(),
-                                                                   capsScores["Black"].Where(x => x.TimeClass == "Blitz").ToList(), 3);
+                                                                   capsScores["Black"].Where(x => x.TimeClass == "Blitz").ToList(), 3, height: 1536, maxCapsGames: 28);
                 Task<string> graphT12 = statsGraph.RenderCapsGraph(capsScores["White"].Where(x => x.TimeClass == "Rapid").ToList(),
-                                                                   capsScores["Black"].Where(x => x.TimeClass == "Rapid").ToList(), 3);
+                                                                   capsScores["Black"].Where(x => x.TimeClass == "Rapid").ToList(), 3, height: 1536, maxCapsGames: 28);
                 Task<string> graphT13 = statsGraph.RenderCapsGraph(capsScores["White"].Where(x => x.TimeClass == "Bullet").ToList(),
-                                                                   capsScores["Black"].Where(x => x.TimeClass == "Bullet").ToList(), 10);
+                                                                   capsScores["Black"].Where(x => x.TimeClass == "Bullet").ToList(), 10, height: 1536, maxCapsGames: 260);
                 Task<string> graphT14 = statsGraph.RenderCapsGraph(capsScores["White"].Where(x => x.TimeClass == "Blitz").ToList(),
-                                                                   capsScores["Black"].Where(x => x.TimeClass == "Blitz").ToList(), 10);
+                                                                   capsScores["Black"].Where(x => x.TimeClass == "Blitz").ToList(), 10, height: 1536, maxCapsGames: 260);
                 Task<string> graphT15 = statsGraph.RenderCapsGraph(capsScores["White"].Where(x => x.TimeClass == "Rapid").ToList(),
-                                                                   capsScores["Black"].Where(x => x.TimeClass == "Rapid").ToList(), 10);
+                                                                   capsScores["Black"].Where(x => x.TimeClass == "Rapid").ToList(), 10, height: 1536, maxCapsGames: 260);
 
                 _ = await Task.WhenAll(graphT1, graphT2, graphT3,
                                        graphT4, graphT5, graphT6,
+                                       graphT7, graphT8, graphT9,
                                        graphT10, graphT11, graphT12,
                                        graphT13, graphT14, graphT15).ConfigureAwait(false);
 
@@ -271,6 +278,10 @@ namespace ChessStats
                 string bulletAvStatsGraphHtmlFragment = graphT4.Result;
                 string blitzAvStatsraphHtmlFragment = graphT5.Result;
                 string rapidAvStatsraphHtmlFragment = graphT6.Result;
+
+                string capsGraphBullet = graphT7.Result;
+                string capsGraphBlitz = graphT8.Result;
+                string capsGraphRapid = graphT9.Result;
 
                 string capsGraphRollingShortBullet = graphT10.Result;
                 string capsGraphRollingShortBlitz = graphT11.Result;
@@ -297,6 +308,7 @@ namespace ChessStats
                                                         playingStatshtmlOut, timePlayedByMonthhtmlOut, userLogoBase64, pawnFragment,
                                                         bulletGraphHtmlFragment, blitzGraphHtmlFragment, rapidGraphHtmlFragment,
                                                         bulletAvStatsGraphHtmlFragment, blitzAvStatsraphHtmlFragment, rapidAvStatsraphHtmlFragment,
+                                                        capsGraphBullet, capsGraphBlitz, capsGraphRapid,
                                                         capsGraphRollingShortBullet, capsGraphRollingShortBlitz, capsGraphRollingShortRapid,
                                                         capsGraphRollingLongBullet, capsGraphRollingLongBlitz, capsGraphRollingLongRapid);
 
@@ -358,6 +370,7 @@ namespace ChessStats
                 ratingsPostGame = null;
                 graphData = null;
                 graphT1 = graphT2 = graphT3 = graphT4 = graphT5 = graphT6 = reportT1 = reportT2 = null;
+                graphT7 = graphT8 = graphT9 = null;
                 graphT10 = graphT11 = graphT12 = graphT13 = graphT14 = graphT15 = null;
                 bulletGraphHtmlFragment = blitzGraphHtmlFragment = rapidGraphHtmlFragment = bulletAvStatsGraphHtmlFragment = blitzAvStatsraphHtmlFragment = rapidAvStatsraphHtmlFragment = null;
 
@@ -444,6 +457,7 @@ namespace ChessStats
                                                           string blitzGraphHtmlFragment, string rapidGraphHtmlFragment,
                                                           string bulletAvStatsGraphHtmlFragment, string blitzAvStatsGraphHtmlFragment,
                                                           string rapidAvStatsGraphHtmlFragment,
+                                                          string capsGraphBullet, string capsGraphBlitz, string capsGraphRapid,
                                                           string capsGraphRollingShortBullet, string capsGraphRollingShortBlitz, string capsGraphRollingShortRapid,
                                                           string capsGraphRollingLongBullet, string capsGraphRollingLongBlitz, string capsGraphRollingLongRapid)
         {
@@ -476,6 +490,26 @@ namespace ChessStats
                            .AppendLine($"</div></div>")
                            .AppendLine($"</div>")
                            .AppendLine($"<div class='onerow'><div class='onecolumn'>")
+                           .AppendLine($"<div class='priority-2'>")
+                           .AppendLine($"<br/><h2>{pawnFragment}Ratings/CAPs/Win Loss Avg.</h2>")
+                           .AppendLine($"<div class='graphRow'>")
+                           .AppendLine($"<div class='graphBox'>{bulletGraphHtmlFragment}</div>")
+                           .AppendLine($"<div class='graphBox'>{blitzGraphHtmlFragment}</div>")
+                           .AppendLine($"<div class='graphBox'>{rapidGraphHtmlFragment}</div>")
+                           .AppendLine($"</div>")
+                           .AppendLine($"<div class='graphRow'>")
+                           .AppendLine($"<div class='graphBox'>{capsGraphBullet}</div>")
+                           .AppendLine($"<div class='graphBox'>{capsGraphBlitz}</div>")
+                           .AppendLine($"<div class='graphBox'>{capsGraphRapid}</div>")
+                           .AppendLine($"</div>")
+                           .AppendLine($"</div>")
+                           .AppendLine($"<div class='priority-2'>")
+                           .AppendLine($"<div class='graphRow'>")
+                           .AppendLine($"<div class='graphBox'>{bulletAvStatsGraphHtmlFragment}</div>")
+                           .AppendLine($"<div class='graphBox'>{blitzAvStatsGraphHtmlFragment}</div>")
+                           .AppendLine($"<div class='graphBox'>{rapidAvStatsGraphHtmlFragment}</div>")
+                           .AppendLine($"</div>")
+                           .AppendLine($"</div>")
                            .AppendLine($"<br/><h2>{pawnFragment}Last 40 Openings</h2>")
                            .AppendLine($"{whiteOpeningsRecenthtmlOut}")
                            .AppendLine($"{blackOpeningsRecenthtmlOut}")
@@ -500,21 +534,6 @@ namespace ChessStats
                            .AppendLine($"<div class='graphBox'>{capsGraphRollingLongBullet}</div>")
                            .AppendLine($"<div class='graphBox'>{capsGraphRollingLongBlitz}</div>")
                            .AppendLine($"<div class='graphBox'>{capsGraphRollingLongRapid}</div>")
-                           .AppendLine($"</div>")
-                           .AppendLine($"</div>")
-                           .AppendLine($"<div class='priority-2'>")
-                           .AppendLine($"<br/><h2>{pawnFragment}Ratings/Win Loss Avg.</h2>")
-                           .AppendLine($"<div class='graphRow'>")
-                           .AppendLine($"<div class='graphBox'>{bulletGraphHtmlFragment}</div>")
-                           .AppendLine($"<div class='graphBox'>{blitzGraphHtmlFragment}</div>")
-                           .AppendLine($"<div class='graphBox'>{rapidGraphHtmlFragment}</div>")
-                           .AppendLine($"</div>")
-                           .AppendLine($"</div>")
-                           .AppendLine($"<div class='priority-2'>")
-                           .AppendLine($"<div class='graphRow'>")
-                           .AppendLine($"<div class='graphBox'>{bulletAvStatsGraphHtmlFragment}</div>")
-                           .AppendLine($"<div class='graphBox'>{blitzAvStatsGraphHtmlFragment}</div>")
-                           .AppendLine($"<div class='graphBox'>{rapidAvStatsGraphHtmlFragment}</div>")
                            .AppendLine($"</div>")
                            .AppendLine($"</div>")
                            .AppendLine($"<br/><h2>{pawnFragment}Stats by Time Control/Month</h2>")

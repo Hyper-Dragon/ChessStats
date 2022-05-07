@@ -15,13 +15,14 @@ namespace ChessStats.Helpers
         private const double MSG_OFFSET_Y = 10;
         private const double CUR_RATING_BAR_HEIGHT = 30;
         private const double GRAPH_LINE_WIDTH = 15;
-        private const double SCALE_LIGHT_HEIGHT = 4;
-        private const double SCALE_HEAVY_HEIGHT = 8;
+        private const double SCALE_MINOR_HEIGHT = 4;
+        private const double SCALE_MAJOR_HEIGHT = 8;
+        private const bool IS_SMOOTH_CAPS = true;
 
         private Colour COL_BKG_GRAD_START = Colour.FromRgba(0, 0, 0, 0);
         private Colour COL_BKG_GRAD_END = Colour.FromRgba(255, 255, 255, 25);
-        private Colour COL_SCALE_HEAVY = Colour.FromRgba(102, 102, 102, 255);
-        private Colour COL_SCALE_LIGHT = Colour.FromRgba(150, 0, 0, 255);
+        private Colour COL_SCALE_MINOR = Colour.FromRgba(76, 76, 75, 255);
+        private Colour COL_SCALE_MAJOR = Colour.FromRgba(99,99,98, 255);
         private Colour COL_CAPS_WHITE = Colour.FromRgba(200, 200, 200, 200);
         private Colour COL_CAPS_BLACK = Colour.FromRgba(255, 127, 39, 175);
         private Colour COL_BAR = Colour.FromRgba(229, 139, 9, 200);
@@ -64,22 +65,51 @@ namespace ChessStats.Helpers
 
         private void WriteNoDataMessage(VectSharp.Graphics gpr, double height)
         {
-            gpr.FillText(new Point(MSG_OFFSET_X, height - fontMessage.MeasureText(NO_DATA_MSG).Height - MSG_OFFSET_Y),
-                         NO_DATA_MSG, fontMessage, COL_FONT_MSG);
+            WriteMessage(gpr, height, NO_DATA_MSG);
         }
 
-        private void WriteRangeMessage(VectSharp.Graphics gpr, double height, string bottomVal = "-", string topVal = "-")
+        private void WriteMessage(VectSharp.Graphics gpr, double height, string message)
         {
-            gpr.FillText(new Point(MSG_OFFSET_X, MSG_OFFSET_Y), topVal, font, COL_FONT);
-            gpr.FillText(new Point(MSG_OFFSET_X, height - font.MeasureText(bottomVal).Height - MSG_OFFSET_Y),
-                                   bottomVal, font, COL_FONT);
+            gpr.FillText(new Point(MSG_OFFSET_X, height - fontMessage.MeasureText(message).Height - MSG_OFFSET_Y),
+                         message, fontMessage, COL_FONT_MSG);
+        }
+
+        private void WriteRangeMessage(VectSharp.Graphics gpr, double height, string bottomVal = "", string topVal = "")
+        {
+            if (!string.IsNullOrEmpty(topVal))
+            {
+                gpr.FillText(new Point(MSG_OFFSET_X, MSG_OFFSET_Y), topVal, font, COL_FONT);
+            }
+            
+            if (!string.IsNullOrEmpty(bottomVal))
+            {
+                gpr.FillText(new Point(MSG_OFFSET_X, height - font.MeasureText(bottomVal).Height - MSG_OFFSET_Y),
+                                 bottomVal, font, COL_FONT);
+            }
+        }
+
+        private void RenderPercentageScale(VectSharp.Graphics gpr, double height, bool showMinorScale = true)
+        {
+            for (double i = 1; i < 10 && showMinorScale ; i++)
+            {
+                gpr.FillRectangle(0, (height / 10 * i) - (SCALE_MINOR_HEIGHT / 2), GraphWidth, SCALE_MINOR_HEIGHT, COL_SCALE_MINOR);
+            }
+
+            gpr.FillRectangle(0, (height / 4 * 1) - (SCALE_MAJOR_HEIGHT / 2), GraphWidth, SCALE_MAJOR_HEIGHT, COL_SCALE_MAJOR);
+            gpr.FillRectangle(0, (height / 4 * 2) - (SCALE_MAJOR_HEIGHT / 2), GraphWidth, SCALE_MAJOR_HEIGHT, COL_SCALE_MAJOR);
+            gpr.FillRectangle(0, (height / 4 * 3) - (SCALE_MAJOR_HEIGHT / 2), GraphWidth, SCALE_MAJOR_HEIGHT, COL_SCALE_MAJOR);
         }
 
         internal async Task<string> RenderCapsGraph(List<CapsRecord> capsScoresWhite, List<CapsRecord> capsScoresBlack,
-                                                    int rollingAv, double height = 768, double maxCapsGames = 100)
+                                                    int rollingAv = 3, double height = 768, double maxCapsGames = 100)
         {
             return await Task<string>.Run(() =>
             {
+                //Make sure the data is sorted correctly
+                capsScoresWhite = capsScoresWhite.OrderBy(item => item.GameDate).TakeLast((int)maxCapsGames).ToList();
+                capsScoresBlack = capsScoresBlack.OrderBy(item => item.GameDate).TakeLast((int)maxCapsGames).ToList();
+
+
                 double[] whiteMovingAv = MovingAverage.CalculateMovingAv(capsScoresWhite.Select(item => item.Caps).ToList<double>(), rollingAv);
                 double[] blackMovingAv = MovingAverage.CalculateMovingAv(capsScoresBlack.Select(item => item.Caps).ToList<double>(), rollingAv);
                 double maxDataPoints = Math.Min(maxCapsGames, Math.Max(whiteMovingAv.Length, blackMovingAv.Length));
@@ -95,15 +125,7 @@ namespace ChessStats.Helpers
                 }
                 else
                 {
-                    for (double i = 1; i < 10; i++)
-                    {
-                        gpr.FillRectangle(0, (height / 10 * i) - (SCALE_LIGHT_HEIGHT / 2), GraphWidth, SCALE_LIGHT_HEIGHT, COL_SCALE_LIGHT);
-                    }
-
-                    gpr.FillRectangle(0, (height / 4 * 1) - (SCALE_HEAVY_HEIGHT / 2), GraphWidth, SCALE_HEAVY_HEIGHT, COL_SCALE_HEAVY);
-                    gpr.FillRectangle(0, (height / 4 * 2) - (SCALE_HEAVY_HEIGHT / 2), GraphWidth, SCALE_HEAVY_HEIGHT, COL_SCALE_HEAVY);
-                    gpr.FillRectangle(0, (height / 4 * 3) - (SCALE_HEAVY_HEIGHT / 2), GraphWidth, SCALE_HEAVY_HEIGHT, COL_SCALE_HEAVY);
-
+                    RenderPercentageScale(gpr, height);
 
                     GraphicsPath gpWhite = new();
                     GraphicsPath gpBlack = new();
@@ -139,14 +161,68 @@ namespace ChessStats.Helpers
 
                     GraphicsPath gpWhiteSmooth = new();
                     _ = gpWhiteSmooth.AddSmoothSpline(gpWhitePoints.ToArray());
-                    gpr.StrokePath(gpWhite, COL_CAPS_WHITE, lineWidth: GRAPH_LINE_WIDTH);
+                    gpr.StrokePath(IS_SMOOTH_CAPS ? gpWhiteSmooth : gpWhite, COL_CAPS_WHITE, lineWidth: GRAPH_LINE_WIDTH);
 
 
                     GraphicsPath gpBlackSmooth = new();
                     _ = gpBlackSmooth.AddSmoothSpline(gpBlackPoints.ToArray());
-                    gpr.StrokePath(gpBlackSmooth, COL_CAPS_BLACK, lineWidth: GRAPH_LINE_WIDTH);
+                    gpr.StrokePath(IS_SMOOTH_CAPS ? gpBlackSmooth : gpBlack, COL_CAPS_BLACK, lineWidth: GRAPH_LINE_WIDTH);
+
+                    WriteMessage(gpr, height, $"* Based on the last {whiteMovingAv.Length}/{blackMovingAv.Length} games with available CAPs scores");
                 }
 
+                return Imaging.GetImageAsHtmlFragment(doc.Pages.First());
+            }).ConfigureAwait(false);
+        }
+
+
+        internal async Task<string> RenderAllCapsGraph(List<CapsRecord> capsScores, double height = 768)
+        {
+            return await Task<string>.Run(() =>
+            {
+                Document doc = CreateDocument(height);
+                VectSharp.Graphics gpr = doc.Pages[0].Graphics;
+
+
+                if (capsScores.Count == 0)
+                {
+                    WriteNoDataMessage(gpr, height);
+                }
+                else
+                {
+                    capsScores = capsScores.OrderBy(item => item.GameDate).ToList();
+                    double RatingStepX = GraphWidth / capsScores.Count;
+                    double RatingStepY = height / 100;
+
+                    RenderPercentageScale(gpr, height, false);
+
+                    DateTime lastDate = DateTime.MinValue;
+                    Colour brush01 = COL_BAR;
+                    Colour brush02 = COL_BAR_ALT;
+                    Colour currentBrush = brush01;
+
+                    for (int loop = 0; loop < capsScores.Count; loop++)
+                    {
+                        //Switch brush when the month changes
+                        if (capsScores[loop].GameDate.Month != lastDate.Month)
+                        {
+                            currentBrush = currentBrush == brush01 ? brush02 : brush01;
+                        }
+
+                        //Draw the bar
+                        if (capsScores[loop].Caps > 0)
+                        {
+                            gpr.FillRectangle(loop * RatingStepX, (100 - capsScores[loop].Caps) * RatingStepY,
+                                              RatingStepX, height - ((100 - capsScores[loop].Caps) * RatingStepY),
+                                              currentBrush);
+                        }
+
+                        lastDate = capsScores[loop].GameDate;
+                    }
+
+                    WriteRangeMessage(gpr, height, "", "100%");
+                }
+                
                 return Imaging.GetImageAsHtmlFragment(doc.Pages.First());
             }).ConfigureAwait(false);
         }
@@ -175,9 +251,9 @@ namespace ChessStats.Helpers
 
                     for (double loopY = graphMax % 100; loopY < (graphMax - graphMin); loopY += 100)
                     {
-                        gpr.FillRectangle(0, (loopY * RatingStepY) - (SCALE_HEAVY_HEIGHT / 2),
-                                          GraphWidth, SCALE_HEAVY_HEIGHT,
-                                          COL_SCALE_HEAVY);
+                        gpr.FillRectangle(0, (loopY * RatingStepY) - (SCALE_MAJOR_HEIGHT / 2),
+                                          GraphWidth, SCALE_MAJOR_HEIGHT,
+                                          COL_SCALE_MAJOR);
                     }
 
                     //Draw Graph
@@ -240,9 +316,9 @@ namespace ChessStats.Helpers
 
                     for (double loopY = graphMax % 100; loopY < (graphMax - graphMin); loopY += 100)
                     {
-                        gpr.FillRectangle(0, (loopY * RatingStepY) - (SCALE_HEAVY_HEIGHT / 2),
-                                          GraphWidth, SCALE_HEAVY_HEIGHT,
-                                          COL_SCALE_HEAVY);
+                        gpr.FillRectangle(0, (loopY * RatingStepY) - (SCALE_MAJOR_HEIGHT / 2),
+                                          GraphWidth, SCALE_MAJOR_HEIGHT,
+                                          COL_SCALE_MAJOR);
                     }
 
                     for (int loop = 0; loop < graphData.Count; loop++)
