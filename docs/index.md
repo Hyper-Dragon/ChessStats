@@ -80,8 +80,10 @@ or just double click the _exe_ and you will be prompted for a Chess.com username
 
 ## Known Issues
 
-* Version 0.7
+* Version 0.8
   * None (yet)
+* Version 0.7
+  * None
 * Version 0.6
   * CAPS scores are not available due to Chess.com site changes
   * Error: An assembly specified in the application dependencies manifest (ChessStats.deps.json) was not found 
