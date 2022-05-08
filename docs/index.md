@@ -30,6 +30,16 @@ or just double click the _exe_ and you will be prompted for a Chess.com username
 
 ## Version History
 
+### Version 0.8 
+* Full CAPS Scores for all games analysed on Chess.com)
+  * All games graph
+  * 3 Game Rolling Average
+  * 10 Game Rolling Average
+* Improved Graph Rendering (.svg)
+* Removed the dependency on libgdiplus (linux only)
+* Changed the report section ordering
+* Added a linux arm build
+ 
 ### Version 0.7
 
 * CAPS scores, limited to the last 20 games, now included
