@@ -17,7 +17,7 @@ chessstats -refresh
 or 
 just double click the _exe_ and you will be prompted for a chess.com username unless the CHESSSTATS_DEFAULT_PARAMS environment veriable is set in which case that will be taken as the default.
 
-### (Linux Only)
+### (Linux Only) Pre v0.8.0
 
 If you receive the following error you are missing 'libgdiplus'.
 <pre>
@@ -30,6 +30,16 @@ To resolve run the following:
 </pre>
 
 ## Version History
+### Version 0.8 
+* Full CAPS Scores for all games analysed on Chess.com)
+  * All games graph
+  * 3 Game Rolling Average
+  * 10 Game Rolling Average
+* Improved Graph Rendering (.svg)
+* Removed the dependency on libgdiplus (linux only)
+* Changed the report section ordering
+* Added a linux arm build
+
 ### Version 0.7 
 * CAPS scores, limited to the last 20 games, now included
 * Openings for the last 40 games table added
