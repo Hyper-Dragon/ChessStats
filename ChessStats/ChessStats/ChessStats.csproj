@@ -32,4 +32,8 @@
     <ProjectReference Include="..\..\..\..\HyperDragon-Forks\ChessDotComSharp\ChessDotComSharp\ChessDotComSharp.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Properties\PublishProfiles\" />
+  </ItemGroup>
+
 </Project>

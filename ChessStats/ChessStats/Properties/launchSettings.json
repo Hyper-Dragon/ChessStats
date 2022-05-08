@@ -2,7 +2,7 @@
   "profiles": {
     "ChessStats": {
       "commandName": "Project",
-      "commandLineArgs": "BaronVonChickenpants"
+      "commandLineArgs": "hyper-dragon"
     },
     "Docker": {
       "commandName": "Docker"
