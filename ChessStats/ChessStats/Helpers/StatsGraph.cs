@@ -138,29 +138,26 @@ namespace ChessStats.Helpers
 
                     if (whiteMovingAv.Length > 1)
                     {
-                        _ = gpWhite.MoveTo(whiteOffsetX, height - (whiteMovingAv[0] * CapsStepY));
-                        gpWhitePoints.Add(new(whiteOffsetX, height - (whiteMovingAv[0] * CapsStepY)));
+                        _ = gpWhite.MoveTo(whiteOffsetX * CapsStepX, height - (whiteMovingAv[0] * CapsStepY));
+                        gpWhitePoints.Add(new(whiteOffsetX * CapsStepX, height - (whiteMovingAv[0] * CapsStepY)));
                     }
 
                     if (blackMovingAv.Length > 1)
                     {
-                        _ = gpBlack.MoveTo(blackOffsetX, height - (blackMovingAv[0] * CapsStepY));
-                        gpBlackPoints.Add(new(blackOffsetX, height - (blackMovingAv[0] * CapsStepY)));
+                        _ = gpBlack.MoveTo(blackOffsetX * CapsStepX, height - (blackMovingAv[0] * CapsStepY));
+                        gpBlackPoints.Add(new(blackOffsetX * CapsStepX, height - (blackMovingAv[0] * CapsStepY)));
                     }
 
-                    for (int loopY = 1; loopY < maxDataPoints - 1; loopY++)
-                    {
-                        if (loopY < whiteMovingAv.Length - 1)
-                        {
-                            _ = gpWhite.LineTo((loopY+whiteOffsetX) * CapsStepX, height - (whiteMovingAv[loopY] * CapsStepY));
-                            gpWhitePoints.Add(new((loopY+whiteOffsetX) * CapsStepX, height - (whiteMovingAv[loopY] * CapsStepY)));
-                        }
+                    for (int loopY = 1; loopY < whiteMovingAv.Length - 1 ; loopY++)
+                    { 
+                            _ = gpWhite.LineTo((loopY + whiteOffsetX) * CapsStepX, height - (whiteMovingAv[loopY] * CapsStepY));
+                            gpWhitePoints.Add(new((loopY + whiteOffsetX) * CapsStepX, height - (whiteMovingAv[loopY] * CapsStepY)));
+                    }
 
-                        if (loopY < blackMovingAv.Length - 1)
-                        {
-                            _ = gpBlack.LineTo((loopY+blackOffsetX) * CapsStepX, height - (blackMovingAv[loopY] * CapsStepY));
-                            gpBlackPoints.Add(new((loopY+blackOffsetX) * CapsStepX, height - (blackMovingAv[loopY] * CapsStepY)));
-                        }
+                    for (int loopY = 1; loopY < blackMovingAv.Length - 1; loopY++)
+                    {
+                            _ = gpBlack.LineTo((loopY + blackOffsetX) * CapsStepX, height - (blackMovingAv[loopY] * CapsStepY));
+                            gpBlackPoints.Add(new((loopY + blackOffsetX) * CapsStepX, height - (blackMovingAv[loopY] * CapsStepY)));
                     }
 
                     GraphicsPath gpWhiteSmooth = new();
