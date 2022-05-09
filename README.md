@@ -89,7 +89,7 @@ To resolve run the following:
 * [ChessDotComSharp](https://github.com/nullablebool/ChessDotComSharp) @nullablebool
 * Chess.com Api
 * ~~Chess.com website HTML for CAPs extraction (broken)~~
-* Chess.com undocumented endpoint for CAPs extraction (last 20 games only)
+* ~~Chess.com undocumented endpoint for CAPs extraction (last 20 games only)~~
 * [Project Site](https://hyper-dragon.github.io/ChessStats/) 
 
 ## Acknowledgements
@@ -99,7 +99,7 @@ To resolve run the following:
 * Thanks to chess.com user _NefariousNebula_ for highlighting the (undocumented) CAPS endpoint
 
 ## Saying Thank You
-If you find this useful and want to say thanks [just send me a fun trophy or two or three](https://www.chess.com/member/hyper-dragon) over on chess.com :smiley:
+If you find this useful and want to say thanks [just send me a fun trophy or two or three](https://www.chess.com/member/hyper-dragon) over on chess.com :smiley: If you find it really useful then consider hitting the donate button at the top of the page.
 
 ## Example Output (HTML)
 ![Sample Report](./HtmlReportExample3.png)
