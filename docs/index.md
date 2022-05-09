@@ -107,4 +107,4 @@ If you find this useful and want to say thanks [just send me a fun trophy or two
 
 ## Example Output (HTML)
 
-![Sample Report](https://github.com/Hyper-Dragon/ChessStats/blob/1359e35366104753e3e16c4e41e228175401bae2/HtmlReportExample3.png)
+![Sample Report](assets/images/SampleReport.png)
