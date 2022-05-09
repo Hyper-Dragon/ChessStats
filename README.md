@@ -31,7 +31,7 @@ To resolve run the following:
 
 ## Version History
 ### Version 0.8 
-* Full CAPS Scores for all games analysed on Chess.com)
+* Full CAPS Scores for all games analysed on Chess.com
   * All games graph
   * 3 Game Rolling Average
   * 10 Game Rolling Average
