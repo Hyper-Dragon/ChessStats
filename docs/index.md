@@ -30,6 +30,16 @@ or just double click the _exe_ and you will be prompted for a Chess.com username
 
 ## Version History
 
+### Version 0.8 
+* Full CAPS Scores for all games analysed on Chess.com)
+  * All games graph
+  * 3 Game Rolling Average
+  * 10 Game Rolling Average
+* Improved Graph Rendering (.svg)
+* Removed the dependency on libgdiplus (linux only)
+* Changed the report section ordering
+* Added a linux arm build
+ 
 ### Version 0.7
 
 * CAPS scores, limited to the last 20 games, now included
@@ -70,8 +80,10 @@ or just double click the _exe_ and you will be prompted for a Chess.com username
 
 ## Known Issues
 
-* Version 0.7
+* Version 0.8
   * None (yet)
+* Version 0.7
+  * None
 * Version 0.6
   * CAPS scores are not available due to Chess.com site changes
   * Error: An assembly specified in the application dependencies manifest (ChessStats.deps.json) was not found 
@@ -95,4 +107,4 @@ If you find this useful and want to say thanks [just send me a fun trophy or two
 
 ## Example Output (HTML)
 
-![Sample Report](https://raw.githubusercontent.com/Hyper-Dragon/ChessStats/master/HtmlReportExample3.png)
+![Sample Report](https://github.com/Hyper-Dragon/ChessStats/blob/728b8a3f71159d682b3289080f8c4cf531115e49/HtmlReportExample3.png)
