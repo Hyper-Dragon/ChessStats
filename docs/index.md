@@ -31,7 +31,7 @@ or just double click the _exe_ and you will be prompted for a Chess.com username
 ## Version History
 
 ### Version 0.8 
-* Full CAPS Scores for all games analysed on Chess.com)
+* Full CAPS Scores for all games analysed on Chess.com
   * All games graph
   * 3 Game Rolling Average
   * 10 Game Rolling Average
@@ -107,4 +107,4 @@ If you find this useful and want to say thanks [just send me a fun trophy or two
 
 ## Example Output (HTML)
 
-![Sample Report](https://github.com/Hyper-Dragon/ChessStats/blob/728b8a3f71159d682b3289080f8c4cf531115e49/HtmlReportExample3.png)
+![Sample Report](https://github.com/Hyper-Dragon/ChessStats/blob/1359e35366104753e3e16c4e41e228175401bae2/HtmlReportExample3.png)
