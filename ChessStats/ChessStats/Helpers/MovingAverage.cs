@@ -5,11 +5,11 @@ namespace ChessStats.Helpers
 {
     internal class MovingAverage
     {
-        private readonly int _k;
-        private readonly double[] _values;
+        private readonly int rollingAv;
+        private readonly double[] values;
 
-        private int _index = 0;
-        private double _sum = 0;
+        private int index = 0;
+        private double total = 0;
 
         public MovingAverage(int k)
         {
@@ -18,23 +18,17 @@ namespace ChessStats.Helpers
                 throw new ArgumentOutOfRangeException(nameof(k), "Must be greater than 0");
             }
 
-            _k = k;
-            _values = new double[k];
+            rollingAv = k;
+            values = new double[k];
         }
 
         public double Update(double nextInput)
         {
-            // calculate the new sum
-            _sum = _sum - _values[_index] + nextInput;
+            total = total - values[index] + nextInput;
+            values[index] = nextInput;
+            index = (index + 1) % rollingAv;
 
-            // overwrite the old value with the new one
-            _values[_index] = nextInput;
-
-            // increment the index (wrapping back to 0)
-            _index = (_index + 1) % _k;
-
-            // calculate the average
-            return _sum / _k;
+            return total / rollingAv;
         }
 
         public static double[] CalculateMovingAv(List<double> values, int k)
@@ -42,15 +36,15 @@ namespace ChessStats.Helpers
             MovingAverage movingAv = new(k);
             List<double> movingAvOut = new();
 
-            for (int i = 0; i < values.Count; i++)
+            for (int loop = 0; loop < values.Count; loop++)
             {
-                if (i < k)
+                if (loop < k)
                 {
-                    _ = movingAv.Update(values[i]);
+                    _ = movingAv.Update(values[loop]);
                 }
                 else
                 {
-                    movingAvOut.Add(movingAv.Update(values[i]));
+                    movingAvOut.Add(movingAv.Update(values[loop]));
                 }
             }
 
