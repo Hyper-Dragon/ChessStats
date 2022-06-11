@@ -52,7 +52,7 @@ namespace ChessStats.Helpers
         {
             Document doc = new();
             doc.Pages.Add(new(GraphWidth, height));
-
+            
             LinearGradientBrush bkgBrush = new(new Point(0, 0),
                                                          new Point(GraphWidth, height),
                                                          new GradientStop(COL_BKG_GRAD_START, 0),
