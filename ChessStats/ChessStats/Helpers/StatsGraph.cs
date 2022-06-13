@@ -37,15 +37,17 @@ namespace ChessStats.Helpers
         public double GraphWidth { get; private set; }
         public float TextSize { get; private set; }
         public float TextSizeMsg { get; private set; }
+        public double GameTypeDivisor { get; private set; }
 
-        internal StatsGraph(double width = 3840, float textSize = 140, float textSizeMsg = 100)
+        internal StatsGraph(double width = 3840, float textSize = 140, float textSizeMsg = 100, int gameModesPlayed = 0)
         {
             TextSize = textSize;
             TextSizeMsg = textSizeMsg;
             GraphWidth = width;
+            GameTypeDivisor = (4 - (gameModesPlayed == 0 ? 3 : gameModesPlayed)); ;
 
-            font = new(FontFamily.ResolveFontFamily(FontFamily.StandardFontFamilies.TimesRoman), TextSize);
-            fontMessage = new(FontFamily.ResolveFontFamily(FontFamily.StandardFontFamilies.TimesItalic), TextSizeMsg);
+            font = new(FontFamily.ResolveFontFamily(FontFamily.StandardFontFamilies.TimesRoman), TextSize/GameTypeDivisor);
+            fontMessage = new(FontFamily.ResolveFontFamily(FontFamily.StandardFontFamilies.TimesItalic), TextSizeMsg/GameTypeDivisor);
         }
 
         private Document CreateDocument(double height)
@@ -105,6 +107,8 @@ namespace ChessStats.Helpers
         {
             return await Task<string>.Run(() =>
             {
+                height /= GameTypeDivisor;
+                
                 //Make sure the data is sorted correctly
                 capsScoresWhite = capsScoresWhite.OrderBy(item => item.GameDate).TakeLast((int)maxCapsGames).ToList();
                 capsScoresBlack = capsScoresBlack.OrderBy(item => item.GameDate).TakeLast((int)maxCapsGames).ToList();
@@ -181,6 +185,7 @@ namespace ChessStats.Helpers
         {
             return await Task<string>.Run(() =>
             {
+                height /= GameTypeDivisor;
                 Document doc = CreateDocument(height);
                 VectSharp.Graphics gpr = doc.Pages[0].Graphics;
 
@@ -229,11 +234,12 @@ namespace ChessStats.Helpers
             }).ConfigureAwait(false);
         }
 
-        internal async Task<string> RenderRatingGraph(List<(DateTime gameDate, int rating,
-                                                      string gameType)> ratingsPostGame, double height = 1920)
+        internal async Task<string> RenderRatingGraph(List<(DateTime gameDate, int rating, string gameType)> ratingsPostGame, 
+                                                      double height = 1920)
         {
             return await Task<string>.Run(() =>
             {
+                height /= GameTypeDivisor;
                 Document doc = CreateDocument(height);
                 VectSharp.Graphics gpr = doc.Pages[0].Graphics;
 
@@ -293,11 +299,13 @@ namespace ChessStats.Helpers
             }).ConfigureAwait(false);
         }
 
-        internal async Task<string> RenderAverageStatsGraph(List<(string TimeControl, int VsMin, int Worst, int LossAv, int DrawAv,
-                                                            int WinAv, int Best, int VsMax)> graphData, double height = 1280)
+        internal async Task<string> RenderAverageStatsGraph(List<(string TimeControl, int VsMin, int Worst, int LossAv, int DrawAv, int WinAv, int Best, int VsMax)> graphData,
+                                                            double height = 1280)
         {
             return await Task<string>.Run(() =>
             {
+                height /= ((double)GameTypeDivisor);
+                
                 int graphMinCalc = graphData.Where(x => x.WinAv != 0 && x.LossAv != 0).Select(x => x.WinAv).DefaultIfEmpty(0).Min();
                 int graphMaxCalc = graphData.Where(x => x.WinAv != 0 && x.LossAv != 0).Select(x => x.LossAv).DefaultIfEmpty(0).Max();
 

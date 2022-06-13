@@ -16,8 +16,8 @@ namespace ChessStats
 {
     internal class Program
     {
-        private const string VERSION_NUMBER = "0.8.0";
-        private const string RELEEASE_DATE = "05/2022";
+        private const string VERSION_NUMBER = "0.8.1";
+        private const string RELEEASE_DATE = "06/2022";
         private const string RESULTS_DIR_NAME = "ChessStatsResults";
         private const string CACHE_DIR_NAME = "ChessStatsCache";
         private const string CACHE_VERSION_NUMBER = "2";
@@ -237,11 +237,11 @@ namespace ChessStats
                 // *************
                 Helpers.StatsConsole.StartTimedSection($">>Rendering Graphs");
 
-                StatsGraph statsGraph = new();
+                StatsGraph statsGraph = new(gameModesPlayed: ((userStats.ChessBullet is null ? 0 : 1) + (userStats.ChessBlitz is null ? 0 : 1) + (userStats.ChessRapid is null ? 0 : 1)));
 
                 Task<string> graphT1 = statsGraph.RenderRatingGraph(ratingsPostGame.Where(x => x.gameType == "Bullet").ToList());
-                Task<string> graphT2 = statsGraph.RenderRatingGraph(ratingsPostGame.Where(x => x.gameType == "Blitz").ToList());
-                Task<string> graphT3 = statsGraph.RenderRatingGraph(ratingsPostGame.Where(x => x.gameType == "Rapid").ToList());
+                Task<string> graphT2 = statsGraph.RenderRatingGraph(ratingsPostGame.Where(x => x.gameType == "Blitz").ToList() );
+                Task<string> graphT3 = statsGraph.RenderRatingGraph(ratingsPostGame.Where(x => x.gameType == "Rapid").ToList() );
 
                 Task<string> graphT4 = statsGraph.RenderAverageStatsGraph(graphData.Where(x => x.TimeControl.Contains("Bullet", StringComparison.InvariantCultureIgnoreCase)).OrderBy(x => x.TimeControl).ToList());
                 Task<string> graphT5 = statsGraph.RenderAverageStatsGraph(graphData.Where(x => x.TimeControl.Contains("Blitz", StringComparison.InvariantCultureIgnoreCase)).OrderBy(x => x.TimeControl).ToList());
@@ -249,8 +249,8 @@ namespace ChessStats
 
 
                 Task<string> graphT7 = statsGraph.RenderAllCapsGraph(capsScores["All"].Where(x => x.TimeClass == "Bullet").ToList(), 576);
-                Task<string> graphT8 = statsGraph.RenderAllCapsGraph(capsScores["All"].Where(x => x.TimeClass == "Blitz").ToList(), 576);
-                Task<string> graphT9 = statsGraph.RenderAllCapsGraph(capsScores["All"].Where(x => x.TimeClass == "Rapid").ToList(), 576);
+                Task<string> graphT8 = statsGraph.RenderAllCapsGraph(capsScores["All"].Where(x => x.TimeClass == "Blitz").ToList() , 576);
+                Task<string> graphT9 = statsGraph.RenderAllCapsGraph(capsScores["All"].Where(x => x.TimeClass == "Rapid").ToList() , 576);
 
 
                 Task<string> graphT10 = statsGraph.RenderCapsGraph(capsScores["White"].Where(x => x.TimeClass == "Bullet").ToList(),
@@ -535,32 +535,30 @@ namespace ChessStats
 
                            
                 .AppendLine($"      </div>")
-                //.AppendLine($"      <div class='graphRow'>")
-                //
-                //
-                //
-                //
-                //.AppendLine((userStats.ChessBullet == null ? "        <!--Not Played-->" : $"        <div class='graphBox'>{capsGraphBullet}</div>"))
-                //.AppendLine((userStats.ChessBlitz  == null ? "        <!--Not Played-->" : $"        <div class='graphBox'>{capsGraphBlitz}</div>"))
-                //.AppendLine((userStats.ChessRapid  == null ? "        <!--Not Played-->" : $"        <div class='graphBox'>{capsGraphRapid}</div>"))
-                //
-                //
-                //
-                //.AppendLine($"      </div>")
-                //.AppendLine($"      <div class='graphRow'>")
-                //
-                //
-                //
-                //.AppendLine((userStats.ChessBullet == null ? "        <!--Not Played-->" : $"        <div class='graphBox'>{bulletAvStatsGraphHtmlFragment}</div>"))
-                //.AppendLine((userStats.ChessBlitz  == null ? "        <!--Not Played-->" : $"        <div class='graphBox'>{blitzAvStatsGraphHtmlFragment}</div>"))
-                //.AppendLine((userStats.ChessRapid  == null ? "        <!--Not Played-->" : $"        <div class='graphBox'>{rapidAvStatsGraphHtmlFragment}</div>"))
-                //
-                //
-                //
-                //
-                //
-                //
-                //.AppendLine($"      </div>")
+                .AppendLine($"      <div class='graphRow'>")
+                
+                
+                .AppendLine((userStats.ChessBullet == null ? "        <!--Not Played-->" : $"        <div class='graphBox'>{capsGraphBullet}</div>"))
+                .AppendLine((userStats.ChessBlitz  == null ? "        <!--Not Played-->" : $"        <div class='graphBox'>{capsGraphBlitz}</div>"))
+                .AppendLine((userStats.ChessRapid  == null ? "        <!--Not Played-->" : $"        <div class='graphBox'>{capsGraphRapid}</div>"))
+                
+                
+                
+                .AppendLine($"      </div>")
+                .AppendLine($"      <div class='graphRow'>")
+                
+                
+                
+                .AppendLine((userStats.ChessBullet == null ? "        <!--Not Played-->" : $"        <div class='graphBox'>{bulletAvStatsGraphHtmlFragment}</div>"))
+                .AppendLine((userStats.ChessBlitz  == null ? "        <!--Not Played-->" : $"        <div class='graphBox'>{blitzAvStatsGraphHtmlFragment}</div>"))
+                .AppendLine((userStats.ChessRapid  == null ? "        <!--Not Played-->" : $"        <div class='graphBox'>{rapidAvStatsGraphHtmlFragment}</div>"))
+                
+                
+                
+                
+                
+                
+                .AppendLine($"      </div>")
                 .AppendLine($"    </div>")
                 .AppendLine($"  </div>")
                 .AppendLine($"</div>")

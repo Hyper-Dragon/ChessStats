@@ -57,12 +57,9 @@ namespace ChessStats.Helpers
                           .AppendLine($"      .ratingRow                                                    {{display: grid;grid-template-columns: {string.Join(" ","auto auto auto".Split(" ").Take(controlsPlayed))} ;grid-gap: 20px;padding: 10px;}}")
                           .AppendLine("      .ratingRow > div                                              {font-family: Montserrat; font-weight: 700; text-align: center;  padding: 0px;  color: whitesmoke;  font-size: 15px;  font-weight: bold;}")
                           .AppendLine("      .ratingBox                                                    {cursor: pointer;}")
-                        
                           .AppendLine($"      .graphRow                                                     {{display: grid;grid-template-columns: {string.Join(" ", "auto auto auto".Split(" ").Take(controlsPlayed))} ;grid-gap: 10px;padding: 5px;}}")
                           .AppendLine("      .graphRow > div                                               {font-family: Montserrat; font-weight: 700; text-align: center;  padding: 0px;  color: whitesmoke;  font-size: 15px;  font-weight: bold;}")
-
-                          .AppendLine("      .graphBox img                                                 { min-width:100%; width:100%; height: 100px; object-fit: fill; }")
- 
+                          .AppendLine("      .graphBox img                                                 { width:100%; height:auto; object-fit: cover; }")
                           .AppendLine("      .graphCapsRow                                                 {display: grid;grid-template-columns: 60% auto;grid-gap: 10px;padding: 5px;}")
                           .AppendLine("      .graphCapsRow>div                                             {font-family: Montserrat;font-weight: 700;text-align: center;padding: 0px;color: whitesmoke;font-size: 15px;font-weight: bold;}")
                           .AppendLine("      .graphCapsBox img                                             {max-width: 100%; width: auto;height: auto;}")  
