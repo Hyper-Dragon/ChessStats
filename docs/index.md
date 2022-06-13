@@ -107,7 +107,7 @@ For more information, please refer to [unlicense.org](https://unlicense.org).
 
 ## Saying Thank You
 
-If you find this useful and want to say thanks [just send me a fun trophy or two or three](https://www.chess.com/member/hyper-dragon) over on chess.com.  If you find it really useful then consider hitting the donate button at the top of the page.
+If you find this useful and want to say thanks [just send me a fun trophy or two or three](https://www.chess.com/member/hyper-dragon) over on chess.com.  If you find it really useful then consider hitting the [donate](https://github.com/sponsors/Hyper-Dragon) button at the top of the page.
 
 ## Example Output (HTML)
 
