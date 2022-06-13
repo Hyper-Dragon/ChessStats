@@ -81,6 +81,8 @@ To resolve run the following:
     * These are available for games that have been analysed on the chess.com website (games with no analysis are marked with '-' on ingest). 
     
 ## Known Issues
+* Version 0.8.x
+    * None
 * Version 0.7.x
     * The 'Last 40 Openings' section only displays the top 15 for black and white...so the totals may not add up to 40!
 * Version 0.6
