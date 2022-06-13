@@ -10,7 +10,7 @@ Personally, I sync my ChessStats folder with dropbox so I can read the reports d
 
 ## Installation
 
-Download the latest version from the [Releases](https://github.com/Hyper-Dragon/ChessStats/releases) page, extract _ChessStats.exe_ and put it where you want it to go.  **Note that the cache and reporting directories are created relative to the executable's location**.
+Download the latest version from the [Releases](https://github.com/Hyper-Dragon/ChessStats/releases) page, extract _ChessStats.exe_/_ChessStats_ and put it where you want it to go.  **Note that the cache and reporting directories are created relative to the executable's location**.
 
 ## Usage
 
