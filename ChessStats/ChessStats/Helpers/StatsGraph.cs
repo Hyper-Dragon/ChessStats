@@ -41,13 +41,14 @@ namespace ChessStats.Helpers
 
         internal StatsGraph(double width = 3840, float textSize = 140, float textSizeMsg = 100, int gameModesPlayed = 0)
         {
-            TextSize = textSize;
-            TextSizeMsg = textSizeMsg;
+            GameTypeDivisor = (4 - (gameModesPlayed == 0 ? 3 : gameModesPlayed));
+            TextSize = textSize/(float)GameTypeDivisor;
+            TextSizeMsg = textSizeMsg / (float)GameTypeDivisor;
             GraphWidth = width;
-            GameTypeDivisor = (4 - (gameModesPlayed == 0 ? 3 : gameModesPlayed)); ;
+            
 
-            font = new(FontFamily.ResolveFontFamily(FontFamily.StandardFontFamilies.TimesRoman), TextSize/GameTypeDivisor);
-            fontMessage = new(FontFamily.ResolveFontFamily(FontFamily.StandardFontFamilies.TimesItalic), TextSizeMsg/GameTypeDivisor);
+            font = new(FontFamily.ResolveFontFamily(FontFamily.StandardFontFamilies.TimesRoman), TextSize);
+            fontMessage = new(FontFamily.ResolveFontFamily(FontFamily.StandardFontFamilies.TimesItalic), TextSizeMsg);
         }
 
         private Document CreateDocument(double height)
@@ -166,12 +167,12 @@ namespace ChessStats.Helpers
 
                     GraphicsPath gpWhiteSmooth = new();
                     _ = gpWhiteSmooth.AddSmoothSpline(gpWhitePoints.ToArray());
-                    gpr.StrokePath(IS_SMOOTH_CAPS ? gpWhiteSmooth : gpWhite, COL_CAPS_WHITE, lineWidth: GRAPH_LINE_WIDTH);
+                    gpr.StrokePath(IS_SMOOTH_CAPS ? gpWhiteSmooth : gpWhite, COL_CAPS_WHITE, lineWidth: GRAPH_LINE_WIDTH/GameTypeDivisor);
 
 
                     GraphicsPath gpBlackSmooth = new();
                     _ = gpBlackSmooth.AddSmoothSpline(gpBlackPoints.ToArray());
-                    gpr.StrokePath(IS_SMOOTH_CAPS ? gpBlackSmooth : gpBlack, COL_CAPS_BLACK, lineWidth: GRAPH_LINE_WIDTH);
+                    gpr.StrokePath(IS_SMOOTH_CAPS ? gpBlackSmooth : gpBlack, COL_CAPS_BLACK, lineWidth: GRAPH_LINE_WIDTH/GameTypeDivisor);
 
                     WriteMessage(gpr, height, $"* Based on the last {whiteMovingAv.Length}/{blackMovingAv.Length} games with available CAPs scores");
                 }
@@ -289,8 +290,8 @@ namespace ChessStats.Helpers
 
                     WriteRangeMessage(gpr, height, $"{graphMin}", $"{graphMax}");
 
-                    gpr.FillRectangle(0, ((graphMax - ratingsPostGameOrdered[^1].rating) * RatingStepY) - (CUR_RATING_BAR_HEIGHT / 2),
-                                      GraphWidth, CUR_RATING_BAR_HEIGHT,
+                    gpr.FillRectangle(0, ((graphMax - ratingsPostGameOrdered[^1].rating) * RatingStepY) - ((CUR_RATING_BAR_HEIGHT / GameTypeDivisor) / 2),
+                                      GraphWidth, CUR_RATING_BAR_HEIGHT / GameTypeDivisor,
                                       COL_RATING);
                 }
 
