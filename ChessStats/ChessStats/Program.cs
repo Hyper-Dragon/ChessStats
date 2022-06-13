@@ -16,8 +16,8 @@ namespace ChessStats
 {
     internal class Program
     {
-        private const string VERSION_NUMBER = "0.8.0";
-        private const string RELEEASE_DATE = "05/2022";
+        private const string VERSION_NUMBER = "0.8.1";
+        private const string RELEEASE_DATE = "06/2022";
         private const string RESULTS_DIR_NAME = "ChessStatsResults";
         private const string CACHE_DIR_NAME = "ChessStatsCache";
         private const string CACHE_VERSION_NUMBER = "2";
@@ -237,11 +237,11 @@ namespace ChessStats
                 // *************
                 Helpers.StatsConsole.StartTimedSection($">>Rendering Graphs");
 
-                StatsGraph statsGraph = new();
+                StatsGraph statsGraph = new(gameModesPlayed: ((userStats.ChessBullet is null ? 0 : 1) + (userStats.ChessBlitz is null ? 0 : 1) + (userStats.ChessRapid is null ? 0 : 1)));
 
                 Task<string> graphT1 = statsGraph.RenderRatingGraph(ratingsPostGame.Where(x => x.gameType == "Bullet").ToList());
-                Task<string> graphT2 = statsGraph.RenderRatingGraph(ratingsPostGame.Where(x => x.gameType == "Blitz").ToList());
-                Task<string> graphT3 = statsGraph.RenderRatingGraph(ratingsPostGame.Where(x => x.gameType == "Rapid").ToList());
+                Task<string> graphT2 = statsGraph.RenderRatingGraph(ratingsPostGame.Where(x => x.gameType == "Blitz").ToList() );
+                Task<string> graphT3 = statsGraph.RenderRatingGraph(ratingsPostGame.Where(x => x.gameType == "Rapid").ToList() );
 
                 Task<string> graphT4 = statsGraph.RenderAverageStatsGraph(graphData.Where(x => x.TimeControl.Contains("Bullet", StringComparison.InvariantCultureIgnoreCase)).OrderBy(x => x.TimeControl).ToList());
                 Task<string> graphT5 = statsGraph.RenderAverageStatsGraph(graphData.Where(x => x.TimeControl.Contains("Blitz", StringComparison.InvariantCultureIgnoreCase)).OrderBy(x => x.TimeControl).ToList());
@@ -249,8 +249,8 @@ namespace ChessStats
 
 
                 Task<string> graphT7 = statsGraph.RenderAllCapsGraph(capsScores["All"].Where(x => x.TimeClass == "Bullet").ToList(), 576);
-                Task<string> graphT8 = statsGraph.RenderAllCapsGraph(capsScores["All"].Where(x => x.TimeClass == "Blitz").ToList(), 576);
-                Task<string> graphT9 = statsGraph.RenderAllCapsGraph(capsScores["All"].Where(x => x.TimeClass == "Rapid").ToList(), 576);
+                Task<string> graphT8 = statsGraph.RenderAllCapsGraph(capsScores["All"].Where(x => x.TimeClass == "Blitz").ToList() , 576);
+                Task<string> graphT9 = statsGraph.RenderAllCapsGraph(capsScores["All"].Where(x => x.TimeClass == "Rapid").ToList() , 576);
 
 
                 Task<string> graphT10 = statsGraph.RenderCapsGraph(capsScores["White"].Where(x => x.TimeClass == "Bullet").ToList(),
@@ -467,7 +467,12 @@ namespace ChessStats
             {
                 StringBuilder htmlOut = new();
 
-                _ = htmlOut.Append(Helpers.StatsHtml.GetHtmlTop($"ChessStats for {chessdotcomUsername}", bkgImageBase64, favIconBase64, font700Fragment, font800Fragment))
+                int timeControlsPlayed = (userStats.ChessBullet is null ? 0 : 1) +
+                                         (userStats.ChessBlitz is null ? 0 : 1) +
+                                         (userStats.ChessRapid is null ? 0 : 1);
+
+                _ = htmlOut.Append(Helpers.StatsHtml.GetHtmlTop($"ChessStats for {chessdotcomUsername}", bkgImageBase64, favIconBase64, 
+                                   font700Fragment, font800Fragment, (timeControlsPlayed==0?3:timeControlsPlayed)))
                            .AppendLine($"<div class='headRow'>")
                            .AppendLine($"  <div class='headBox priority-2'>")
                            .AppendLine($"    <a href='{userRecord.Url}'><img width='200px' height='200px' alt='logo' src='data:image/png;base64,{userLogoBase64}'/></a>")
@@ -476,73 +481,116 @@ namespace ChessStats
                            .AppendLine($"    <h1>Live Games <div class='priority-3'>Summary</div>For <a class='headerLink' href='{userRecord.Url}'>{chessdotcomUsername}</a><br/><div class='priority-2'>On {DateTime.UtcNow.ToShortDateString()}&nbsp;<small class='priority-3'>({DateTime.UtcNow.ToShortTimeString()} UTC)</small></div></h1>")
                            .AppendLine($"  </div>")
                            .AppendLine($"</div>")
-                           .AppendLine($"<div class='ratingRow'>")
-                           .AppendLine($"  <div class='ratingBox'>")
-                           .AppendLine($"    <div class='item1 {((userStats.ChessBullet != null) ? "active" : "inactive")}' onclick=\"window.location.href='{STATS_BASE_URL}/live/bullet/{chessdotcomUsername}'\">")
-                           .AppendLine($"      Bullet {Helpers.StatsConsole.ValueOrDash(userStats.ChessBullet?.Last.Rating)}<br/><span class='priority-2'>(Gliko RD&nbsp;{Helpers.StatsConsole.ValueOrDash(userStats.ChessBullet?.Last.GlickoRd)})<br/></span>{((userStats.ChessBullet == null) ? "-" : userStats.ChessBullet?.Last.Date.ToShortDateString())}")
-                           .AppendLine($"    </div>")
-                           .AppendLine($"  </div>")
-                           .AppendLine($"  <div class='ratingBox'>")
-                           .AppendLine($"    <div class='item2 {((userStats.ChessBlitz != null) ? "active" : "inactive")}' onclick=\"window.location.href='{STATS_BASE_URL}/live/blitz/{chessdotcomUsername}'\">")
-                           .AppendLine($"      Blitz {Helpers.StatsConsole.ValueOrDash(userStats.ChessBlitz?.Last.Rating)}<br/><span class='priority-2'>(Gliko RD&nbsp;{Helpers.StatsConsole.ValueOrDash(userStats.ChessBlitz?.Last.GlickoRd)})<br/></span>{((userStats.ChessBlitz == null) ? "-" : userStats.ChessBlitz?.Last.Date.ToShortDateString())}")
-                           .AppendLine($"    </div></div>")
-                           .AppendLine($"    <div class='ratingBox'>")
-                           .AppendLine($"      <div class='item3 {((userStats.ChessRapid != null) ? "active" : "inactive")}' onclick=\"window.location.href='{STATS_BASE_URL}/live/rapid/{chessdotcomUsername}'\">")
-                           .AppendLine($"        Rapid {Helpers.StatsConsole.ValueOrDash(userStats.ChessRapid?.Last.Rating)}<br/><span class='priority-2'>(Gliko RD&nbsp;{Helpers.StatsConsole.ValueOrDash(userStats.ChessRapid?.Last.GlickoRd)})<br/></span>{((userStats.ChessRapid == null) ? "-" : userStats.ChessRapid?.Last.Date.ToShortDateString())}")
-                           .AppendLine($"    </div>")
-                           .AppendLine($"  </div>")
-                           .AppendLine($"</div>")
-                           .AppendLine($"<div class='onerow'>")
-                           .AppendLine($"  <div class='onecolumn'>")
-                           .AppendLine($"    <div class='priority-2'>")
-                           .AppendLine($"      <br/><h2>{pawnFragment}Ratings/CAPs/Win Loss Avg.</h2>")
-                           .AppendLine($"      <div class='graphRow'>")
-                           .AppendLine($"        <div class='graphBox'>{bulletGraphHtmlFragment}</div>")
-                           .AppendLine($"        <div class='graphBox'>{blitzGraphHtmlFragment}</div>")
-                           .AppendLine($"        <div class='graphBox'>{rapidGraphHtmlFragment}</div>")
-                           .AppendLine($"      </div>")
-                           .AppendLine($"      <div class='graphRow'>")
-                           .AppendLine($"        <div class='graphBox'>{capsGraphBullet}</div>")
-                           .AppendLine($"        <div class='graphBox'>{capsGraphBlitz}</div>")
-                           .AppendLine($"        <div class='graphBox'>{capsGraphRapid}</div>")
-                           .AppendLine($"      </div>")
-                           .AppendLine($"      <div class='graphRow'>")
-                           .AppendLine($"        <div class='graphBox'>{bulletAvStatsGraphHtmlFragment}</div>")
-                           .AppendLine($"        <div class='graphBox'>{blitzAvStatsGraphHtmlFragment}</div>")
-                           .AppendLine($"        <div class='graphBox'>{rapidAvStatsGraphHtmlFragment}</div>")
-                           .AppendLine($"      </div>")
-                           .AppendLine($"    </div>")
-                           .AppendLine($"  </div>")
-                           .AppendLine($"</div>")
-                           .AppendLine($"<br/><h2>{pawnFragment}Last 40 Openings</h2>")
-                           .AppendLine($"{whiteOpeningsRecenthtmlOut}")
-                           .AppendLine($"{blackOpeningsRecenthtmlOut}")
-                           .AppendLine($"<br/><h2>{pawnFragment}All Openings (Max 15)</h2>")
-                           .AppendLine($"{whiteOpeningshtmlOut}")
-                           .AppendLine($"{blackOpeningshtmlOut}")
-                           .AppendLine($"<div class='priority-2'><br/>")
-                           .AppendLine($"  <h2>{pawnFragment}CAPs Rolling 3 Game Avg.</h2>")
-                           .AppendLine($"  <div class='graphRow'>")
-                           .AppendLine($"    <div class='graphBox'>{capsGraphRollingShortBullet}</div>")
-                           .AppendLine($"    <div class='graphBox'>{capsGraphRollingShortBlitz}</div>")
-                           .AppendLine($"    <div class='graphBox'>{capsGraphRollingShortRapid}</div>")
-                           .AppendLine($"   </div>")
-                           .AppendLine($"</div>")
-                           .AppendLine($"<div class='priority-2'><br/>")
-                           .AppendLine($"  <h2>{pawnFragment}CAPs Rolling 10 Game Avg.</h2>")
-                           .AppendLine($"  <div class='graphRow'>")
-                           .AppendLine($"    <div class='graphBox'>{capsGraphRollingLongBullet}</div>")
-                           .AppendLine($"    <div class='graphBox'>{capsGraphRollingLongBlitz}</div>")
-                           .AppendLine($"    <div class='graphBox'>{capsGraphRollingLongRapid}</div>")
-                           .AppendLine($"  </div>")
-                           .AppendLine($"</div>")
-                           .AppendLine($"<br/><h2>{pawnFragment}Stats by Time Control/Month</h2>")
-                           .AppendLine(playingStatshtmlOut)
-                           .AppendLine($"<br/><h2>{pawnFragment}Time Played by Month</h2>")
-                           .AppendLine(timePlayedByMonthhtmlOut)
-                           .AppendLine(Helpers.StatsHtml.GetHtmlTail(new Uri(CHESSCOM_URL), VERSION_NUMBER, PROJECT_LINK))
-                           .AppendLine("  </body>")
-                           .AppendLine("</html>");
+                           .AppendLine($"<div class='ratingRow'>");
+
+
+
+                if (userStats.ChessBullet != null)
+                {
+                    _ = htmlOut.AppendLine($"  <div class='ratingBox'>")
+                               .AppendLine($"    <div class='item1 {((userStats.ChessBullet != null) ? "active" : "inactive")}' onclick=\"window.location.href='{STATS_BASE_URL}/live/bullet/{chessdotcomUsername}'\">")
+                               .AppendLine($"      Bullet {Helpers.StatsConsole.ValueOrDash(userStats.ChessBullet?.Last.Rating)}<br/><span class='priority-2'>(Gliko RD&nbsp;{Helpers.StatsConsole.ValueOrDash(userStats.ChessBullet?.Last.GlickoRd)})<br/></span>{((userStats.ChessBullet == null) ? "-" : userStats.ChessBullet?.Last.Date.ToShortDateString())}")
+                               .AppendLine($"    </div>")
+                               .AppendLine($"  </div>");
+                }
+
+                if (userStats.ChessBlitz != null)
+                {
+                    _ = htmlOut.AppendLine($"  <div class='ratingBox'>")
+                              .AppendLine($"    <div class='item2 {((userStats.ChessBlitz != null) ? "active" : "inactive")}' onclick=\"window.location.href='{STATS_BASE_URL}/live/blitz/{chessdotcomUsername}'\">")
+                              .AppendLine($"      Blitz {Helpers.StatsConsole.ValueOrDash(userStats.ChessBlitz?.Last.Rating)}<br/><span class='priority-2'>(Gliko RD&nbsp;{Helpers.StatsConsole.ValueOrDash(userStats.ChessBlitz?.Last.GlickoRd)})<br/></span>{((userStats.ChessBlitz == null) ? "-" : userStats.ChessBlitz?.Last.Date.ToShortDateString())}")
+                              .AppendLine($"    </div></div>");
+                }
+
+                if (userStats.ChessRapid != null)
+                {
+                    _ = htmlOut.AppendLine($"    <div class='ratingBox'>")
+                              .AppendLine($"      <div class='item3 {((userStats.ChessRapid != null) ? "active" : "inactive")}' onclick=\"window.location.href='{STATS_BASE_URL}/live/rapid/{chessdotcomUsername}'\">")
+                              .AppendLine($"        Rapid {Helpers.StatsConsole.ValueOrDash(userStats.ChessRapid?.Last.Rating)}<br/><span class='priority-2'>(Gliko RD&nbsp;{Helpers.StatsConsole.ValueOrDash(userStats.ChessRapid?.Last.GlickoRd)})<br/></span>{((userStats.ChessRapid == null) ? "-" : userStats.ChessRapid?.Last.Date.ToShortDateString())}")
+                              .AppendLine($"    </div>");
+                }
+
+
+
+                _ = htmlOut.AppendLine($"  </div>")
+                            .AppendLine($"</div>")
+                 
+                 
+                 
+                 
+                 
+                 
+                .AppendLine($"<div class='onerow'>")
+                .AppendLine($"  <div class='onecolumn'>")
+                .AppendLine($"    <div class='priority-2'>")
+                .AppendLine($"      <br/><h2>{pawnFragment}Ratings/CAPs/Win Loss Avg.</h2>")
+                .AppendLine($"      <div class='graphRow'>")
+
+
+
+                .AppendLine((userStats.ChessBullet == null ? "        <!--Not Played-->" : $"        <div class='graphBox'>{bulletGraphHtmlFragment}</div>"))
+                .AppendLine((userStats.ChessBlitz  == null ? "        <!--Not Played-->" : $"        <div class='graphBox'>{blitzGraphHtmlFragment}</div>"))
+                .AppendLine((userStats.ChessRapid  == null ? "        <!--Not Played-->" : $"        <div class='graphBox'>{rapidGraphHtmlFragment}</div>"))
+
+
+                           
+                .AppendLine($"      </div>")
+                .AppendLine($"      <div class='graphRow'>")
+                
+                
+                .AppendLine((userStats.ChessBullet == null ? "        <!--Not Played-->" : $"        <div class='graphBox'>{capsGraphBullet}</div>"))
+                .AppendLine((userStats.ChessBlitz  == null ? "        <!--Not Played-->" : $"        <div class='graphBox'>{capsGraphBlitz}</div>"))
+                .AppendLine((userStats.ChessRapid  == null ? "        <!--Not Played-->" : $"        <div class='graphBox'>{capsGraphRapid}</div>"))
+                
+                
+                
+                .AppendLine($"      </div>")
+                .AppendLine($"      <div class='graphRow'>")
+                
+                
+                
+                .AppendLine((userStats.ChessBullet == null ? "        <!--Not Played-->" : $"        <div class='graphBox'>{bulletAvStatsGraphHtmlFragment}</div>"))
+                .AppendLine((userStats.ChessBlitz  == null ? "        <!--Not Played-->" : $"        <div class='graphBox'>{blitzAvStatsGraphHtmlFragment}</div>"))
+                .AppendLine((userStats.ChessRapid  == null ? "        <!--Not Played-->" : $"        <div class='graphBox'>{rapidAvStatsGraphHtmlFragment}</div>"))
+                
+                
+                
+                
+                
+                
+                .AppendLine($"      </div>")
+                .AppendLine($"    </div>")
+                .AppendLine($"  </div>")
+                .AppendLine($"</div>")
+                .AppendLine($"<br/><h2>{pawnFragment}Last 40 Openings</h2>")
+                .AppendLine($"{whiteOpeningsRecenthtmlOut}")
+                .AppendLine($"{blackOpeningsRecenthtmlOut}")
+                .AppendLine($"<br/><h2>{pawnFragment}All Openings (Max 15)</h2>")
+                .AppendLine($"{whiteOpeningshtmlOut}")
+                .AppendLine($"{blackOpeningshtmlOut}")
+                .AppendLine($"<div class='priority-2'><br/>")
+                .AppendLine($"  <h2>{pawnFragment}CAPs Rolling 3 Game Avg.</h2>")
+                .AppendLine($"  <div class='graphRow'>")
+                .AppendLine((userStats.ChessBullet == null ? "        <!--Not Played-->" : $"    <div class='graphBox'>{capsGraphRollingShortBullet}</div>"))
+                .AppendLine((userStats.ChessBlitz  == null ? "        <!--Not Played-->" : $"    <div class='graphBox'>{capsGraphRollingShortBlitz}</div>"))
+                .AppendLine((userStats.ChessRapid  == null ? "        <!--Not Played-->" : $"    <div class='graphBox'>{capsGraphRollingShortRapid}</div>"))
+                .AppendLine($"   </div>")
+                .AppendLine($"</div>")
+                .AppendLine($"<div class='priority-2'><br/>")
+                .AppendLine($"  <h2>{pawnFragment}CAPs Rolling 10 Game Avg.</h2>")
+                .AppendLine($"  <div class='graphRow'>")
+                .AppendLine((userStats.ChessBullet == null ? "        <!--Not Played-->" : $"    <div class='graphBox'>{capsGraphRollingLongBullet}</div>"))
+                .AppendLine((userStats.ChessBlitz  == null ? "        <!--Not Played-->" : $"    <div class='graphBox'>{capsGraphRollingLongBlitz}</div>"))
+                .AppendLine((userStats.ChessRapid  == null ? "        <!--Not Played-->" : $"    <div class='graphBox'>{capsGraphRollingLongRapid}</div>"))
+                .AppendLine($"  </div>")
+                .AppendLine($"</div>")
+                .AppendLine($"<br/><h2>{pawnFragment}Stats by Time Control/Month</h2>")
+                .AppendLine(playingStatshtmlOut)
+                .AppendLine($"<br/><h2>{pawnFragment}Time Played by Month</h2>")
+                .AppendLine(timePlayedByMonthhtmlOut)
+                .AppendLine(Helpers.StatsHtml.GetHtmlTail(new Uri(CHESSCOM_URL), VERSION_NUMBER, PROJECT_LINK))
+                .AppendLine("  </body>")
+                .AppendLine("</html>");
 
                 return htmlOut.ToString();
             }).ConfigureAwait(false);
