@@ -1,7 +1,7 @@
 # ChessStats for [Chess.com](https://chess.com)
 
 ## About
-ChessStats is a console app used to retrieve monthly play time, ratings and top openings for any chess.com user. Note that variant game types are not included in the stats (displayed as 'X' during game retrieval) and unrated game ('NR') information is time only. 
+ChessStats is a console app used to retrieve monthly play time, ratings and top openings for any chess.com user. Note that variant game types are not included in the stats (displayed as 'X' during game retrieval) and unrated game ('NR') information is time only. The project site is [here](https://hyper-dragon.github.io/ChessStats/).
 
 ## Installation
 Download the latest version from the [Releases](https://github.com/Hyper-Dragon/ChessStats/releases) page, extract _ChessStats.exe_ (or _ChessStats_ if you are on Linux) and put it where you want it to go.  Note that the cache and reporting directories are created relative to the executable's location. 
