@@ -30,6 +30,11 @@ To resolve run the following:
 </pre>
 
 ## Version History
+
+### Version 0.8.1
+* Improved HTML Report
+  * Only display stats graphs for the time controls played by the CDC user
+  
 ### Version 0.8 
 * Full CAPS Scores for all games analysed on Chess.com
   * All games graph
