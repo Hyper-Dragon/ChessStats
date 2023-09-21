@@ -32,7 +32,7 @@ To resolve run the following:
 ## Version History
 
 ### Version 0.8.2
-* Fix for issue #26
+* Fix for issue [#26](../../issues/26) - Cloudflare blocking requests to CDC
 
 ### Version 0.8.1
 * Improved HTML Report
