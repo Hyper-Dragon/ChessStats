@@ -1,7 +1,7 @@
 # ChessStats for [Chess.com](https://chess.com)
 
 ## About
-ChessStats is a console app used to retrieve monthly play time, ratings and top openings for any chess.com user. Note that variant game types are not included in the stats (displayed as 'X' during game retrieval) and unrated game ('NR') information is time only. 
+ChessStats is a console app used to retrieve monthly play time, ratings and top openings for any chess.com user. Note that variant game types are not included in the stats (displayed as 'X' during game retrieval) and unrated game ('NR') information is time only. The project site is [here](https://hyper-dragon.github.io/ChessStats/).
 
 ## Installation
 Download the latest version from the [Releases](https://github.com/Hyper-Dragon/ChessStats/releases) page, extract _ChessStats.exe_ (or _ChessStats_ if you are on Linux) and put it where you want it to go.  Note that the cache and reporting directories are created relative to the executable's location. 
@@ -30,6 +30,11 @@ To resolve run the following:
 </pre>
 
 ## Version History
+
+### Version 0.8.1
+* Improved HTML Report
+  * Only display stats graphs for the time controls played by the CDC user
+  
 ### Version 0.8 
 * Full CAPS Scores for all games analysed on Chess.com
   * All games graph
@@ -76,6 +81,8 @@ To resolve run the following:
     * These are available for games that have been analysed on the chess.com website (games with no analysis are marked with '-' on ingest). 
     
 ## Known Issues
+* Version 0.8.x
+    * None
 * Version 0.7.x
     * The 'Last 40 Openings' section only displays the top 15 for black and white...so the totals may not add up to 40!
 * Version 0.6

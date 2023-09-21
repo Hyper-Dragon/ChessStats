@@ -10,7 +10,7 @@ Personally, I sync my ChessStats folder with dropbox so I can read the reports d
 
 ## Installation
 
-Download the latest version from the [Releases](https://github.com/Hyper-Dragon/ChessStats/releases) page, extract _ChessStats.exe_ and put it where you want it to go.  **Note that the cache and reporting directories are created relative to the executable's location**.
+Download the latest version from the [Releases](https://github.com/Hyper-Dragon/ChessStats/releases) page, extract _ChessStats.exe_/_ChessStats_ and put it where you want it to go.  **Note that the cache and reporting directories are created relative to the executable's location**.
 
 ## Usage
 
@@ -29,6 +29,10 @@ or just double click the _exe_ and you will be prompted for a Chess.com username
 ![Sample Run](assets/images/RunningConsole.gif)
 
 ## Version History
+
+### Version 0.8.1
+* Improved HTML Report
+  * Only display stats graphs for the time controls played by the CDC user
 
 ### Version 0.8 
 * Full CAPS Scores for all games analysed on Chess.com
@@ -103,7 +107,7 @@ For more information, please refer to [unlicense.org](https://unlicense.org).
 
 ## Saying Thank You
 
-If you find this useful and want to say thanks [just send me a fun trophy or two or three](https://www.chess.com/member/hyper-dragon) over on chess.com.  If you find it really useful then consider hitting the donate button at the top of the page.
+If you find this useful and want to say thanks [just send me a fun trophy or two or three](https://www.chess.com/member/hyper-dragon) over on chess.com.  If you find it really useful then consider hitting the [donate](https://github.com/sponsors/Hyper-Dragon) button at the top of the page.
 
 ## Example Output (HTML)
 
