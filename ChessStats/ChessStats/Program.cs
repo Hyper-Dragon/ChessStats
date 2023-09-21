@@ -16,8 +16,8 @@ namespace ChessStats
 {
     internal class Program
     {
-        private const string VERSION_NUMBER = "0.8.1";
-        private const string RELEEASE_DATE = "06/2022";
+        private const string VERSION_NUMBER = "0.8.2";
+        private const string RELEEASE_DATE = "09/2022";
         private const string RESULTS_DIR_NAME = "ChessStatsResults";
         private const string CACHE_DIR_NAME = "ChessStatsCache";
         private const string CACHE_VERSION_NUMBER = "2";
@@ -122,6 +122,8 @@ namespace ChessStats
 
             using (HttpClient httpClient = new())
             {
+                httpClient.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36");
+
                 string indexPageLogo = Convert.ToBase64String(await httpClient.GetByteArrayAsync(new Uri(INDEX_PAGE_IMAGE)).ConfigureAwait(false));
                 indexPageLogoFragment = $"<img width='200px' height='200px' src='data:image/png;base64,{indexPageLogo}'/>";
 
