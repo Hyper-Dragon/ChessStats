@@ -31,6 +31,9 @@ To resolve run the following:
 
 ## Version History
 
+### Version 0.8.2
+* Fix for issue #26
+
 ### Version 0.8.1
 * Improved HTML Report
   * Only display stats graphs for the time controls played by the CDC user
