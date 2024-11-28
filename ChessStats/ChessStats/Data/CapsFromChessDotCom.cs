@@ -17,6 +17,7 @@ namespace ChessStats.Data
         public bool IsDraw { get; set; }
         public DateTime GameDate { get; set; }
         public string GameYearMonth => $"{GameDate.Year}-{GameDate.Month.ToString(CultureInfo.InvariantCulture).PadLeft(2, '0')}";
+        public bool PlayedBetterAndLost { get; set; } // P652c
     }
 
     public static class CapsFromChessDotCom
@@ -69,6 +70,11 @@ namespace ChessStats.Data
 
                 return capsScores;
             });
+        }
+
+        public static bool DetermineIfPlayedBetterAndLost(CapsRecord playerRecord, CapsRecord opponentRecord) // Pe47c
+        {
+            return playerRecord.Caps > opponentRecord.Caps && playerRecord.GameResult != CapsRecord.GameEndState.DRAW && !playerRecord.IsWin;
         }
     }
 

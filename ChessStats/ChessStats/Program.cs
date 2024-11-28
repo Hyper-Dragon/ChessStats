@@ -220,6 +220,17 @@ namespace ChessStats
                 capsScores = await CapsFromChessDotCom.GetCapsScoresJson(chessdotcomUsername, gameList).ConfigureAwait(false);
                 Helpers.StatsConsole.EndTimedSection(">>Finished Processing Available CAPS Scores", false);
 
+                // Determine if played better and lost
+                foreach (var capsScore in capsScores["All"])
+                {
+                    var opponentRecord = capsScores[capsScore.GameResult == CapsRecord.GameEndState.WHITE ? "Black" : "White"]
+                        .FirstOrDefault(x => x.GameDate == capsScore.GameDate);
+                    if (opponentRecord != null)
+                    {
+                        capsScore.PlayedBetterAndLost = CapsFromChessDotCom.DetermineIfPlayedBetterAndLost(capsScore, opponentRecord);
+                    }
+                }
+
                 // **********************
                 // Extract Reporting Data
                 // **********************                
@@ -232,6 +243,7 @@ namespace ChessStats
                 (string timePlayedByMonthtextOut, string timePlayedByMonthhtmlOut) = DisplayTimePlayedByMonth(secondsPlayedRollupMonthOnly);
                 (_, string capsRollingAverageFivehtmlOut, Dictionary<string, double[]> capsAverageFiveOut) = DisplayCapsRollingAverage(3, capsScores);
                 (string totalSecondsPlayedtextOut, _) = DisplayTotalSecondsPlayed(totalSecondsPlayed);
+                (string playedBetterAndLostTextOut, string playedBetterAndLostHtmlOut) = DisplayPlayedBetterAndLost(capsScores["All"]);
                 Helpers.StatsConsole.EndTimedSection($">>Finished Compiling Report Data");
 
                 // *************               
@@ -302,7 +314,7 @@ namespace ChessStats
 
                 //Build the text report
                 Task<string> reportT1 = BuildTextReport(chessdotcomUsername, whiteOpeningstextOut, blackOpeningstextOut, playingStatstextOut,
-                                                          timePlayedByMonthtextOut, "", "", totalSecondsPlayedtextOut);
+                                                          timePlayedByMonthtextOut, "", "", totalSecondsPlayedtextOut, playedBetterAndLostTextOut);
 
                 //Build the HTML report
                 Task<string> reportT2 = BuildHtmlReport(VERSION_NUMBER, userRecord, userStats, chessdotcomUsername, whiteOpeningshtmlOut,
@@ -313,7 +325,7 @@ namespace ChessStats
                                                         bulletAvStatsGraphHtmlFragment, blitzAvStatsraphHtmlFragment, rapidAvStatsraphHtmlFragment,
                                                         capsGraphBullet, capsGraphBlitz, capsGraphRapid,
                                                         capsGraphRollingShortBullet, capsGraphRollingShortBlitz, capsGraphRollingShortRapid,
-                                                        capsGraphRollingLongBullet, capsGraphRollingLongBlitz, capsGraphRollingLongRapid);
+                                                        capsGraphRollingLongBullet, capsGraphRollingLongBlitz, capsGraphRollingLongRapid, playedBetterAndLostHtmlOut);
 
                 _ = await Task.WhenAll(reportT1, reportT2).ConfigureAwait(false);
                 string textReport = reportT1.Result;
@@ -462,7 +474,8 @@ namespace ChessStats
                                                           string rapidAvStatsGraphHtmlFragment,
                                                           string capsGraphBullet, string capsGraphBlitz, string capsGraphRapid,
                                                           string capsGraphRollingShortBullet, string capsGraphRollingShortBlitz, string capsGraphRollingShortRapid,
-                                                          string capsGraphRollingLongBullet, string capsGraphRollingLongBlitz, string capsGraphRollingLongRapid)
+                                                          string capsGraphRollingLongBullet, string capsGraphRollingLongBlitz, string capsGraphRollingLongRapid,
+                                                          string playedBetterAndLostHtmlOut)
         {
 
             return await Task<string>.Run(() =>
@@ -590,6 +603,8 @@ namespace ChessStats
                 .AppendLine(playingStatshtmlOut)
                 .AppendLine($"<br/><h2>{pawnFragment}Time Played by Month</h2>")
                 .AppendLine(timePlayedByMonthhtmlOut)
+                .AppendLine($"<br/><h2>{pawnFragment}Played Better and Lost</h2>")
+                .AppendLine(playedBetterAndLostHtmlOut)
                 .AppendLine(Helpers.StatsHtml.GetHtmlTail(new Uri(CHESSCOM_URL), VERSION_NUMBER, PROJECT_LINK))
                 .AppendLine("  </body>")
                 .AppendLine("</html>");
@@ -661,7 +676,7 @@ namespace ChessStats
             htmlReportFileOutStream.Close();
         }
 
-        private static async Task<string> BuildTextReport(string chessdotcomUsername, string whiteOpeningstextOut, string blackOpeningstextOut, string playingStatstextOut, string timePlayedByMonthtextOut, string capsTabletextOut, string capsRollingAverageTentextOut, string totalSecondsPlayedtextOut)
+        private static async Task<string> BuildTextReport(string chessdotcomUsername, string whiteOpeningstextOut, string blackOpeningstextOut, string playingStatstextOut, string timePlayedByMonthtextOut, string capsTabletextOut, string capsRollingAverageTentextOut, string totalSecondsPlayedtextOut, string playedBetterAndLostTextOut)
         {
             return await Task<string>.Run(() =>
             {
@@ -674,6 +689,7 @@ namespace ChessStats
                               .Append(capsTabletextOut)
                               .Append(capsRollingAverageTentextOut)
                               .Append(totalSecondsPlayedtextOut)
+                              .Append(playedBetterAndLostTextOut)
                               .Append(Helpers.StatsConsole.GetDisplaySection("End of Report", true));
 
                 return textReport.ToString();
@@ -820,12 +836,12 @@ namespace ChessStats
                                             Win: (isWin != null && isWin.Value == true) ? secondsPlayedRollup[key].Win + 1 : secondsPlayedRollup[key].Win,
                                             Loss: (isWin != null && isWin.Value == false) ? secondsPlayedRollup[key].Loss + 1 : secondsPlayedRollup[key].Loss,
                                             Draw: (isWin == null) ? secondsPlayedRollup[key].Draw + 1 : secondsPlayedRollup[key].Draw,
-                                            MinRating: Math.Min(playerRating, secondsPlayedRollup[key].MinRating),
-                                            MaxRating: Math.Max(playerRating, secondsPlayedRollup[key].MaxRating),
-                                            OpponentMinRating: Math.Min(opponentRating, secondsPlayedRollup[key].OpponentMinRating),
-                                            OpponentMaxRating: Math.Max(opponentRating, secondsPlayedRollup[key].OpponentMaxRating),
-                                            OpponentWorstLoss: (isWin != null && isWin.Value == false && opponentRating != 0) ? Math.Min(opponentRating, secondsPlayedRollup[key].OpponentWorstLoss) : secondsPlayedRollup[key].OpponentWorstLoss,
-                                            OpponentBestWin: (isWin != null && isWin.Value == true) ? Math.Max(opponentRating, secondsPlayedRollup[key].OpponentBestWin) : secondsPlayedRollup[key].OpponentBestWin,
+                                            MinRating: Math.min(playerRating, secondsPlayedRollup[key].MinRating),
+                                            MaxRating: Math.max(playerRating, secondsPlayedRollup[key].MaxRating),
+                                            OpponentMinRating: Math.min(opponentRating, secondsPlayedRollup[key].OpponentMinRating),
+                                            OpponentMaxRating: Math.max(opponentRating, secondsPlayedRollup[key].OpponentMaxRating),
+                                            OpponentWorstLoss: (isWin != null && isWin.Value == false && opponentRating != 0) ? Math.min(opponentRating, secondsPlayedRollup[key].OpponentWorstLoss) : secondsPlayedRollup[key].OpponentWorstLoss,
+                                            OpponentBestWin: (isWin != null && isWin.Value == true) ? Math.max(opponentRating, secondsPlayedRollup[key].OpponentBestWin) : secondsPlayedRollup[key].OpponentBestWin,
                                             TotalWin: (isWin != null && isWin.Value == true) ? secondsPlayedRollup[key].TotalWin + opponentRating : secondsPlayedRollup[key].TotalWin,
                                             TotalDraw: (isWin == null) ? secondsPlayedRollup[key].TotalDraw + opponentRating : secondsPlayedRollup[key].TotalDraw,
                                             TotalLoss: (isWin != null && isWin.Value == false) ? secondsPlayedRollup[key].TotalLoss + opponentRating : secondsPlayedRollup[key].TotalLoss
@@ -1100,6 +1116,29 @@ namespace ChessStats
             _ = textOut.AppendLine("");
 
             _ = htmlOut.AppendLine($"<tr><td>Time Played (hh:mm:ss)</td><td>{((int)time.TotalHours).ToString(CultureInfo.CurrentCulture),6}:{time.Minutes.ToString(CultureInfo.CurrentCulture).PadLeft(2, '0')}:{time.Seconds.ToString(CultureInfo.CurrentCulture).PadLeft(2, '0')}</td><tr>");
+            _ = htmlOut.AppendLine("</tbody></table>");
+
+            return (textOut.ToString(), htmlOut.ToString());
+        }
+
+        private static (string textOut, string htmlOut) DisplayPlayedBetterAndLost(List<CapsRecord> capsRecords)
+        {
+            StringBuilder textOut = new();
+            StringBuilder htmlOut = new();
+
+            _ = textOut.AppendLine("");
+            _ = textOut.AppendLine(Helpers.StatsConsole.GetDisplaySection("Played Better and Lost", false));
+            _ = textOut.AppendLine("Date       | Time Control | CAPS | Result");
+
+            _ = htmlOut.AppendLine("<table class='playedBetterAndLostTable'><thead><tr><td>Date</td><td>Time Control</td><td>CAPS</td><td>Result</td></tr></thead><tbody>");
+
+            foreach (var capsRecord in capsRecords.Where(x => x.PlayedBetterAndLost))
+            {
+                _ = textOut.AppendLine($"{capsRecord.GameDate.ToShortDateString(),-10} | {capsRecord.TimeClass,-12} | {capsRecord.Caps,4} | {capsRecord.GameResult}");
+
+                _ = htmlOut.AppendLine($"<tr><td>{capsRecord.GameDate.ToShortDateString()}</td><td>{capsRecord.TimeClass}</td><td>{capsRecord.Caps}</td><td>{capsRecord.GameResult}</td></tr>");
+            }
+
             _ = htmlOut.AppendLine("</tbody></table>");
 
             return (textOut.ToString(), htmlOut.ToString());
