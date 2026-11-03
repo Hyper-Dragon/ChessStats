@@ -9,6 +9,21 @@ namespace ChessStats.Data
     {
         public Dictionary<string, string> Attributes { get; } = new Dictionary<string, string>();
 
+        /// <summary>
+        /// Returns the value of a PGN header, or <paramref name="defaultValue"/> when the tag is
+        /// absent. Chess.com does not emit every tag for every game, so callers must never index
+        /// <see cref="Attributes"/> directly - a missing tag used to abort the whole run.
+        /// </summary>
+        public string GetAttribute(string name, string defaultValue = null)
+        {
+            return Attributes.TryGetValue(name, out string value) ? value : defaultValue;
+        }
+
+        public bool HasAttribute(string name)
+        {
+            return Attributes.ContainsKey(name);
+        }
+
         public enum SupportedAttribute
         {
             Event,

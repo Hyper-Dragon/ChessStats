@@ -3,11 +3,7 @@
 FROM mcr.microsoft.com/dotnet/runtime:10.0 AS base
 
 WORKDIR /app
-ENV CHESSSTATS_DEFAULT_PARAMS="hyper-dragon"
-RUN apt-get update
-#RUN apt-get install -y apt-utils
-RUN apt-get install -y libgdiplus
-#RUN ln -s /usr/lib/libgdiplus.so /usr/lib/gdiplus.dll
+
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 COPY ["ChessStats/ChessStats.csproj", "ChessStats/"]
@@ -24,4 +20,5 @@ FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
 
-ENTRYPOINT ["dotnet", "ChessStats.dll","hyper-dragon"]
+# Pass the chess.com username (or -refresh) on the docker run command line.
+ENTRYPOINT ["dotnet", "ChessStats.dll"]

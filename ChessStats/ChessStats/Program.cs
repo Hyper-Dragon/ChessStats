@@ -17,7 +17,7 @@ namespace ChessStats
     internal class Program
     {
         private static readonly string VERSION_NUMBER = ChessDotComApi.Version;
-        private const string RELEEASE_DATE = ChessDotComApi.ReleaseDate;
+        private const string RELEASE_DATE = ChessDotComApi.ReleaseDate;
         private const string RESULTS_DIR_NAME = "ChessStatsResults";
         private const string CACHE_DIR_NAME = "ChessStatsCache";
         private const string CACHE_VERSION_NUMBER = "2";
@@ -44,7 +44,7 @@ namespace ChessStats
 
         private static async Task Main(string[] args)
         {
-            Helpers.StatsConsole.DisplayLogo(VERSION_NUMBER, RELEEASE_DATE, PROJECT_LINK);
+            Helpers.StatsConsole.DisplayLogo(VERSION_NUMBER, RELEASE_DATE, PROJECT_LINK);
 
             try
             {
@@ -80,7 +80,7 @@ namespace ChessStats
                 Console.WriteLine($"{ex.StackTrace}");
                 Console.WriteLine("");
 
-                if (args.Length != 1) { Helpers.StatsConsole.PressToContinue(); }
+                if (args is null || args.Length != 1) { Helpers.StatsConsole.PressToContinue(); }
 
                 Environment.Exit(-2);
             }
@@ -92,7 +92,13 @@ namespace ChessStats
             bool hasCmdLineOptionSet = true;
 
             //Set up data directories
-            DirectoryInfo applicationPath = new(Path.GetDirectoryName(Environment.ProcessPath));
+            string applicationDirectory = Path.GetDirectoryName(Environment.ProcessPath);
+            if (string.IsNullOrEmpty(applicationDirectory))
+            {
+                throw new InvalidOperationException("Unable to determine the application directory.");
+            }
+
+            DirectoryInfo applicationPath = new(applicationDirectory);
             DirectoryInfo baseResultsDir = applicationPath.CreateSubdirectory(RESULTS_DIR_NAME);
             DirectoryInfo baseCacheDir = applicationPath.CreateSubdirectory($"{CACHE_DIR_NAME}/CacheV{CACHE_VERSION_NUMBER}");
 
@@ -104,10 +110,16 @@ namespace ChessStats
             {
                 Console.WriteLine($"You must specify a single valid chess.com username or -refresh");
                 Console.Write("> ");
-                args = Console.ReadLine().Trim()
-                                         .Split()
-                                         .Where(x => !string.IsNullOrWhiteSpace(x))
-                                         .Select(x => x.Trim()).ToArray<string>();
+
+                string entry = Console.ReadLine();
+                if (entry is null)
+                {
+                    throw new InvalidOperationException("No username was supplied and standard input is closed.");
+                }
+
+                args = entry.Split()
+                            .Where(x => !string.IsNullOrWhiteSpace(x))
+                            .Select(x => x.Trim()).ToArray<string>();
                 hasCmdLineOptionSet = false;
             }
 
@@ -208,7 +220,7 @@ namespace ChessStats
                                                         int Draw, int MinRating, int MaxRating, int OpponentMinRating,
                                                         int OpponentMaxRating, int OpponentWorstLoss, int OpponentBestWin,
                                                         int TotalWin, int TotalDraw, int TotalLoss)> secondsPlayedRollup,
-                                out SortedList<string, dynamic> secondsPlayedRollupMonthOnly,
+                                out SortedList<string, int> secondsPlayedRollupMonthOnly,
                                 out SortedList<string, (string href, int total, int winCount, int drawCount, int lossCount)> ecoPlayedRollupWhite,
                                 out SortedList<string, (string href, int total, int winCount, int drawCount, int lossCount)> ecoPlayedRollupBlack,
                                 out SortedList<string, (string href, int total, int winCount, int drawCount, int lossCount)> ecoPlayedRollupWhiteRecent,
@@ -651,7 +663,7 @@ namespace ChessStats
         private static async Task WriteTextReportToDisk(string VERSION_NUMBER, DirectoryInfo resultsDir, string chessdotcomUsername, string textReport)
         {
             using StreamWriter textReportFileOutStream = File.CreateText($"{Path.Combine(resultsDir.FullName, $"{chessdotcomUsername}-Summary.txt")}");
-            await textReportFileOutStream.WriteLineAsync($"{Helpers.StatsConsole.GetDisplayLogo(VERSION_NUMBER, RELEEASE_DATE, PROJECT_LINK)}").ConfigureAwait(false);
+            await textReportFileOutStream.WriteLineAsync($"{Helpers.StatsConsole.GetDisplayLogo(VERSION_NUMBER, RELEASE_DATE, PROJECT_LINK)}").ConfigureAwait(false);
             await textReportFileOutStream.WriteLineAsync($"{textReport}").ConfigureAwait(false);
             await textReportFileOutStream.FlushAsync().ConfigureAwait(false);
             textReportFileOutStream.Close();
@@ -686,7 +698,7 @@ namespace ChessStats
 
         private static void ProcessGameData(string chessdotcomUsername, List<ChessGame> gameList,
                                             out SortedList<string, (int SecondsPlayed, int GameCount, int Win, int Loss, int Draw, int MinRating, int MaxRating, int OpponentMinRating, int OpponentMaxRating, int OpponentWorstLoss, int OpponentBestWin, int TotalWin, int TotalDraw, int TotalLoss)> secondsPlayedRollup,
-                                            out SortedList<string, dynamic> secondsPlayedRollupMonthOnly,
+                                            out SortedList<string, int> secondsPlayedRollupMonthOnly,
                                             out SortedList<string, (string href, int total, int winCount, int drawCount, int lossCount)> ecoPlayedRollupWhite,
                                             out SortedList<string, (string href, int total, int winCount, int drawCount, int lossCount)> ecoPlayedRollupBlack,
                                             out SortedList<string, (string href, int total, int winCount, int drawCount, int lossCount)> ecoPlayedRollupWhiteRecent,
@@ -696,7 +708,7 @@ namespace ChessStats
         {
             //Initialise reporting lists
             secondsPlayedRollup = new SortedList<string, (int, int, int, int, int, int, int, int, int, int, int, int, int, int)>();
-            secondsPlayedRollupMonthOnly = new SortedList<string, dynamic>();
+            secondsPlayedRollupMonthOnly = new SortedList<string, int>();
             ecoPlayedRollupWhite = new SortedList<string, (string, int, int, int, int)>();
             ecoPlayedRollupBlack = new SortedList<string, (string, int, int, int, int)>();
             ecoPlayedRollupWhiteRecent = new SortedList<string, (string, int, int, int, int)>();
@@ -709,7 +721,7 @@ namespace ChessStats
             foreach (ChessGame game in gameList)
             {
                 // Don't include daily games
-                if (game.GameAttributes.Attributes["Event"] != "Live Chess")
+                if (game.GameAttributes.GetAttribute("Event") != "Live Chess")
                 {
                     continue;
                 }
@@ -789,19 +801,20 @@ namespace ChessStats
 
         private static void ExtractRatings(string chessdotcomUsername, ChessGame game, out string side, out int playerRating, out int opponentRating, out bool? isWin)
         {
-            side = game.GameAttributes.Attributes["White"].ToUpperInvariant() == chessdotcomUsername.ToUpperInvariant() ? "White" : "Black";
+            side = string.Equals(game.GameAttributes.GetAttribute("White"), chessdotcomUsername, StringComparison.OrdinalIgnoreCase) ? "White" : "Black";
             playerRating = game.IsRatedGame ? ((side == "White") ? game.WhiteRating : game.BlackRating) : 0;
             opponentRating = game.IsRatedGame ? ((side == "White") ? game.BlackRating : game.WhiteRating) : 0;
-            isWin = game.GameAttributes.Attributes[SupportedAttribute.Result.ToString()] switch
+            isWin = game.GameAttributes.GetAttribute(SupportedAttribute.Result.ToString()) switch
             {
                 "1/2-1/2" => null,
                 "1-0" => side == "White",
                 "0-1" => side != "White",
-                _ => throw new Exception($"Unrecorded game result found"),
+                // An unrecognised result used to abort the run; treat it as non-decisive instead.
+                _ => null,
             };
         }
 
-        private static void UpdateGameTimeTotals(SortedList<string, dynamic> secondsPlayedRollupMonthOnly, DateTime parsedStartDate, double seconds)
+        private static void UpdateGameTimeTotals(SortedList<string, int> secondsPlayedRollupMonthOnly, DateTime parsedStartDate, double seconds)
         {
             string keyMonthOnly = $"{parsedStartDate.Year}-{((parsedStartDate.Month < 10) ? "0" : "")}{parsedStartDate.Month}";
             if (secondsPlayedRollupMonthOnly.ContainsKey(keyMonthOnly))
@@ -857,14 +870,16 @@ namespace ChessStats
 
         private static void CalculateGameTime(ChessGame game, out DateTime parsedStartDate, out double seconds, out string gameTime)
         {
-            string gameStartDate = game.GameAttributes.Attributes["Date"];
-            string gameStartTime = game.GameAttributes.Attributes["StartTime"];
-            string gameEndDate = game.GameAttributes.Attributes["EndDate"];
-            string gameEndTime = game.GameAttributes.Attributes["EndTime"];
+            string gameStartDate = game.GameAttributes.GetAttribute("Date");
+            string gameStartTime = game.GameAttributes.GetAttribute("StartTime");
+            string gameEndDate = game.GameAttributes.GetAttribute("EndDate", gameStartDate);
+            string gameEndTime = game.GameAttributes.GetAttribute("EndTime", gameStartTime);
 
-            _ = DateTime.TryParseExact($"{gameStartDate} {gameStartTime}", "yyyy.MM.dd HH:mm:ss", null, DateTimeStyles.AssumeUniversal, out parsedStartDate);
-            _ = DateTime.TryParseExact($"{gameEndDate} {gameEndTime}", "yyyy.MM.dd HH:mm:ss", null, DateTimeStyles.AssumeUniversal, out DateTime parsedEndDate);
-            seconds = System.Math.Abs((parsedEndDate - parsedStartDate).TotalSeconds);
+            bool hasStart = DateTime.TryParseExact($"{gameStartDate} {gameStartTime}", "yyyy.MM.dd HH:mm:ss", null, DateTimeStyles.AssumeUniversal, out parsedStartDate);
+            bool hasEnd = DateTime.TryParseExact($"{gameEndDate} {gameEndTime}", "yyyy.MM.dd HH:mm:ss", null, DateTimeStyles.AssumeUniversal, out DateTime parsedEndDate);
+
+            // A PGN without usable timestamps used to throw; it now just contributes no time.
+            seconds = (hasStart && hasEnd) ? System.Math.Abs((parsedEndDate - parsedStartDate).TotalSeconds) : 0;
             gameTime = $"{game.TimeClass,-6}{(game.IsRatedGame ? "   " : " NR")}";
         }
 
@@ -872,10 +887,17 @@ namespace ChessStats
         {
             try
             {
-                string ecoHref = game.GameAttributes.Attributes["ECOUrl"];
-                string ecoName = game.GameAttributes.Attributes["ECOUrl"].Replace(OPENING_URL, "", true, CultureInfo.InvariantCulture).Replace("-", " ", true, CultureInfo.InvariantCulture);
+                string ecoUrl = game.GameAttributes.GetAttribute("ECOUrl");
+                string ecoCode = game.GameAttributes.GetAttribute("ECO", "");
+                if (string.IsNullOrEmpty(ecoUrl))
+                {
+                    //ECO missing from Pgn so just ignore
+                    return;
+                }
+
+                string ecoName = ecoUrl.Replace(OPENING_URL, "", true, CultureInfo.InvariantCulture).Replace("-", " ", true, CultureInfo.InvariantCulture);
                 string ecoShortened = new Regex(@"^.*?(?=[0-9])").Match(ecoName).Value.Trim();
-                string ecoKey = $"{game.GameAttributes.Attributes["ECO"]}-{(string.IsNullOrEmpty(ecoShortened) ? ecoName : ecoShortened)}";
+                string ecoKey = $"{ecoCode}-{(string.IsNullOrEmpty(ecoShortened) ? ecoName : ecoShortened)}";
                 SortedList<string, (string href, int total, int winCount, int drawCount, int lossCount)> ecoPlayedRollup = (side == "White") ? ecoPlayedRollupWhite : ecoPlayedRollupBlack;
 
                 if (ecoPlayedRollup.ContainsKey(ecoKey))
@@ -888,7 +910,7 @@ namespace ChessStats
                 }
                 else
                 {
-                    ecoPlayedRollup.Add(ecoKey, (ecoHref,
+                    ecoPlayedRollup.Add(ecoKey, (ecoUrl,
                                                  1,
                                                  (isWin != null && isWin.Value) ? 1 : 0,
                                                  (isWin == null) ? 1 : 0,
@@ -1034,7 +1056,7 @@ namespace ChessStats
             return (textOut.ToString(), htmlOut.ToString(), graphData);
         }
 
-        private static (string textOut, string htmlOut) DisplayTimePlayedByMonth(SortedList<string, dynamic> secondsPlayedRollupMonthOnly)
+        private static (string textOut, string htmlOut) DisplayTimePlayedByMonth(SortedList<string, int> secondsPlayedRollupMonthOnly)
         {
             StringBuilder textOut = new();
             StringBuilder htmlOut = new();
@@ -1050,7 +1072,7 @@ namespace ChessStats
             string currentYear = "";
             string yearSplitClass = "";
 
-            foreach (KeyValuePair<string, dynamic> rolledUp in secondsPlayedRollupMonthOnly)
+            foreach (KeyValuePair<string, int> rolledUp in secondsPlayedRollupMonthOnly)
             {
                 if (rolledUp.Key[..4] != currentYear)
                 {

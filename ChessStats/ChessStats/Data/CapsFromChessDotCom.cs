@@ -33,38 +33,57 @@ namespace ChessStats.Data
                                                                             { $"All", new List<CapsRecord>() }
                                                                         };
 
+                int skippedGames = 0;
+
                 foreach (ChessGame game in gameList)
                 {
-                    if (game.IsRatedGame)
+                    if (!game.IsRatedGame)
                     {
-                        string[] dateSplit = game.GameAttributes.Attributes["Date"].Split('.');
+                        continue;
+                    }
 
-                        CapsRecord capsRecord = new()
-                        {
-                            GameResult = (game.GameAttributes.Attributes["Result"] == "1-0") ? CapsRecord.GameEndState.WHITE :
-                                             (game.GameAttributes.Attributes["Result"] == "0-1") ? CapsRecord.GameEndState.BLACK :
-                                             CapsRecord.GameEndState.DRAW,
-                            ResultReson = game.GameAttributes.Attributes["Termination"],
-                            IsWin = (game.GameAttributes.Attributes["White"] == chessdotcomUsername &&
-                                        game.GameAttributes.Attributes["Result"] == "1-0") ||
-                                        (game.GameAttributes.Attributes["Black"] == chessdotcomUsername &&
-                                        game.GameAttributes.Attributes["Result"] == "0-1"),
-                            IsDraw = game.GameAttributes.Attributes["White"] == chessdotcomUsername &&
-                                         game.GameAttributes.Attributes["Result"] != "1-0" &&
-                                         game.GameAttributes.Attributes["Black"] == chessdotcomUsername &&
-                                         game.GameAttributes.Attributes["Result"] != "0-1",
-                            TimeClass = game.TimeClass,
-                            Caps = (game.GameAttributes.Attributes["White"] == chessdotcomUsername) ? game.WhiteCaps : game.BlackCaps,
-                            GameDate = new DateTime(int.Parse(dateSplit[0]), int.Parse(dateSplit[1]), int.Parse(dateSplit[2]))
-                        };
+                    if (!DateTime.TryParseExact(game.GameAttributes.GetAttribute("Date"), "yyyy.MM.dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime gameDate))
+                    {
+                        skippedGames++;
+                        continue;
+                    }
 
+                    string whitePlayer = game.GameAttributes.GetAttribute("White");
+                    string blackPlayer = game.GameAttributes.GetAttribute("Black");
+                    string result = game.GameAttributes.GetAttribute("Result");
+
+                    bool playedAsWhite = whitePlayer == chessdotcomUsername;
+                    bool playedAsBlack = blackPlayer == chessdotcomUsername;
+
+                    CapsRecord capsRecord = new()
+                    {
+                        GameResult = (result == "1-0") ? CapsRecord.GameEndState.WHITE :
+                                         (result == "0-1") ? CapsRecord.GameEndState.BLACK :
+                                         CapsRecord.GameEndState.DRAW,
+                        ResultReson = game.GameAttributes.GetAttribute("Termination"),
+                        IsWin = (playedAsWhite && result == "1-0") ||
+                                    (playedAsBlack && result == "0-1"),
+                        // Any non-decisive result in a game this player took part in is a draw.
+                        IsDraw = (playedAsWhite || playedAsBlack) && result != "1-0" && result != "0-1",
+                        TimeClass = game.TimeClass,
+                        Caps = playedAsWhite ? game.WhiteCaps : game.BlackCaps,
+                        GameDate = gameDate
+                    };
+
+                    if (playedAsWhite || playedAsBlack)
+                    {
                         if (game.WhiteCaps > 0 && game.BlackCaps > 0)
                         {
-                            capsScores[$"{((game.GameAttributes.Attributes["White"] == chessdotcomUsername) ? "White" : "Black")}"].Add(capsRecord);
+                            capsScores[playedAsWhite ? "White" : "Black"].Add(capsRecord);
                         }
 
                         capsScores["All"].Add(capsRecord);
                     }
+                }
+
+                if (skippedGames > 0)
+                {
+                    Console.WriteLine($"  >>WARNING: {skippedGames} game(s) skipped because the PGN had no usable date");
                 }
 
                 return capsScores;

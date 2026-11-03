@@ -9,20 +9,13 @@ namespace ChessStats.Helpers
 {
     internal class Imaging
     {
+        /// <summary>
+        /// Returns an embedded image as a quoted HTML attribute value, e.g. 'data:image/png;base64,...'.
+        /// Use <see cref="GetResourceBase64"/> when you need the raw base64 (any media type, no quotes).
+        /// </summary>
         public static string EncodeResourceImageAsHtmlFragment(string imageName)
         {
-            string base64Img = "";
-
-            using (Stream reader = new EmbeddedFileProvider(Assembly.GetExecutingAssembly()).GetFileInfo($"Images.{imageName}").CreateReadStream())
-            {
-                //read all to byte[]
-                byte[] bytes = new byte[reader.Length];
-                _ = reader.Read(bytes, 0, (int)reader.Length);
-
-                base64Img = Convert.ToBase64String(bytes.ToArray());
-            }
-
-            return $"'data:image/png;base64,{base64Img}'";
+            return $"'data:image/png;base64,{GetResourceBase64(imageName)}'";
         }
 
         /// <summary>
