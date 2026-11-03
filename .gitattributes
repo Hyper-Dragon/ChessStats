@@ -4,6 +4,21 @@
 * text=auto
 
 ###############################################################################
+# Never normalise binary assets - the report graphics and fonts are embedded
+# into the executable byte-for-byte.
+###############################################################################
+*.png     binary
+*.ico     binary
+*.psd     binary
+*.woff2   binary
+
+###############################################################################
+# Dockerfile and shell scripts must keep LF endings
+###############################################################################
+Dockerfile  text eol=lf
+*.sh        text eol=lf
+
+###############################################################################
 # Set default behavior for command prompt diff.
 #
 # This is need for earlier builds of msysgit that does not have it on by
