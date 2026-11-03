@@ -49,7 +49,7 @@ The only network access during a run is the Chess.com public API itself, plus th
 * Moved to .NET 10 (.NET 6 is out of support)
 
 ### Version 0.8.2
-* Fixed 403 (Forbidden) responses from the Chess.com API by sending a User-Agent
+* Fix for issue [#26](../../issues/26) - Cloudflare blocking requests to CDC
 
 ### Version 0.8.1
 * Improved HTML Report
