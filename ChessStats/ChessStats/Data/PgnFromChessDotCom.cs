@@ -16,7 +16,7 @@ namespace ChessStats.Data
     {
         public static async Task<(PlayerProfile userRecord, PlayerStats userStats)> FetchUserData(string username)
         {
-            using ChessDotComSharp.ChessDotComClient client = new();
+            using ChessDotComSharp.ChessDotComClient client = new(Helpers.ChessDotComApi.UserAgent);
             PlayerProfile userRecord = await client.GetPlayerProfileAsync(username).ConfigureAwait(false);
             PlayerStats userStats = await client.GetPlayerStatsAsync(username).ConfigureAwait(false);
 
@@ -78,7 +78,7 @@ namespace ChessStats.Data
 
         private static async System.Threading.Tasks.Task<ArchivedGamesList> GetPlayerMonthlyArchive(string username)
         {
-            using ChessDotComSharp.ChessDotComClient client = new();
+            using ChessDotComSharp.ChessDotComClient client = new(Helpers.ChessDotComApi.UserAgent);
             ArchivedGamesList myGames = await client.GetPlayerGameArchivesAsync(username).ConfigureAwait(true);
             return myGames;
         }
@@ -102,7 +102,7 @@ namespace ChessStats.Data
                 await apiSemaphore.WaitAsync().ConfigureAwait(false);
                 try
                 {
-                    using ChessDotComSharp.ChessDotComClient client = new();
+                    using ChessDotComSharp.ChessDotComClient client = new(Helpers.ChessDotComApi.UserAgent);
                     myGames = await client.GetPlayerGameMonthlyArchiveAsync(username, year, month).ConfigureAwait(true);
 
 

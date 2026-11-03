@@ -1,6 +1,6 @@
 #See https://aka.ms/containerfastmode to understand how Visual Studio uses this Dockerfile to build your images for faster debugging.
 
-FROM mcr.microsoft.com/dotnet/runtime:6.0 AS base
+FROM mcr.microsoft.com/dotnet/runtime:10.0 AS base
 
 WORKDIR /app
 ENV CHESSSTATS_DEFAULT_PARAMS="hyper-dragon"
@@ -8,7 +8,7 @@ RUN apt-get update
 #RUN apt-get install -y apt-utils
 RUN apt-get install -y libgdiplus
 #RUN ln -s /usr/lib/libgdiplus.so /usr/lib/gdiplus.dll
-FROM mcr.microsoft.com/dotnet/sdk:6.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 COPY ["ChessStats/ChessStats.csproj", "ChessStats/"]
 COPY ["../../ChessDotComSharp/ChessDotComSharp.csproj", "ChessDotComSharp/"]

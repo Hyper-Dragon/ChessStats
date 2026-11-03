@@ -29,7 +29,27 @@ To resolve run the following:
 > apt-get install -y libgdiplus
 </pre>
 
+## Offline Reports & Network Access
+
+Every report is a single self-contained HTML file: graphs, images, fonts and CSS are all embedded, so it can be copied anywhere and opened without a network connection.
+
+To make that possible the report graphics (the player placeholder image, the heading icon and the Montserrat 700/800 fonts) are compiled into the executable as embedded resources instead of being downloaded at run time. Chess.com retired the CDN those files used to be served from, which previously made every run fail with `521` before any data had been retrieved (issue [#27](https://github.com/Hyper-Dragon/ChessStats/issues/27)).
+
+The only network access during a run is the Chess.com public API itself, plus the player's avatar - and if that avatar cannot be downloaded the built-in placeholder is used instead.
+
 ## Version History
+
+### Version 0.8.3
+* Report graphics (images and fonts) are now embedded in the executable instead of being
+  downloaded at run time. Chess.com retired the CDN they were fetched from, which made every
+  run fail before any data was retrieved (issue #27)
+* A player with no avatar now falls back to the built-in placeholder rather than failing the run
+* Sends a contactable User-Agent, as required by the Chess.com API policy
+* Assembly/file version metadata now matches the release number
+* Moved to .NET 10 (.NET 6 is out of support)
+
+### Version 0.8.2
+* Fixed 403 (Forbidden) responses from the Chess.com API by sending a User-Agent
 
 ### Version 0.8.1
 * Improved HTML Report

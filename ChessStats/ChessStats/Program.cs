@@ -16,8 +16,8 @@ namespace ChessStats
 {
     internal class Program
     {
-        private const string VERSION_NUMBER = "0.8.2";
-        private const string RELEEASE_DATE = "09/2022";
+        private static readonly string VERSION_NUMBER = ChessDotComApi.Version;
+        private const string RELEEASE_DATE = ChessDotComApi.ReleaseDate;
         private const string RESULTS_DIR_NAME = "ChessStatsResults";
         private const string CACHE_DIR_NAME = "ChessStatsCache";
         private const string CACHE_VERSION_NUMBER = "2";
@@ -25,12 +25,14 @@ namespace ChessStats
         private const string MEMBER_URL = "https://www.chess.com/member/";
         private const string OPENING_URL = "https://www.chess.com/openings/";
         private const string STATS_BASE_URL = "https://www.chess.com/stats";
-        private const string PROJECT_LINK = "https://hyper-dragon.github.io/ChessStats/";
-        private const string DEFAULT_USER_IMAGE = "https://betacssjs.chesscomfiles.com/bundles/web/images/black_400.918cdaa6.png";
-        private const string INDEX_PAGE_IMAGE = "https://betacssjs.chesscomfiles.com/bundles/web/images/black_400.918cdaa6.png";
-        private const string REPORT_HEADING_ICON = "https://www.chess.com/bundles/web/favicons/favicon-16x16.31f99381.png";
-        private const string FONT_700_WOFF2_URL = "https://www.chess.com/bundles/web/fonts/montserrat-700.5e7b9b6f.woff2";
-        private const string FONT_800_WOFF2_URL = "https://www.chess.com/bundles/web/fonts/montserrat-800.92157f3f.woff2";
+        private const string PROJECT_LINK = ChessDotComApi.ProjectLink;
+
+        //Report graphics are embedded resources (see Images/) rather than downloaded, so a change
+        //to chess.com's asset CDN can never abort a run.
+        private const string DEFAULT_AVATAR_RESOURCE = "DefaultAvatar.png";
+        private const string HEADING_ICON_RESOURCE = "HeadingIcon.png";
+        private const string FONT_700_RESOURCE = "Montserrat-700.woff2";
+        private const string FONT_800_RESOURCE = "Montserrat-800.woff2";
 
         private static string bkgImageBase64 = "";
         private static string favIconBase64 = "";
@@ -117,27 +119,18 @@ namespace ChessStats
                 _ => new string[] { args[0] }
             };
 
-            //Get reporting graphics
-            Helpers.StatsConsole.StartTimedSection(">>Download report images/fonts");
+            //Get reporting graphics from embedded resources
+            Helpers.StatsConsole.StartTimedSection(">>Load report images/fonts");
 
-            using (HttpClient httpClient = new())
-            {
-                httpClient.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36");
+            string defaultAvatarBase64 = Imaging.GetResourceBase64(DEFAULT_AVATAR_RESOURCE);
+            indexPageLogoFragment = $"<img width='200px' height='200px' src='data:image/png;base64,{defaultAvatarBase64}'/>";
 
-                string indexPageLogo = Convert.ToBase64String(await httpClient.GetByteArrayAsync(new Uri(INDEX_PAGE_IMAGE)).ConfigureAwait(false));
-                indexPageLogoFragment = $"<img width='200px' height='200px' src='data:image/png;base64,{indexPageLogo}'/>";
+            pawnFragment = $"<img src='data:image/png;base64,{Imaging.GetResourceBase64(HEADING_ICON_RESOURCE)}'/>";
 
-                string pawnFileBase64 = Convert.ToBase64String(await httpClient.GetByteArrayAsync(new Uri(REPORT_HEADING_ICON)).ConfigureAwait(false));
-                pawnFragment = $"<img src='data:image/png;base64,{pawnFileBase64}'/>";
+            font700Fragment = $"font-display:swap; font-family:Montserrat; font-style:normal; font-weight:700; src: url('data:font/woff2;base64,{Imaging.GetResourceBase64(FONT_700_RESOURCE)}') format('woff2');";
+            font800Fragment = $"font-display:swap; font-family:Montserrat; font-style:normal; font-weight:800; src: url('data:font/woff2;base64,{Imaging.GetResourceBase64(FONT_800_RESOURCE)}') format('woff2');";
 
-                string font700FragmentBase64 = Convert.ToBase64String(await httpClient.GetByteArrayAsync(new Uri(FONT_700_WOFF2_URL)).ConfigureAwait(false));
-                font700Fragment = $"font-display:swap; font-family:Montserrat; font-style:normal; font-weight:700; src: url('data:font/ttf;base64,{font700FragmentBase64}') format('woff2');";
-
-                string font800FragmentBase64 = Convert.ToBase64String(await httpClient.GetByteArrayAsync(new Uri(FONT_800_WOFF2_URL)).ConfigureAwait(false));
-                font800Fragment = $"font-display:swap; font-family:Montserrat; font-style:normal; font-weight:800; src: url('data:font/ttf;base64,{font800FragmentBase64}') format('woff2');";
-            }
-
-            Helpers.StatsConsole.EndTimedSection(">>Download complete");
+            Helpers.StatsConsole.EndTimedSection(">>Report graphics loaded");
 
             foreach (string user in chessdotcomUsers)
             {
@@ -171,15 +164,26 @@ namespace ChessStats
                 Helpers.StatsConsole.DisplaySection($"Fetching Data for {chessdotcomUsername}", true);
 
                 //Get reporting graphics
-                Helpers.StatsConsole.StartTimedSection(">>Download user profile image");
+                Helpers.StatsConsole.StartTimedSection(">>Fetch user profile image");
 
-                using (HttpClient httpClient = new())
+                userLogoBase64 = defaultAvatarBase64;
+                if (!string.IsNullOrEmpty(userRecord.Avatar))
                 {
-                    Uri userLogoUri = new(string.IsNullOrEmpty(userRecord.Avatar) ? DEFAULT_USER_IMAGE : userRecord.Avatar);
-                    userLogoBase64 = Convert.ToBase64String(await httpClient.GetByteArrayAsync(userLogoUri).ConfigureAwait(false));
+                    try
+                    {
+                        using HttpClient httpClient = new();
+                        httpClient.DefaultRequestHeaders.Add("User-Agent", ChessDotComApi.UserAgent);
+
+                        userLogoBase64 = Convert.ToBase64String(await httpClient.GetByteArrayAsync(new Uri(userRecord.Avatar)).ConfigureAwait(false));
+                    }
+                    catch (Exception ex) when (ex is HttpRequestException or UriFormatException)
+                    {
+                        Console.WriteLine($"  >>WARNING: Could not download avatar, using default - {ex.Message}");
+                        userLogoBase64 = defaultAvatarBase64;
+                    }
                 }
 
-                Helpers.StatsConsole.EndTimedSection(">>Download complete");
+                Helpers.StatsConsole.EndTimedSection(">>Profile image ready");
 
                 List<ChessGame> gameList = new();
                 Helpers.StatsConsole.StartTimedSection($">>Fetching Games From Chess.Com");

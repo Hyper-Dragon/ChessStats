@@ -1,0 +1,3 @@
+[submodule "ChessDotComSharp"]
+	path = ChessDotComSharp
+	url = https://github.com/Hyper-Dragon/ChessDotComSharp.git
