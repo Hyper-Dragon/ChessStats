@@ -34,7 +34,7 @@ namespace ChessStats.Data
 
             if (monthlyArchive?.Archives is null || monthlyArchive.Archives.Count == 0)
             {
-                throw new InvalidOperationException($"Chess.com returned no game archives for '{username}'.");
+                throw new NoGamesFoundException(username);
             }
 
             _ = Parallel.ForEach(monthlyArchive.Archives, new ParallelOptions { MaxDegreeOfParallelism = 4 }, (dataForMonth) =>

@@ -204,6 +204,15 @@ namespace ChessStats
                 {
                     gameList = await PgnFromChessDotCom.FetchGameRecordsForUser(chessdotcomUsername, cacheDir).ConfigureAwait(false);
                 }
+                catch (NoGamesFoundException ex)
+                {
+                    // A brand new or non-playing account is a normal outcome, not a crash.
+                    Console.WriteLine("");
+                    Console.WriteLine($"  >>No games to report: {ex.Message}");
+                    Console.WriteLine("");
+                    hasRunErrors = true;
+                    continue;
+                }
                 catch (Exception ex)
                 {
                     Console.WriteLine("");
