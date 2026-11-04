@@ -18,6 +18,11 @@ namespace ChessStats
     {
         private static readonly string VERSION_NUMBER = ChessDotComApi.Version;
         private const string RELEASE_DATE = ChessDotComApi.ReleaseDate;
+
+        // Negative exit codes collapse to 254 on Linux, so warning and fatal looked identical.
+        private const int EXIT_CODE_OK = 0;
+        private const int EXIT_CODE_WARNINGS = 1;
+        private const int EXIT_CODE_FATAL = 2;
         private const string RESULTS_DIR_NAME = "ChessStatsResults";
         private const string CACHE_DIR_NAME = "ChessStatsCache";
         private const string CACHE_VERSION_NUMBER = "2";
@@ -64,12 +69,12 @@ namespace ChessStats
                     Console.WriteLine("");
 
                     if (!hasCmdLineOptionSet) { Helpers.StatsConsole.PressToContinue(); }
-                    Environment.Exit(-1);
+                    Environment.Exit(EXIT_CODE_WARNINGS);
                 }
                 else
                 {
                     if (!hasCmdLineOptionSet) { Helpers.StatsConsole.PressToContinue(); }
-                    Environment.Exit(0);
+                    Environment.Exit(EXIT_CODE_OK);
                 }
             }
             catch (Exception ex)
@@ -82,7 +87,61 @@ namespace ChessStats
 
                 if (args is null || args.Length != 1) { Helpers.StatsConsole.PressToContinue(); }
 
-                Environment.Exit(-2);
+                Environment.Exit(EXIT_CODE_FATAL);
+            }
+        }
+
+        /// <summary>
+        /// Returns the user's sub directory, matching an existing directory case-insensitively and
+        /// only creating one when nothing matches.
+        /// <para>
+        /// A results directory can be seeded by creating it by hand (that is how a container declares
+        /// which accounts to report). Chess.com decides the canonical spelling of a username, so on a
+        /// case-sensitive filesystem a seeded "hyper-dragon" and the reported "Hyper-Dragon" would
+        /// otherwise become two directories - one empty and reprocessed on every refresh, one with the
+        /// actual report.
+        /// </para>
+        /// </summary>
+        private static DirectoryInfo ResolveUserDirectory(DirectoryInfo parent, string directoryName)
+        {
+            parent.Refresh();
+
+            DirectoryInfo existing = parent.GetDirectories()
+                                           .FirstOrDefault(directory => string.Equals(directory.Name, directoryName, StringComparison.OrdinalIgnoreCase));
+
+            if (existing is null)
+            {
+                return parent.CreateSubdirectory(directoryName);
+            }
+
+            if (string.Equals(existing.Name, directoryName, StringComparison.Ordinal))
+            {
+                return existing;
+            }
+
+            // Adopt the canonical spelling: the index builds its links from the directory name, so a
+            // seeded "hyper-dragon" would otherwise point at files that are written as
+            // "Hyper-Dragon-Summary.html" and 404 on a case-sensitive filesystem. The rename runs in
+            // two steps so a case-only change also works on case-insensitive filesystems.
+            string temporaryPath = Path.Combine(parent.FullName, $"{directoryName}.{Guid.NewGuid():N}.renaming");
+
+            try
+            {
+                Directory.Move(existing.FullName, temporaryPath);
+                Directory.Move(temporaryPath, Path.Combine(parent.FullName, directoryName));
+
+                return new DirectoryInfo(Path.Combine(parent.FullName, directoryName));
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                Console.WriteLine($"  >>WARNING: could not rename '{existing.Name}' to '{directoryName}' - {ex.Message}");
+
+                if (Directory.Exists(temporaryPath) && !Directory.Exists(existing.FullName))
+                {
+                    try { Directory.Move(temporaryPath, existing.FullName); } catch (IOException) { }
+                }
+
+                return existing;
             }
         }
 
@@ -90,6 +149,7 @@ namespace ChessStats
         {
             bool hasRunErrors = false;
             bool hasCmdLineOptionSet = true;
+            int accountsWithNoGames = 0;
 
             //Set up data directories
             string applicationDirectory = Path.GetDirectoryName(Environment.ProcessPath);
@@ -170,8 +230,8 @@ namespace ChessStats
                 int chessdotcomPlayerId = userRecord.PlayerId;
 
                 //Create output directory
-                DirectoryInfo resultsDir = baseResultsDir.CreateSubdirectory(chessdotcomUsername);
-                DirectoryInfo cacheDir = baseCacheDir.CreateSubdirectory(chessdotcomUsername);
+                DirectoryInfo resultsDir = ResolveUserDirectory(baseResultsDir, chessdotcomUsername);
+                DirectoryInfo cacheDir = ResolveUserDirectory(baseCacheDir, chessdotcomUsername);
 
                 Helpers.StatsConsole.DisplaySection($"Fetching Data for {chessdotcomUsername}", true);
 
@@ -206,11 +266,12 @@ namespace ChessStats
                 }
                 catch (NoGamesFoundException ex)
                 {
-                    // A brand new or non-playing account is a normal outcome, not a crash.
+                    // A brand new or non-playing account is a normal outcome, not a failure - an
+                    // unattended refresh list usually contains one, and it must not fail the run.
                     Console.WriteLine("");
                     Console.WriteLine($"  >>No games to report: {ex.Message}");
                     Console.WriteLine("");
-                    hasRunErrors = true;
+                    accountsWithNoGames++;
                     continue;
                 }
                 catch (Exception ex)
@@ -473,6 +534,12 @@ namespace ChessStats
             indexFileOutStream.Close();
 
             Helpers.StatsConsole.EndTimedSection($">>Finished Rebuilding HTML Index", newLineAfter: true);
+
+            if (accountsWithNoGames > 0)
+            {
+                Console.WriteLine($"  >>{accountsWithNoGames} account(s) had no completed games and were skipped.");
+                Console.WriteLine("");
+            }
 
             return (hasRunErrors, hasCmdLineOptionSet);
         }
