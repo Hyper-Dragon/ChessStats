@@ -44,7 +44,7 @@ The package is public, so no registry login is needed. Use a version tag (`ghcr.
 ```
 docker run -d --name chessstats \
   -p 18080:80 \
-  -e CHESS_USERS="Hyper-Dragon AbhideepChess" \
+  -e CHESS_USERS="Hyper-Dragon GothamChess" \
   -v chessstats-results:/app/ChessStatsResults \
   -v chessstats-cache:/app/ChessStatsCache \
   ghcr.io/hyper-dragon/chessstats:latest
@@ -68,7 +68,7 @@ A directory under `/app/ChessStatsResults` **is** an account to report on - `-re
 
 ```
 docker run --rm -v chessstats-results:/results alpine \
-  sh -c "mkdir -p /results/Hyper-Dragon /results/AbhideepChess"
+  sh -c "mkdir -p /results/Hyper-Dragon /results/GothamChess"
 ```
 
 Use the spelling Chess.com reports for the account (the name in its profile URL). A directory seeded in a different case is adopted and renamed, so `hyper-dragon` becomes `Hyper-Dragon` on the first run. Removing an account is just removing its directory.
