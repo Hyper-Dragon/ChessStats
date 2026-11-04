@@ -44,6 +44,11 @@ The only network access during a run is the Chess.com public API itself, plus th
   downloaded at run time. Chess.com retired the CDN they were fetched from, which made every
   run fail before any data was retrieved (issue #27)
 * A player with no avatar now falls back to the built-in placeholder rather than failing the run
+* An account with no completed games is reported as a single notice and no longer fails the run
+* A results directory seeded by hand is matched case-insensitively and adopted, so report links
+  stay valid on case-sensitive filesystems
+* Exit codes are 0 (ok), 1 (completed with warnings) and 2 (fatal) - negative codes both
+  collapse to 254 on Linux
 * Sends a contactable User-Agent, as required by the Chess.com API policy
 * Assembly/file version metadata now matches the release number
 * Moved to .NET 10 (.NET 6 is out of support)
