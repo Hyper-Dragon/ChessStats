@@ -1,0 +1,11 @@
+.git
+.gitignore
+.github
+.vs
+**/bin
+**/obj
+ChessStatsResults
+ChessStatsCache
+*.code-workspace
+*.md
+!THIRD-PARTY-NOTICES.md

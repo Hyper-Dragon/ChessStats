@@ -1,0 +1,179 @@
+name: release
+
+# Publishing a v* tag builds and publishes the binaries, then the multi-arch container
+# image from those same artifacts - so the image can only ever contain bytes that were
+# actually released.
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Existing tag to (re)publish, e.g. v0.8.3-Final'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  packages: write
+
+env:
+  IMAGE: ghcr.io/hyper-dragon/chessstats
+
+jobs:
+  assets:
+    name: publish binaries
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.version.outputs.tag }}
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          ref: ${{ github.event.inputs.tag || github.ref }}
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Resolve version from the tag
+        id: version
+        shell: bash
+        run: |
+          set -euo pipefail
+          tag="${{ github.event.inputs.tag || github.ref_name }}"
+          version="${tag#v}"
+          version="${version%-Final}"
+          echo "tag=${tag}" >> "$GITHUB_OUTPUT"
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+
+      - name: Check the tag matches the project version
+        shell: bash
+        run: |
+          set -euo pipefail
+          project="$(sed -n 's:.*<Version>\([^<]*\)</Version>.*:\1:p' ChessStats/ChessStats/ChessStats.csproj | head -n1)"
+          echo "tag=${{ steps.version.outputs.version }} project=${project}"
+          if [ "${{ steps.version.outputs.version }}" != "${project}" ]; then
+            echo "::error::Tag ${{ steps.version.outputs.version }} does not match <Version>${project}</Version>"
+            exit 1
+          fi
+
+      - name: Publish and package
+        shell: bash
+        run: |
+          set -euo pipefail
+          v="${{ steps.version.outputs.version }}"
+
+          for rid in win-x64 linux-x64 linux-arm64; do
+            dotnet publish ChessStats/ChessStats/ChessStats.csproj -c Release \
+              -p:PublishProfile="ChessStats-${rid}" --nologo
+
+            mkdir -p "stage/${rid}"
+            if [ "${rid}" = "win-x64" ]; then
+              cp "ChessStats/ChessStats/bin/Release/net10.0/publish/${rid}/ChessStats.exe" "stage/${rid}/"
+            else
+              cp "ChessStats/ChessStats/bin/Release/net10.0/publish/${rid}/ChessStats" "stage/${rid}/"
+            fi
+            cp THIRD-PARTY-NOTICES.md "stage/${rid}/"
+          done
+
+          (cd stage/win-x64 && zip -qr "../../ChessStats-${v}-win-x64.zip" .)
+          tar -czf "ChessStats-${v}-linux-x64.tar.gz" -C stage/linux-x64 .
+          tar -czf "ChessStats-${v}-linux-arm64.tar.gz" -C stage/linux-arm64 .
+
+          sha256sum ChessStats-* > SHA256SUMS.txt
+          ls -lh ChessStats-* SHA256SUMS.txt
+
+      - name: Create or update the release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          tag="${{ steps.version.outputs.tag }}"
+
+          if gh release view "${tag}" >/dev/null 2>&1; then
+            echo "release ${tag} exists - uploading assets"
+            gh release upload "${tag}" ChessStats-* SHA256SUMS.txt --clobber
+          else
+            gh release create "${tag}" ChessStats-* SHA256SUMS.txt \
+              --title "ChessStats-${{ steps.version.outputs.version }}" \
+              --generate-notes
+          fi
+
+  image:
+    name: image ${{ matrix.arch }}
+    needs: assets
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Native runners only: no QEMU emulation.
+          - arch: amd64
+            runner: ubuntu-latest
+            asset: linux-x64
+          - arch: arm64
+            runner: ubuntu-24.04-arm
+            asset: linux-arm64
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download the published binary
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          gh release download "${{ needs.assets.outputs.tag }}" \
+            --pattern "ChessStats-*-${{ matrix.asset }}.tar.gz" --dir dist
+          mkdir -p publish
+          tar -xzf dist/*.tar.gz -C publish
+          chmod +x publish/ChessStats
+          file publish/ChessStats
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: container/Dockerfile
+          platforms: linux/${{ matrix.arch }}
+          push: true
+          tags: ${{ env.IMAGE }}:${{ needs.assets.outputs.version }}-${{ matrix.arch }}
+          labels: |
+            org.opencontainers.image.title=ChessStats
+            org.opencontainers.image.version=${{ needs.assets.outputs.version }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+
+  manifest:
+    name: multi-arch manifest
+    needs: [assets, image]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Merge the per-architecture images
+        run: |
+          set -euo pipefail
+          v="${{ needs.assets.outputs.version }}"
+          docker buildx imagetools create \
+            --tag "${IMAGE}:${v}" \
+            --tag "${IMAGE}:latest" \
+            "${IMAGE}:${v}-amd64" \
+            "${IMAGE}:${v}-arm64"
+          docker buildx imagetools inspect "${IMAGE}:${v}"
